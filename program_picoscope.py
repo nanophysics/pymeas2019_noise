@@ -36,7 +36,7 @@ class PicoScope:
   def connect(self):
     self.scope = self.record.connect()  # establish a connection to the PicoScope
 
-  def acquire(self, channel_name, frequency_hz, duration_s, amplitude_Vpp):
+  def acquire(self, config):
     self.scope.set_channel('A', scale='10V')  # enable Channel A and set the voltage range to be +/-10V
     self.scope.set_channel('D', scale='10V')  # enable Channel A and set the voltage range to be +/-10V
     max_sample_rate = 62.5e6
@@ -47,7 +47,7 @@ class PicoScope:
     # dt, num_samples = self.scope.set_timebase(1e-6, 2.0)  # sample the voltage on Channel A every 1 us, for 100 us
     dt_s, num_samples = self.scope.set_timebase(desired_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
     # self.scope.set_sig_gen_builtin_v2(start_frequency=1e6, pk_to_pk=2.0, offset_voltage=0.4)  # create a sine wave
-    self.scope.set_sig_gen_builtin_v2(start_frequency=frequency_hz, pk_to_pk=amplitude_Vpp, offset_voltage=0.4, trigger_source='scope_trig', sweeps=0)  # create a sine wave
+    self.scope.set_sig_gen_builtin_v2(start_frequency=config.frequency_Hz, pk_to_pk=config.input_set_Vp, offset_voltage=0.4, trigger_source='scope_trig', sweeps=0)  # create a sine wave
     # self.scope.set_sig_gen_builtin_v2(start_frequency=1e3, pk_to_pk=2.0, offset_voltage=0.4, trigger_source='scope_trig', shots=100, sweeps=0)  # create a sine wave
     # self.scope.set_sig_gen_builtin_v2(start_frequency=1e3, pk_to_pk=2.0, offset_voltage=0.4, trigger_source='soft_trig', shots=100, sweeps=0)  # create a sine wave
     # self.scope.sig_gen_software_control(1)
@@ -63,7 +63,7 @@ class PicoScope:
 
     @callbacks.ps5000aStreamingReady
     def my_streaming_ready(handle, num_samples, start_index, overflow, trigger_at, triggered, auto_stop, p_parameter):
-      if False:
+      if True:
         print('StreamingReady Callback: handle={}, num_samples={}, start_index={}, overflow={}, trigger_at={}, '
           'triggered={}, auto_stop={}, p_parameter={}'.format(handle, num_samples, start_index, overflow,
                                   trigger_at, triggered, auto_stop, p_parameter))
@@ -72,7 +72,7 @@ class PicoScope:
         print('\noverflow')
       if triggered:
         print('\nTrigger {}'.format(trigger_at))
-        self.trigger_at=trigger_at
+        self.trigger_at=start_index+trigger_at
 
       print('.', end='')
 
@@ -86,26 +86,22 @@ class PicoScope:
       self.scope.wait_until_ready()  # wait until the latest streaming values are ready
       self.scope.get_streaming_latest_values(my_streaming_ready)  # get the latest streaming values
 
-    aux_data = dict(
+    measurementData = program.MeasurementData(config)
+    measurementData.write(
+      channelA = self.scope.channel['A'].volts,
+      channelD = self.scope.channel['D'].volts,
       dt_s = dt_s,
       num_samples = num_samples,
-      global_trigger_at = self.trigger_at,
+      trigger_at = self.trigger_at,
     )
-    filename = f'data_{channel_name}_{frequency_hz:0.0e}hz'
-    def fullname(extension):
-      return os.path.join(program.DIRECTORY_RAW, f'{filename}.{extension}')
-    print(f'Writing {filename}')
-    np.savez(fullname('npz'), self.scope.channel['A'].volts, self.scope.channel['D'].volts)
-    with open(fullname('txt'), 'w') as f:
-      f.write(str(aux_data))
 
     print('Done')
     self.scope.stop()
 
-if __name__ == '__main__':
-  pymeas = program.PyMeas2019()
+# if __name__ == '__main__':
+#   pymeas = program.PyMeas2019()
 
-  picoscope = PicoScope()
-  picoscope.connect()
-  for frequency_hz in (1e2, 1e4, 1e6):
-    picoscope.acquire(channel_name='ch1', frequency_hz=frequency_hz, duration_s=5.0, amplitude_Vpp=2.0)
+#   picoscope = PicoScope()
+#   picoscope.connect()
+#   for frequency_hz in (1e2, 1e4, 1e6):
+#     picoscope.acquire(channel_name='ch1', frequency_hz=frequency_hz, duration_s=5.0, amplitude_Vpp=2.0)
