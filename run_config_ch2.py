@@ -1,4 +1,4 @@
 config = dict(
-diagram_legend = 'CH2 common mode mess',
-input_Vp = 0.2,
+  diagram_legend = 'CH2 common mode mess',
+  input_Vp = 0.2,
 )
