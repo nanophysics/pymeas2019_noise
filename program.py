@@ -58,6 +58,16 @@ class MeasurementData:
     with open(self.config.get_filename_data('txt'), 'w') as f:
       f.write(str(aux_data))
 
+  def calculate_transfer(self):
+    # Peter
+    # https://www.numpy.org/
+    # https://www.scipy.org/
+    channelA = self.channelA
+    channalAmal2 = 2*channelA
+    self.config.frequency_Hz
+    self.num_samples
+    pass
+
   def dump_plot(self):
     # t = np.arange(-scope.pre_trigger, dt*num_samples-scope.pre_trigger, dt)
     
@@ -148,6 +158,7 @@ class Configuration:
   
   def condense(self):
     measurementData = MeasurementData(self, read=True)
+    measurementData.calculate_transfer()
     measurementData.dump_plot()
     pass
 

@@ -38,9 +38,9 @@ class PicoScope:
     self.scope = self.record.connect()  # establish a connection to the PicoScope
 
   def acquire(self, config):
-    self.scope.set_channel('A', scale='10V')
+    self.scope.set_channel('A', scale=config.input_Vp)
     if config.with_channel_D:
-      self.scope.set_channel('D', scale='10V')
+      self.scope.set_channel('D', scale=10.0)
     if False:
       max_sample_rate = 62.5e6
       desired_sample_rate = max_sample_rate/2
