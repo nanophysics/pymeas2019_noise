@@ -8,7 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import config_measurements
-import program_picoscope
+import program_picoscope_5442D as program_picoscope
+# import program_picoscope_2204A as program_picoscope
 
 logger = logging.getLogger(__name__)
 
@@ -59,12 +60,31 @@ class MeasurementData:
 
   def dump_plot(self):
     # t = np.arange(-scope.pre_trigger, dt*num_samples-scope.pre_trigger, dt)
-    t = np.arange(0, self.dt_s*self.num_samples, self.dt_s)
-    plt.plot(t, self.channelA)
+    
+    # t = np.arange(0, self.dt_s*self.num_samples, self.dt_s)
+    # plt.plot(t, self.channelA)
+    if True:
+      fig, ax = plt.subplots()
 
-    # plt.plot(self.channelA)
-    plt.ylabel('channel A')
-    plt.show()
+      lineA, = ax.plot(self.channelA, linewidth=0.1, color='blue')
+      # lineA.set_label('Channel A')
+
+      lineD, = ax.plot(self.channelD, linewidth=0.1, color='red')
+      # lineD.set_label('Channel D')
+      # lineD.set_dashes([2, 2, 10, 2])  # 2pt line, 2pt break, 10pt line, 2pt break
+
+      ax.set_title(self.config)
+      # ax.legend()
+
+      filename_png = self.config.get_filename_data(extension='png', directory=DIRECTORY_CONDENSED)
+      print(f'writing: {filename_png}')
+      fig.savefig(filename_png)
+      # plt.show()
+
+    if False:
+      plt.plot(self.channelD)
+      plt.ylabel('channel D')
+      plt.show()
 
 class Configuration:
   def __init__(self):
@@ -75,10 +95,21 @@ class Configuration:
     self.diagram_legend = DEFINED_BY_CHANNEL
     self.frequency_Hz = DEFINED_BY_FREQUENCY
     self.duration_s = DEFINED_BY_FREQUENCY
+    self.with_channel_D = DEFINED_BY_MEASUREMENTS
 
-  def get_filename_data(self, extension):
+  def create_directories(self):
+    for directory in (DIRECTORY_RAW, DIRECTORY_CONDENSED, DIRECTORY_RESULT):
+        if not os.path.exists(directory):
+          os.makedirs(directory)
+
+  def __str__(self):
+    return f'{self.diagram_legend} ({self.channel_name}, {self.frequency_Hz:06d}hz, {self.duration_s:0.3f}s)'
+    return f'{self.diagram_legend} ({self.channel_name}, {self.frequency_Hz:0.0e}hz, {self.duration_s:0.0e}s)'
+
+  def get_filename_data(self, extension, directory=DIRECTORY_RAW):
     filename = f'data_{self.channel_name}_{self.frequency_Hz:0.0e}hz'
-    return os.path.join(DIRECTORY_RAW, f'{filename}.{extension}')
+    filename = f'data_{self.channel_name}_{self.frequency_Hz:06d}hz'
+    return os.path.join(directory, f'{filename}.{extension}')
 
   def _update_element(self, key, value):
     assert key in self.__dict__
@@ -89,6 +120,7 @@ class Configuration:
       self._update_element(key, value)
 
   def update_by_channel_file(self, filename_channel):
+    self.create_directories()
     dict_globals = {}
     with open(filename_channel) as f:
       exec(f.read(), dict_globals)
@@ -105,12 +137,14 @@ class Configuration:
       self.update_by_dict(dict_measurement)
       yield self
 
-  def measure_for_all_frequencies(self):
-    picoscope = program_picoscope.PicoScope()
+  def measure_for_all_frequencies(self, measured_only_first=False):
+    picoscope = program_picoscope.PicoScope(self)
     picoscope.connect()
     for config in self.iter_frequencies():
       # picoscope.acquire(channel_name='ch1', frequency_hz=config.frequency_Hz, duration_s=config.duration_s, amplitude_Vpp=config.input_set_Vp)
       picoscope.acquire(config)
+      if measured_only_first:
+        return
   
   def condense(self):
     measurementData = MeasurementData(self, read=True)
@@ -135,34 +169,30 @@ def get_configs():
       list_configs.append(os.path.join(DIRECTORY_TOP, filename))
   return list_configs
 
+def run_condense_0_to_1():
+  print('get_configs: {}'.format(get_configs()))
+  for config_filename in get_configs():
+    config = get_config_by_config_filename(config_filename)
+    config.condense_for_all_frequencies()
+
 class PyMeas2019:
   def __init__(self):
     for directory in (DIRECTORY_RAW, DIRECTORY_CONDENSED, DIRECTORY_RESULT):
       if not os.path.exists(directory):
         os.makedirs(directory)
 
-# class ConfigFile:
-#   def __init__(self, config_filename):
-#     self.pymeas2019 = PyMeas2019()
-#     self.config_filename = os.path.basename(config_filename)
-#     self.dict_channel = {}
-#     self.dict_channel.update(config_measurements.defaults)
-
-#     with open(config_filename) as f:
-#       dict_globals = {}
-#       exec(f.read(), dict_globals)
-#       self.dict_channel.update(dict_globals['config'])
-
-#     match = RE_CONFIG_CHANNEL.match(self.config_filename)
-
-#     assert match is not None
-#     channel_name = match.group('channel')
-#     self.dict_channel['channel_name'] = channel_name
-
-#     pass
-
 if __name__ == '__main__':
+  if True:
+    filename_config = os.path.join(DIRECTORY_TOP, 'run_config_ch1.py')
+    config = get_config_by_config_filename(filename_config)
+    config.measure_for_all_frequencies(measured_only_first=False)
+    config.condense_for_all_frequencies()
+
+    import sys
+    sys.exit(0)
+
   print('get_configs: {}'.format(get_configs()))
   for config_filename in get_configs():
     config = get_config_by_config_filename(config_filename)
     config.condense_for_all_frequencies()
+
