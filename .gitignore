@@ -1,0 +1,4 @@
+**/data_*.npz
+**/data_*.txt
+**/data_*.png
+**/__pycache__

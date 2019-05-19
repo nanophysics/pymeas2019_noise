@@ -6,6 +6,7 @@ import time
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.fftpack
 
 import config_measurements
 import program_picoscope_5442D as program_picoscope
@@ -43,15 +44,21 @@ class MeasurementData:
     with open(self.config.get_filename_data('txt'), 'r') as f:
       d = eval(f.read())
     self.dt_s = d['dt_s']
+    self.channelA_volts_per_adu = d['channelA_volts_per_adu']
+    self.channelD_volts_per_adu = d['channelD_volts_per_adu']
     self.num_samples = d['num_samples']
     self.trigger_at = d['trigger_at']
-    pass
+    
+    self.channelA = self.channelA * self.channelA_volts_per_adu
+    self.channelD = self.channelD * self.channelD_volts_per_adu
 
-  def write(self, channelA, channelD, dt_s, num_samples, trigger_at):
+  def write(self, channelA, channelD, channelA_volts_per_adu, channelD_volts_per_adu, dt_s, num_samples, trigger_at):
     aux_data = dict(
       dt_s = dt_s,
       num_samples = num_samples,
       trigger_at = trigger_at,
+      channelA_volts_per_adu = channelA_volts_per_adu,
+      channelD_volts_per_adu = channelD_volts_per_adu,
     )
     print(f'Writing')
     np.savez(self.config.get_filename_data('npz'), A=channelA, D=channelD)
@@ -92,6 +99,25 @@ class MeasurementData:
       # plt.show()
 
     if False:
+      fig, ax = plt.subplots()
+
+      yf = scipy.fftpack.fft(self.channelD)
+      # xf = np.linspace(0.0, 1.0/(2.0*self.dt_s), self.num_samples//2)
+      f = 1.0/(2.0*self.dt_s)
+      xf = np.linspace(0.0, 2*self.config.frequency_Hz, self.num_samples//2)
+      lineD, = ax.plot(xf, 2.0/self.num_samples* np.abs(yf[0:self.num_samples//2]), linewidth=0.1, color='red')
+      # lineD.set_label('Channel D')
+      # lineD.set_dashes([2, 2, 10, 2])  # 2pt line, 2pt break, 10pt line, 2pt break
+
+      ax.set_title(self.config)
+      # ax.legend()
+
+      filename_png = self.config.get_filename_data(extension='png', postfix='_fft', directory=DIRECTORY_CONDENSED)
+      print(f'writing: {filename_png}')
+      fig.savefig(filename_png)
+      # plt.show()
+
+    if False:
       plt.plot(self.channelD)
       plt.ylabel('channel D')
       plt.show()
@@ -116,10 +142,10 @@ class Configuration:
     return f'{self.diagram_legend} ({self.channel_name}, {self.frequency_Hz:06d}hz, {self.duration_s:0.3f}s)'
     return f'{self.diagram_legend} ({self.channel_name}, {self.frequency_Hz:0.0e}hz, {self.duration_s:0.0e}s)'
 
-  def get_filename_data(self, extension, directory=DIRECTORY_RAW):
+  def get_filename_data(self, extension, postfix='', directory=DIRECTORY_RAW):
     filename = f'data_{self.channel_name}_{self.frequency_Hz:0.0e}hz'
     filename = f'data_{self.channel_name}_{self.frequency_Hz:06d}hz'
-    return os.path.join(directory, f'{filename}.{extension}')
+    return os.path.join(directory, f'{filename}{postfix}.{extension}')
 
   def _update_element(self, key, value):
     assert key in self.__dict__

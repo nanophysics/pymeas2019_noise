@@ -88,7 +88,7 @@ class PicoScope:
     dt_s, num_samples = self.scope.set_timebase(desired_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
     # self.scope.set_sig_gen_builtin_v2(start_frequency=1e6, pk_to_pk=2.0, offset_voltage=0.4)  # create a sine wave
     # Make sure the is no signal before the trigger
-    self.scope.set_sig_gen_builtin_v2(start_frequency=config.frequency_Hz, pk_to_pk=config.input_set_Vp, trigger_source='scope_trig', sweeps=0)  # create a sine wave
+    self.scope.set_sig_gen_builtin_v2(start_frequency=config.frequency_Hz, wave_type='sine', pk_to_pk=config.input_set_Vp, trigger_source='scope_trig', sweeps=0)  # create a sine wave
     # self.scope.set_sig_gen_builtin_v2(start_frequency=1e3, pk_to_pk=2.0, offset_voltage=0.4, trigger_source='scope_trig', shots=100, sweeps=0)  # create a sine wave
     # self.scope.set_sig_gen_builtin_v2(start_frequency=1e3, pk_to_pk=2.0, offset_voltage=0.4, trigger_source='soft_trig', shots=100, sweeps=0)  # create a sine wave
     # self.scope.sig_gen_software_control(1)
@@ -129,16 +129,21 @@ class PicoScope:
       self.scope.get_streaming_latest_values(my_streaming_ready)  # get the latest streaming values
 
     channelD_V = None
+    channelD_volts_per_adu = 1.0
     if config.with_channel_D:
-      channelD_V = self.scope.channel['D'].volts
+      channelD_V = self.scope.channel['D'].raw
+      channelD_volts_per_adu = self.scope.channel['D'].volts_per_adu
     measurementData = program.MeasurementData(config)
     measurementData.write(
-      channelA = self.scope.channel['A'].volts,
+      channelA = self.scope.channel['A'].raw,
       channelD = channelD_V,
+      channelA_volts_per_adu = self.scope.channel['A'].volts_per_adu,
+      channelD_volts_per_adu = channelD_volts_per_adu,
       dt_s = dt_s,
       num_samples = num_samples,
       trigger_at = self.trigger_at,
     )
+
 
     print('Done')
     self.scope.stop()
