@@ -1,10 +1,15 @@
-list_measurements = (
-  dict(frequency_Hz=50, duration_s=1e0),
-  dict(frequency_Hz=1000, duration_s=1e-1),
-  dict(frequency_Hz=2000, duration_s=1e-1),
-  dict(frequency_Hz=5000, duration_s=1e-1),
-  dict(frequency_Hz=10000, duration_s=1e-2),
-)
+import helpers
+
+frequencies_Hz = helpers.eseries(series='E6', minimal=0.8, maximal=10)
+list_measurements = helpers.get_list_measurements(frequencies_Hz)
+
+# list_measurements = (
+#   dict(frequency_Hz=50, duration_s=1e0),
+#   dict(frequency_Hz=1000, duration_s=1e-1),
+#   dict(frequency_Hz=2000, duration_s=1e-1),
+#   dict(frequency_Hz=5000, duration_s=1e-1),
+#   dict(frequency_Hz=10000, duration_s=1e-2),
+# )
 
 dict_config = dict(
   skalierungsfaktor=1.00E+03,

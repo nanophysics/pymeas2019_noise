@@ -122,7 +122,8 @@ class PicoScope:
         print('')
         self.streaming_done = True
 
-    self.scope.set_trigger('A', -1000.0, direction='below', timeout=0.1)
+    # self.scope.set_trigger('A', -1000.0, direction='below', timeout=0.05)
+    self.scope.set_trigger('A', -1000.0, direction='below', timeout=0.001)
     self.scope.run_streaming(auto_stop=True)
     while not self.streaming_done:
       self.scope.wait_until_ready()  # wait until the latest streaming values are ready

@@ -36,9 +36,7 @@ def eseries(series = 'E12', minimal = 0.01, maximal = 300):
     #print(valuelist)
     return(valuelist)
 
-if __name__ == '__main__':
-    frequencies_Hz = eseries(series = 'E12', minimal = 0.01, maximal = 300)
-
+def get_list_measurements(frequencies_Hz):
     minimal_duration_s = 0.1
     maximal_duration_s = 150.0
     periods_sine_optimal = 5.0
@@ -50,4 +48,9 @@ if __name__ == '__main__':
         if duration_s < minimal_duration_s:
             duration_s = minimal_duration_s
         list_measurements.append( dict(frequency_Hz=frequency_Hz, duration_s=duration_s))
-    print(list_measurements)
+    # print(list_measurements)
+    return list_measurements
+
+if __name__ == '__main__':
+    frequencies_Hz = eseries(series = 'E12', minimal = 0.01, maximal = 300)
+    get_list_measurements(frequencies_Hz)
