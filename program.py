@@ -208,19 +208,47 @@ class Configuration:
       for config in self.iter_frequencies():
         config.condense()
 
-    listX = []
-    listY = []
+    listAX = []
+    listAY = []
+    listDX = []
+    listDY = []
     for config in self.iter_frequencies():
       measurementData = MeasurementData(self, read=True)
-      complexA = measurementData.GainPhase(measurementData.channelD)
-      listX.append(config.frequency_Hz)
-      listY.append(complexA.real)
-      # listY.append(abs(complexA))
 
-    if True:
-      plt.plot(listX, listY)
+      complexA = measurementData.GainPhase(measurementData.channelA)
+      listAX.append(config.frequency_Hz)
+      listAY.append(complexA.real)
+      # listAY.append(abs(complexA))
+
+      complexD = measurementData.GainPhase(measurementData.channelD)
+      listDX.append(config.frequency_Hz)
+      listDY.append(complexD.real)
+      # listDY.append(abs(complexD))
+
+    if False:
+      plt.plot(listAX, listAY)
       plt.ylabel('channel XYZ')
       plt.show()
+    
+    if True:
+      fig, ax1 = plt.subplots()
+
+      ax1.tick_params('y', colors='blue')
+      lineA, = ax1.plot(listAX, listAY, linewidth=1.0, color='blue')
+      lineA.set_label('Channel A')
+
+      ax2 = ax1.twinx()
+
+      ax2.tick_params('y', colors='red')
+      lineD, = ax2.plot(listDX, listDY, linewidth=1.0, color='red')
+      lineD.set_label('Channel D')
+      # lineD.set_dashes([2, 2, 10, 2])  # 2pt line, 2pt break, 10pt line, 2pt break
+
+      # ax.set_title(self.config)
+      fig.legend()
+      plt.show()
+
+
 
 def get_config_by_config_filename(channel_config_filename):
   config = Configuration()

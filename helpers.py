@@ -1,9 +1,12 @@
 import numpy as np
 
 
-def eseries(series = 'E12', minimal = 0.01, maximal = 300):
+def eseries(series='E12', minimal=0.01, maximal=300):
     assert minimal > 10**-10
     assert maximal < 10**20
+    minimal *= 0.99999
+    maximal *= 1.00001
+
     ereihen = {
         'E6' : np.array([100,150,220,330,470,680]),
         'E12': np.array([100,120,150,180,220,270,330,390,470,560,680,820]),

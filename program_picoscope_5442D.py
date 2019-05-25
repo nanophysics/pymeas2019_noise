@@ -14,7 +14,7 @@ import msl.equipment.resources.picotech.picoscope
 import msl.equipment
 
 from msl.equipment.resources.picotech.picoscope import callbacks
-
+from msl.equipment.resources.picotech.picoscope.enums import PS5000Range
 
 class PicoScope:
   def __init__(self, config):
@@ -38,15 +38,21 @@ class PicoScope:
     self.scope = self.record.connect()  # establish a connection to the PicoScope
 
   def acquire(self, config):
-    self.scope.set_channel('A', scale=config.input_Vp)
+    assert type(config.input_Vp) == type(PS5000Range.R_MAX)
+
+    self.scope.set_channel('A', coupling='dc', scale=config.input_Vp)
     if config.with_channel_D:
-      self.scope.set_channel('D', scale=10.0)
+      self.scope.set_channel('D', coupling='dc', scale=10.0)
     if False:
+      # This section would use the maximal sample rate
+      # But the results are messed up...
       max_sample_rate = 62.5e6
       desired_sample_rate = max_sample_rate/2
       desired_dt_s = 1.0/desired_sample_rate
-      desired_buffer_size = 10e6
-      desired_sample_time_s = desired_dt_s*desired_buffer_size
+      # desired_buffer_size = 10e6
+      # desired_sample_time_s = desired_dt_s*desired_buffer_size
+      desired_sample_time_s = config.duration_s
+      desired_buffer_size = desired_sample_time_s//desired_dt_s
     if True:
       max_sample_rate = 6e6
       desired_sample_rate = max_sample_rate/2
@@ -88,7 +94,10 @@ class PicoScope:
     dt_s, num_samples = self.scope.set_timebase(desired_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
     # self.scope.set_sig_gen_builtin_v2(start_frequency=1e6, pk_to_pk=2.0, offset_voltage=0.4)  # create a sine wave
     # Make sure the is no signal before the trigger
-    self.scope.set_sig_gen_builtin_v2(start_frequency=config.frequency_Hz, wave_type='sine', pk_to_pk=config.input_set_Vp, trigger_source='scope_trig', sweeps=0)  # create a sine wave
+    pk_to_pk=2.0*config.input_set_Vp
+    assert config.input_set_Vp <= 2.0, '"config.input_set_Vp={:f}V" but must be smaller than 2.0V! The output voltage is limited according to the datasheet to +/-2.0V'.format(config.input_set_Vp)
+    assert pk_to_pk <= 4.0, 'The output voltage is limited according to the datasheet to +/-2.0V'
+    self.scope.set_sig_gen_builtin_v2(start_frequency=config.frequency_Hz, wave_type='sine', pk_to_pk=pk_to_pk, trigger_source='scope_trig', sweeps=0)
     # self.scope.set_sig_gen_builtin_v2(start_frequency=1e3, pk_to_pk=2.0, offset_voltage=0.4, trigger_source='scope_trig', shots=100, sweeps=0)  # create a sine wave
     # self.scope.set_sig_gen_builtin_v2(start_frequency=1e3, pk_to_pk=2.0, offset_voltage=0.4, trigger_source='soft_trig', shots=100, sweeps=0)  # create a sine wave
     # self.scope.sig_gen_software_control(1)
