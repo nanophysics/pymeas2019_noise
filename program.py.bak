@@ -80,6 +80,7 @@ class MeasurementData:
     # https://www.numpy.org/
     # https://www.scipy.org/
 
+    print("hallo")
     print ( GainPhase(self.channelD, self.dt_s, self.config.frequency_Hz))
 
     channelA = self.channelA
