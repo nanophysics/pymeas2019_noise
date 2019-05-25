@@ -3,6 +3,7 @@ import gc
 import re
 import os
 import time
+import cmath
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -208,45 +209,84 @@ class Configuration:
       for config in self.iter_frequencies():
         config.condense()
 
-    listAX = []
-    listAY = []
-    listDX = []
-    listDY = []
+
+    class Measurement:
+      def __init__(self, measurementData):
+        self.measurementData = measurementData
+        self.complexA = measurementData.GainPhase(measurementData.channelA)
+        self.complexD = measurementData.GainPhase(measurementData.channelD)
+   
+    list_measurement = []
+    listX = []
     for config in self.iter_frequencies():
+      listX.append(config.frequency_Hz)
       measurementData = MeasurementData(self, read=True)
+      list_measurement.append(Measurement(measurementData))
 
-      complexA = measurementData.GainPhase(measurementData.channelA)
-      listAX.append(config.frequency_Hz)
-      listAY.append(complexA.real)
-      # listAY.append(abs(complexA))
+    def get_list(f):
+      return list(map(f, list_measurement))
 
-      complexD = measurementData.GainPhase(measurementData.channelD)
-      listDX.append(config.frequency_Hz)
-      listDY.append(complexD.real)
-      # listDY.append(abs(complexD))
-
-    if False:
-      plt.plot(listAX, listAY)
-      plt.ylabel('channel XYZ')
-      plt.show()
-    
     if True:
+      # X of channel A and D
+      listAY = get_list(lambda m: m.complexA.real)
+      listDY = get_list(lambda m: m.complexD.real)
+
       fig, ax1 = plt.subplots()
 
       ax1.tick_params('y', colors='blue')
-      lineA, = ax1.plot(listAX, listAY, linewidth=1.0, color='blue')
+      lineA, = ax1.plot(listX, listAY, linewidth=1.0, color='blue')
       lineA.set_label('Channel A')
 
       ax2 = ax1.twinx()
 
       ax2.tick_params('y', colors='red')
-      lineD, = ax2.plot(listDX, listDY, linewidth=1.0, color='red')
+      lineD, = ax2.plot(listX, listDY, linewidth=1.0, color='red')
       lineD.set_label('Channel D')
       # lineD.set_dashes([2, 2, 10, 2])  # 2pt line, 2pt break, 10pt line, 2pt break
 
       # ax.set_title(self.config)
       fig.legend()
       plt.show()
+      plt.close()
+
+    if True:
+      # Phase of channel A and D
+      
+      listAY = get_list(lambda m: cmath.phase(m.complexA))
+      listDY = get_list(lambda m: cmath.phase(m.complexD))
+
+      fig, ax1 = plt.subplots()
+
+      ax1.tick_params('y', colors='blue')
+      lineA, = ax1.plot(listX, listAY, linewidth=1.0, color='blue')
+      lineA.set_label('Channel A')
+
+      ax2 = ax1.twinx()
+
+      ax2.tick_params('y', colors='red')
+      lineD, = ax2.plot(listX, listDY, linewidth=1.0, color='red')
+      lineD.set_label('Channel D')
+      # lineD.set_dashes([2, 2, 10, 2])  # 2pt line, 2pt break, 10pt line, 2pt break
+
+      # ax.set_title(self.config)
+      fig.legend()
+      plt.show()
+      plt.close()
+
+    if True:
+      # Phase of channel A and D
+      
+      listY = get_list(lambda m: (m.complexA/m.complexD).real)
+
+      fig, ax1 = plt.subplots()
+
+      ax1.tick_params('y', colors='blue')
+      lineA, = ax1.plot(listX, listY, linewidth=1.0, color='blue')
+      lineA.set_label('m.complexA/m.complexD')
+
+      fig.legend()
+      plt.show()
+      plt.close()
 
 
 

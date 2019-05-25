@@ -8,6 +8,8 @@ import program
 
 logger = logging.getLogger(__name__)
 
+use_trigger = True
+
 logger.setLevel(logging.DEBUG)
 
 import msl.equipment.resources.picotech.picoscope
@@ -42,7 +44,7 @@ class PicoScope:
 
     self.scope.set_channel('A', coupling='dc', scale=config.input_Vp)
     if config.with_channel_D:
-      self.scope.set_channel('D', coupling='dc', scale=10.0)
+      self.scope.set_channel('D', coupling='dc', scale=PS5000Range.R_5V)
     if False:
       # This section would use the maximal sample rate
       # But the results are messed up...
@@ -97,7 +99,8 @@ class PicoScope:
     pk_to_pk=2.0*config.input_set_Vp
     assert config.input_set_Vp <= 2.0, '"config.input_set_Vp={:f}V" but must be smaller than 2.0V! The output voltage is limited according to the datasheet to +/-2.0V'.format(config.input_set_Vp)
     assert pk_to_pk <= 4.0, 'The output voltage is limited according to the datasheet to +/-2.0V'
-    self.scope.set_sig_gen_builtin_v2(start_frequency=config.frequency_Hz, wave_type='sine', pk_to_pk=pk_to_pk, trigger_source='scope_trig', sweeps=0)
+    trigger_source='scope_trig' if use_trigger else 'None'
+    self.scope.set_sig_gen_builtin_v2(start_frequency=config.frequency_Hz, wave_type='sine', pk_to_pk=pk_to_pk, trigger_source=trigger_source, sweeps=0)
     # self.scope.set_sig_gen_builtin_v2(start_frequency=1e3, pk_to_pk=2.0, offset_voltage=0.4, trigger_source='scope_trig', shots=100, sweeps=0)  # create a sine wave
     # self.scope.set_sig_gen_builtin_v2(start_frequency=1e3, pk_to_pk=2.0, offset_voltage=0.4, trigger_source='soft_trig', shots=100, sweeps=0)  # create a sine wave
     # self.scope.sig_gen_software_control(1)
@@ -131,8 +134,9 @@ class PicoScope:
         print('')
         self.streaming_done = True
 
-    # self.scope.set_trigger('A', -1000.0, direction='below', timeout=0.05)
-    self.scope.set_trigger('A', -1000.0, direction='below', timeout=0.001)
+    if use_trigger:
+      # self.scope.set_trigger('A', -1000.0, direction='below', timeout=0.05)
+      self.scope.set_trigger('A', -1000.0, direction='below', timeout=0.001)
     self.scope.run_streaming(auto_stop=True)
     while not self.streaming_done:
       self.scope.wait_until_ready()  # wait until the latest streaming values are ready

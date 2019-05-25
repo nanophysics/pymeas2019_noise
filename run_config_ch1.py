@@ -2,8 +2,8 @@ from msl.equipment.resources.picotech.picoscope.enums import PS5000Range
 
 dict_config = dict(
   diagram_legend = 'CH1 common mode mess',
-  # input_Vp = PS5000Range.R_2V,
-  input_Vp = PS5000Range.R_10MV,
+  input_Vp = PS5000Range.R_5V,
+  # input_Vp = PS5000Range.R_10MV,
 )
 
 if __name__ == '__main__':
