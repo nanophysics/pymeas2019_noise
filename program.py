@@ -99,6 +99,21 @@ class MeasurementData:
     Yp = np.mean(Yvector * signalvector) * factor
     return complex (Xp, Yp)
 
+  def GainPhaseSerialPoint(self, signal_V=1.22, time_s=0.1123, time_total_s=2.0):
+    phase_rad = 2 * np.pi * self.config.frequency_Hz
+    window_hann = 1 - np.cos(2 * np.pi * time_s / time_total_s)
+    signal_V_windowed = signal_V * window_hann
+    X = signal_V_windowed * np.sin(phase_rad)
+    Y = signal_V_windowed * np.cos(phase_rad)
+    return complex (X, Y)
+
+  def GainPhaseSerial(self, signal) 
+    summe = complex(0,0)
+    for signal_V in signal:
+      summe += GainPhaseSerialPoint(signal_V)
+    return(summe)
+
+
   def dump_plot(self):
     # t = np.arange(-scope.pre_trigger, dt*num_samples-scope.pre_trigger, dt)
     
