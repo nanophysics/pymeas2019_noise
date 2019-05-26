@@ -82,39 +82,28 @@ class MeasurementData:
     self.num_samples
     pass
 
-  def GainPhase(self, signalvector = [1,2,3]):
-    points = len(signalvector)
-    timevector = np.linspace(0, points*self.dt_s, num=points)
-    phasevector = timevector * 2 * np.pi * self.config.frequency_Hz
-    windowvector = np.hanning(points)
-    Xvector = np.sin(phasevector) * windowvector
-    Yvector = np.cos(phasevector) * windowvector
+  def __prepareGainPhase(self, points):
+    self.phasevector = np.linspace(0.0, points * self.dt_s * 2 * np.pi * self.config.frequency_Hz, num=points)
 
-    gc.collect()
+    # corresponds to np.hanning(points)
+    ivektor = np.linspace(0.0, 1.0, num=points)
+    self.windowvector = 1 - np.cos(2 * np.pi * ivektor)
 
-    calibratesine =  np.sin(phasevector) # amplitude of 1 peak or 1/sqrt(2) rms
-    Xcalibratesine = np.mean(Xvector * calibratesine)
-    factor = 1 / Xcalibratesine
+  def __GainPhase(self, signalvector):
+    Xvector = np.sin(self.phasevector) * self.windowvector
+    Yvector = np.cos(self.phasevector) * self.windowvector
 
-    Xp = np.mean(Xvector * signalvector) * factor
-    Yp = np.mean(Yvector * signalvector) * factor
+    Xp = np.mean(Xvector * signalvector)
+    Yp = np.mean(Yvector * signalvector)
     return complex (Xp, Yp)
 
-  def GainPhase_(self, signal):
-    summe = complex(0, 0)
-
-    a = 2 * np.pi * self.config.frequency_Hz * self.dt_s
-    b = 2 * np.pi / len(signal)
-
-    for i in range(len(signal)):
-      phase_rad = i * a
-      window_hann = 1 - math.cos(i * b)
-      signal_V_windowed = signal[i] * window_hann
-      X = signal_V_windowed * math.sin(phase_rad)
-      Y = signal_V_windowed * math.cos(phase_rad)
-
-      summe += complex(X, Y)
-    return summe
+  def GainPhase(self):
+    assert len(self.channelA) == len(self.channelD)
+    points = len(self.channelA)
+    self.__prepareGainPhase(points)
+    complexA = self.__GainPhase(self.channelA)
+    complexD = self.__GainPhase(self.channelD)
+    return complexA, complexD
 
   def dump_plot(self):
     # t = np.arange(-scope.pre_trigger, dt*num_samples-scope.pre_trigger, dt)
@@ -229,9 +218,8 @@ class Configuration:
     class Measurement:
       def __init__(self, measurementData):
         self.measurementData = measurementData
-        self.complexA = measurementData.GainPhase(measurementData.channelA)
-        self.complexD = measurementData.GainPhase(measurementData.channelD)
-   
+        self.complexA, self.complexD = measurementData.GainPhase()
+
     start = time.time()
     list_measurement = []
     listX = []
