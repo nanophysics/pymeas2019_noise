@@ -34,6 +34,8 @@ DEFINED_BY_FREQUENCY='DEFINED_BY_FREQUENCY'
 class MeasurementData:
   def __init__(self, config, read=False):
     self.config = config
+    self.fA = None
+    self.fD = None
 
     if not read:
       return
@@ -42,29 +44,49 @@ class MeasurementData:
       d = eval(f.read())
     self.dt_s = d['dt_s']
     self.num_samples = d['num_samples']
-    self.trigger_at = d['trigger_at']
 
-    filenameNpz = self.config.get_filename_data('npz')
-    npzfile = np.load(filenameNpz)
-  
-    def get_channel(s, adu):
-      channel = npzfile[s]
-      channel = np.roll(channel, -self.trigger_at)
-      return adu * channel
+    self.channelA_volts_per_adu = d['channelA_volts_per_adu']
+    self.channelD_volts_per_adu = d['channelD_volts_per_adu']
 
-    self.channelA = get_channel('A', d['channelA_volts_per_adu'])
-    self.channelD = get_channel('D', d['channelD_volts_per_adu'])
+  def open_files(self, mode):
+    assert mode in ('rb', 'wb')
+    assert self.fA is None
+    assert self.fD is None
+    self.fA = open(self.config.get_filename_data('a_bin'), mode)
+    self.fD = open(self.config.get_filename_data('d_bin'), mode)
 
-  def write(self, channelA, channelD, channelA_volts_per_adu, channelD_volts_per_adu, dt_s, num_samples, trigger_at):
+  def close_files(self):
+    assert self.fA is not None
+    self.fA.close()
+    self.fA=None
+    assert self.fD is not None
+    self.fD.close()
+    self.fD=None
+
+  def get_samples(self, num_samples_chunk):
+
+    def read_buf(fData, adu):
+      # See: msl-equipment\msl\equipment\resources\picotech\picoscope\channel.py
+      # np.empty((0, 0), dtype=np.int16)
+      bytes_per_sample = 2
+
+      data_bytes = fData.read(bytes_per_sample*num_samples_chunk)
+      rawA = np.frombuffer(data_bytes, dtype=np.int16)
+      buf_V = adu * rawA
+      return buf_V
+
+    bufA_V = read_buf(self.fA, self.channelA_volts_per_adu)
+    bufD_V = read_buf(self.fD, self.channelD_volts_per_adu)
+    return bufA_V, bufD_V
+
+  def write(self, channelA_volts_per_adu, channelD_volts_per_adu, dt_s, num_samples):
     aux_data = dict(
       channelA_volts_per_adu = channelA_volts_per_adu,
       channelD_volts_per_adu = channelD_volts_per_adu,
       dt_s = dt_s,
       num_samples = num_samples,
-      trigger_at = trigger_at,
     )
-    print(f'Writing')
-    np.savez(self.config.get_filename_data('npz'), A=channelA, D=channelD)
+
     with open(self.config.get_filename_data('txt'), 'w') as f:
       f.write(str(aux_data))
 
@@ -97,7 +119,7 @@ class MeasurementData:
     Yp = np.mean(self.Yvector * signalvector)
     return complex(Xp, Yp)
 
-  def GainPhase(self):
+  def GainPhase_obsolete(self):
     assert len(self.channelA) == len(self.channelD)
     points = len(self.channelA)
     vector_size = 1000000
@@ -108,6 +130,28 @@ class MeasurementData:
       self.__prepareGainPhase(i_start, i_end, points)
       complexA += self.__GainPhase(self.channelA[i_start:i_end])
       complexD += self.__GainPhase(self.channelD[i_start:i_end])
+    return complexA, complexD
+
+  def read(self):
+    complexA = complex(0.0, 0.0)
+    complexD = complex(0.0, 0.0)
+    vector_size = 1000000
+    points = self.num_samples
+
+    self.open_files('rb')
+    i_start = 0
+    while True:
+      bufA_V, bufD_V = self.get_samples(vector_size)
+      assert len(bufA_V) == len(bufD_V)
+      if len(bufA_V) == 0:
+        break
+      i_end = i_start + len(bufA_V)
+      self.__prepareGainPhase(i_start, i_end, points)
+      complexA += self.__GainPhase(bufA_V)
+      complexD += self.__GainPhase(bufD_V)
+
+    self.close_files()
+
     return complexA, complexD
 
   def dump_plot(self):
@@ -156,7 +200,6 @@ class Configuration:
     self.diagram_legend = DEFINED_BY_CHANNEL
     self.frequency_Hz = DEFINED_BY_FREQUENCY
     self.duration_s = DEFINED_BY_FREQUENCY
-    self.with_channel_D = DEFINED_BY_MEASUREMENTS
 
   def create_directories(self):
     for directory in (DIRECTORY_RAW, DIRECTORY_CONDENSED, DIRECTORY_RESULT):
@@ -222,8 +265,8 @@ class Configuration:
 
     class Measurement:
       def __init__(self, measurementData):
-        self.measurementData = measurementData
-        self.complexA, self.complexD = measurementData.GainPhase()
+        measurementData = measurementData
+        self.complexA, self.complexD = measurementData.read()
 
     start = time.time()
     list_measurement = []
@@ -239,6 +282,8 @@ class Configuration:
 
     def get_list(f):
       return list(map(f, list_measurement))
+
+    listY = get_list(lambda m: (m.complexA/m.complexD).real)
 
     if False:
       # X of channel A and D

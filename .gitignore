@@ -1,4 +1,6 @@
 **/data_*.npz
 **/data_*.txt
 **/data_*.png
+**/data_*.a_bin
+**/data_*.d_bin
 **/__pycache__
