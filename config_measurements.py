@@ -1,7 +1,7 @@
 import helpers
 from msl.equipment.resources.picotech.picoscope.enums import PS5000Range
 
-frequencies_Hz = helpers.eseries(series='E6', minimal=33.0, maximal=100.0)
+frequencies_Hz = helpers.eseries(series='E12', minimal=1.0, maximal=2000.0)
 list_measurements = helpers.get_list_measurements(frequencies_Hz)
 
 # list_measurements = (

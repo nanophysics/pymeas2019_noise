@@ -82,27 +82,32 @@ class MeasurementData:
     self.num_samples
     pass
 
-  def __prepareGainPhase(self, points):
-    self.phasevector = np.linspace(0.0, points * self.dt_s * 2 * np.pi * self.config.frequency_Hz, num=points)
+  def __prepareGainPhase(self, i_start, i_end, points):
+    a = self.dt_s * 2 * np.pi * self.config.frequency_Hz
+    phasevector = np.linspace(a * i_start, a * i_end, num=i_end-i_start)
 
     # corresponds to np.hanning(points)
-    ivektor = np.linspace(0.0, 1.0, num=points)
-    self.windowvector = 1 - np.cos(2 * np.pi * ivektor)
+    ivektor = np.linspace(i_start/points, i_end/points, num=i_end-i_start)
+    windowvector = 1 - np.cos(2 * np.pi * ivektor)
+    self.Xvector = np.sin(phasevector) * windowvector
+    self.Yvector = np.cos(phasevector) * windowvector
 
   def __GainPhase(self, signalvector):
-    Xvector = np.sin(self.phasevector) * self.windowvector
-    Yvector = np.cos(self.phasevector) * self.windowvector
-
-    Xp = np.mean(Xvector * signalvector)
-    Yp = np.mean(Yvector * signalvector)
-    return complex (Xp, Yp)
+    Xp = np.mean(self.Xvector * signalvector)
+    Yp = np.mean(self.Yvector * signalvector)
+    return complex(Xp, Yp)
 
   def GainPhase(self):
     assert len(self.channelA) == len(self.channelD)
     points = len(self.channelA)
-    self.__prepareGainPhase(points)
-    complexA = self.__GainPhase(self.channelA)
-    complexD = self.__GainPhase(self.channelD)
+    vector_size = 1000000
+    complexA = complex(0.0, 0.0)
+    complexD = complex(0.0, 0.0)
+    for i_start in range(0, points, vector_size):
+      i_end = min(i_start+vector_size, points)-1
+      self.__prepareGainPhase(i_start, i_end, points)
+      complexA += self.__GainPhase(self.channelA[i_start:i_end])
+      complexD += self.__GainPhase(self.channelD[i_start:i_end])
     return complexA, complexD
 
   def dump_plot(self):
