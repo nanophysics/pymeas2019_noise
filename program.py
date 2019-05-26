@@ -2,6 +2,7 @@
 import gc
 import re
 import os
+import math
 import time
 import cmath
 import logging
@@ -99,20 +100,21 @@ class MeasurementData:
     Yp = np.mean(Yvector * signalvector) * factor
     return complex (Xp, Yp)
 
-  def GainPhaseSerialPoint(self, signal_V=1.22, time_s=0.1123, time_total_s=2.0):
-    phase_rad = 2 * np.pi * self.config.frequency_Hz
-    window_hann = 1 - np.cos(2 * np.pi * time_s / time_total_s)
-    signal_V_windowed = signal_V * window_hann
-    X = signal_V_windowed * np.sin(phase_rad)
-    Y = signal_V_windowed * np.cos(phase_rad)
-    return complex (X, Y)
+  def GainPhase_(self, signal):
+    summe = complex(0, 0)
 
-  def GainPhaseSerial(self, signal) 
-    summe = complex(0,0)
-    for signal_V in signal:
-      summe += GainPhaseSerialPoint(signal_V)
-    return(summe)
+    a = 2 * np.pi * self.config.frequency_Hz * self.dt_s
+    b = 2 * np.pi / len(signal)
 
+    for i in range(len(signal)):
+      phase_rad = i * a
+      window_hann = 1 - math.cos(i * b)
+      signal_V_windowed = signal[i] * window_hann
+      X = signal_V_windowed * math.sin(phase_rad)
+      Y = signal_V_windowed * math.cos(phase_rad)
+
+      summe += complex(X, Y)
+    return summe
 
   def dump_plot(self):
     # t = np.arange(-scope.pre_trigger, dt*num_samples-scope.pre_trigger, dt)
@@ -224,24 +226,28 @@ class Configuration:
       for config in self.iter_frequencies():
         config.condense()
 
-
     class Measurement:
       def __init__(self, measurementData):
         self.measurementData = measurementData
         self.complexA = measurementData.GainPhase(measurementData.channelA)
         self.complexD = measurementData.GainPhase(measurementData.channelD)
    
+    start = time.time()
     list_measurement = []
     listX = []
     for config in self.iter_frequencies():
+      print(f'config.frequency_Hz: {config.frequency_Hz}')
       listX.append(config.frequency_Hz)
       measurementData = MeasurementData(self, read=True)
       list_measurement.append(Measurement(measurementData))
+    print('Duration {}s'.format(time.time()-start))
+
+    print('A')
 
     def get_list(f):
       return list(map(f, list_measurement))
 
-    if True:
+    if False:
       # X of channel A and D
       listAY = get_list(lambda m: m.complexA.real)
       listDY = get_list(lambda m: m.complexD.real)
@@ -264,7 +270,7 @@ class Configuration:
       plt.show()
       plt.close()
 
-    if True:
+    if False:
       # Phase of channel A and D
       
       listAY = get_list(lambda m: cmath.phase(m.complexA))
@@ -292,6 +298,7 @@ class Configuration:
       # Phase of channel A and D
       
       listY = get_list(lambda m: (m.complexA/m.complexD).real)
+      print('B')
 
       fig, ax1 = plt.subplots()
 
@@ -300,6 +307,9 @@ class Configuration:
       lineA.set_label('m.complexA/m.complexD')
 
       fig.legend()
+      # filename_png = self.config.get_filename_data(extension='png', directory=DIRECTORY_CONDENSED)
+      # print(f'writing: {filename_png}')
+      # fig.savefig(filename_png)
       plt.show()
       plt.close()
 
