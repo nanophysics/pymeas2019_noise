@@ -1,14 +1,14 @@
 import re
 import os
 import time
+import queue
 import logging
 import numpy as np
+import threading
 import matplotlib.pyplot as plt
 import program
 
 logger = logging.getLogger(__name__)
-
-use_trigger = True
 
 logger.setLevel(logging.DEBUG)
 
@@ -29,7 +29,7 @@ class PicoScope:
         address='SDK::ps5000a',
         # properties={'open_async': True},  # opening in async mode is done in the properties
         properties=dict(
-          resolution='14bit' if config.with_channel_D else '16bit',
+          resolution='14bit',
           # resolution='16bit',  # only used for ps5000a series PicoScope's
           auto_select_power=False,  # for PicoScopes that can be powered by an AC adaptor or by a USB cable
         )
@@ -43,77 +43,51 @@ class PicoScope:
     assert type(config.input_Vp) == type(PS5000Range.R_MAX)
 
     self.scope.set_channel('A', coupling='dc', scale=config.input_Vp)
-    if config.with_channel_D:
-      self.scope.set_channel('D', coupling='dc', scale=PS5000Range.R_5V)
-    if False:
-      # This section would use the maximal sample rate
-      # But the results are messed up...
-      max_sample_rate = 62.5e6
-      desired_sample_rate = max_sample_rate/2
-      desired_dt_s = 1.0/desired_sample_rate
-      # desired_buffer_size = 10e6
-      # desired_sample_time_s = desired_dt_s*desired_buffer_size
-      desired_sample_time_s = config.duration_s
-      desired_buffer_size = desired_sample_time_s//desired_dt_s
-    if True:
-      max_sample_rate = 6e6
-      desired_sample_rate = max_sample_rate/2
-      desired_dt_s = 1.0/desired_sample_rate
-      desired_sample_time_s = config.duration_s
-      desired_buffer_size = desired_sample_time_s//desired_dt_s
-    if False:
-      max_sample_rate = 2e4
-      desired_sample_rate = max_sample_rate/2
-      desired_dt_s = 1.0/desired_sample_rate
-      desired_sample_time_s = 0.5
-      desired_buffer_size = desired_sample_time_s//desired_dt_s
-      # StreamingReady Callback: handle=16384, num_samples=932, start_index=0, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=930, start_index=932, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=932, start_index=1862, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=930, start_index=2794, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=932, start_index=3724, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=344, start_index=4656, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=586, start_index=0, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=932, start_index=586, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=930, start_index=1518, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=932, start_index=2448, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=1620, start_index=3380, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=240, start_index=0, overflow=0, trigger_at=0, triggered=1, auto_stop=0, p_parameter=323152552
+    self.scope.set_channel('D', coupling='dc', scale=PS5000Range.R_5V)
 
-      # Trigger 0
-      # .StreamingReady Callback: handle=16384, num_samples=932, start_index=240, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=930, start_index=1172, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=932, start_index=2102, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=930, start_index=3034, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=932, start_index=3964, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=104, start_index=4896, overflow=0, trigger_at=0, triggered=0, auto_stop=0, p_parameter=323152552
-      # .StreamingReady Callback: handle=16384, num_samples=0, start_index=0, overflow=0, trigger_at=0, triggered=0, auto_stop=1, p_parameter=323152552
-      # .
-      # Writing
-      # Done
+    # This section would use the maximal sample rate
+    # But the results are messed up...
+    # max_sample_rate = 62.5e6
+    max_sample_rate = 6e6
+    desired_buffer_size = 10e6
+    desired_sample_rate = max_sample_rate/2
+    desired_dt_s = 1.0/desired_sample_rate
+    desired_sample_time_s = desired_buffer_size*desired_dt_s
+    total_samples = int(config.duration_s/desired_dt_s)
+    assert total_samples > 1000
 
-    # dt, num_samples = self.scope.set_timebase(1e-6, 2.0)  # sample the voltage on Channel A every 1 us, for 100 us
     dt_s, num_samples = self.scope.set_timebase(desired_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
-    # self.scope.set_sig_gen_builtin_v2(start_frequency=1e6, pk_to_pk=2.0, offset_voltage=0.4)  # create a sine wave
+
     # Make sure the is no signal before the trigger
     pk_to_pk=2.0*config.input_set_Vp
     assert config.input_set_Vp <= 2.0, '"config.input_set_Vp={:f}V" but must be smaller than 2.0V! The output voltage is limited according to the datasheet to +/-2.0V'.format(config.input_set_Vp)
     assert pk_to_pk <= 4.0, 'The output voltage is limited according to the datasheet to +/-2.0V'
-    trigger_source='scope_trig' if use_trigger else 'None'
-    self.scope.set_sig_gen_builtin_v2(start_frequency=config.frequency_Hz, wave_type='sine', pk_to_pk=pk_to_pk, trigger_source=trigger_source, sweeps=0)
-    # self.scope.set_sig_gen_builtin_v2(start_frequency=1e3, pk_to_pk=2.0, offset_voltage=0.4, trigger_source='scope_trig', shots=100, sweeps=0)  # create a sine wave
-    # self.scope.set_sig_gen_builtin_v2(start_frequency=1e3, pk_to_pk=2.0, offset_voltage=0.4, trigger_source='soft_trig', shots=100, sweeps=0)  # create a sine wave
-    # self.scope.sig_gen_software_control(1)
-    # self.scope.sig_gen_software_control(0)
-    self.scope.set_data_buffer('A')
-    if config.with_channel_D:
-      self.scope.set_data_buffer('D')
-    # self.scope.set_trigger('D', 0.0, direction='rising')  # use Channel A as the trigger source at 1V, wait forever for a trigger event
-    # self.scope.set_trigger('D', 1.0, timeout=-0.01, direction='raising')  # use Channel A as the trigger source at 1V, wait forever for a trigger event
-    # self.scope.set_trigger('A', 1000.0, direction='below')  # use Channel A as the trigger source at 1V, wait forever for a trigger event
+    self.scope.set_sig_gen_builtin_v2(start_frequency=config.frequency_Hz, wave_type='sine', pk_to_pk=pk_to_pk, sweeps=0)
 
+    self.scope.set_data_buffer('A')
+    self.scope.set_data_buffer('D')
+    channelA_raw = self.scope.channel['A'].raw
+    channelD_raw = self.scope.channel['D'].raw
+
+    measurementData = program.MeasurementData(config)
+    measurementData.open_files('wb')
+
+    self.queue = queue.Queue()
+
+    def worker():
+      while True:
+        item = self.queue.get()
+        if item is None:
+          break
+        start_index, num_samples = item
+        measurementData.fA.write(channelA_raw[start_index:start_index+num_samples].tobytes())
+        measurementData.fD.write(channelD_raw[start_index:start_index+num_samples].tobytes())
+
+    thread = threading.Thread(target=worker)
+    thread.start()
+
+    self.actual_sample_count = 0
     self.streaming_done = False
-    self.trigger_at = None
 
     @callbacks.ps5000aStreamingReady
     def my_streaming_ready(handle, num_samples, start_index, overflow, trigger_at, triggered, auto_stop, p_parameter):
@@ -122,40 +96,35 @@ class PicoScope:
           'triggered={}, auto_stop={}, p_parameter={}'.format(handle, num_samples, start_index, overflow,
                                   trigger_at, triggered, auto_stop, p_parameter))
 
+      self.queue.put((start_index, num_samples))
+
+      self.actual_sample_count += num_samples
+      if self.actual_sample_count > total_samples:
+        self.streaming_done = True
+        self.queue.put(None)
+
       if overflow:
         print('\noverflow')
-      if triggered:
-        print('\nTrigger {}'.format(trigger_at))
-        self.trigger_at=start_index+trigger_at
-
       print('.', end='')
 
-      if auto_stop:
-        print('')
-        self.streaming_done = True
+      assert auto_stop == False
+      assert triggered == False
 
-    if use_trigger:
-      # self.scope.set_trigger('A', -1000.0, direction='below', timeout=0.05)
-      self.scope.set_trigger('A', -1000.0, direction='below', timeout=0.001)
-    self.scope.run_streaming(auto_stop=True)
+    self.scope.run_streaming(auto_stop=False)
     while not self.streaming_done:
       self.scope.wait_until_ready()  # wait until the latest streaming values are ready
       self.scope.get_streaming_latest_values(my_streaming_ready)  # get the latest streaming values
 
-    channelD_V = None
-    channelD_volts_per_adu = 1.0
-    if config.with_channel_D:
-      channelD_V = self.scope.channel['D'].raw
-      channelD_volts_per_adu = self.scope.channel['D'].volts_per_adu
-    measurementData = program.MeasurementData(config)
+
+    print(f'Waiting for thread {config.frequency_Hz}Hz')
+    thread.join()
+
+    measurementData.close_files()
     measurementData.write(
-      channelA = self.scope.channel['A'].raw,
-      channelD = channelD_V,
       channelA_volts_per_adu = self.scope.channel['A'].volts_per_adu,
-      channelD_volts_per_adu = channelD_volts_per_adu,
+      channelD_volts_per_adu = self.scope.channel['D'].volts_per_adu,
       dt_s = dt_s,
-      num_samples = num_samples,
-      trigger_at = self.trigger_at,
+      num_samples = self.actual_sample_count,
     )
 
 

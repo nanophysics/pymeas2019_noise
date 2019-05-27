@@ -119,19 +119,6 @@ class MeasurementData:
     Yp = np.mean(self.Yvector * signalvector)
     return complex(Xp, Yp)
 
-  def GainPhase_obsolete(self):
-    assert len(self.channelA) == len(self.channelD)
-    points = len(self.channelA)
-    vector_size = 1000000
-    complexA = complex(0.0, 0.0)
-    complexD = complex(0.0, 0.0)
-    for i_start in range(0, points, vector_size):
-      i_end = min(i_start+vector_size, points)-1
-      self.__prepareGainPhase(i_start, i_end, points)
-      complexA += self.__GainPhase(self.channelA[i_start:i_end])
-      complexD += self.__GainPhase(self.channelD[i_start:i_end])
-    return complexA, complexD
-
   def read(self):
     complexA = complex(0.0, 0.0)
     complexD = complex(0.0, 0.0)
@@ -149,6 +136,7 @@ class MeasurementData:
       self.__prepareGainPhase(i_start, i_end, points)
       complexA += self.__GainPhase(bufA_V)
       complexD += self.__GainPhase(bufD_V)
+      i_start = i_end
 
     self.close_files()
 
@@ -265,7 +253,6 @@ class Configuration:
 
     class Measurement:
       def __init__(self, measurementData):
-        measurementData = measurementData
         self.complexA, self.complexD = measurementData.read()
 
     start = time.time()

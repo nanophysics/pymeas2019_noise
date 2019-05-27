@@ -50,8 +50,10 @@ def get_list_measurements(frequencies_Hz):
             duration_s = maximal_duration_s
         if duration_s < minimal_duration_s:
             duration_s = minimal_duration_s
-        list_measurements.append( dict(frequency_Hz=frequency_Hz, duration_s=duration_s))
+        list_measurements.append(dict(frequency_Hz=frequency_Hz, duration_s=duration_s))
     # print(list_measurements)
+    # First the high frequencies, then low frequencies
+    list_measurements.sort(key=lambda m: m['frequency_Hz'], reverse=True)
     return list_measurements
 
 if __name__ == '__main__':
