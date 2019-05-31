@@ -1,9 +1,9 @@
-from msl.equipment.resources.picotech.picoscope.enums import PS5000Range
+from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 
 dict_config_setup = dict(
   diagram_legend = 'Calibrate Picoscope channel A versus D',
-  input_Vp = PS5000Range.R_5V,
-  # input_Vp = PS5000Range.R_10MV,
+  input_Vp = PS5000ARange.R_5V,
+  # input_Vp = PS5000ARange.R_10MV,
 )
 
 if __name__ == '__main__':

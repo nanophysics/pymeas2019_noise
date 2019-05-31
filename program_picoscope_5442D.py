@@ -16,7 +16,7 @@ import msl.equipment.resources.picotech.picoscope
 import msl.equipment
 
 from msl.equipment.resources.picotech.picoscope import callbacks
-from msl.equipment.resources.picotech.picoscope.enums import PS5000Range
+from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 
 class PicoScope:
   def __init__(self, config):
@@ -29,7 +29,7 @@ class PicoScope:
         address='SDK::ps5000a',
         # properties={'open_async': True},  # opening in async mode is done in the properties
         properties=dict(
-          resolution='14bit',
+          resolution='15bit',
           # resolution='16bit',  # only used for ps5000a series PicoScope's
           auto_select_power=False,  # for PicoScopes that can be powered by an AC adaptor or by a USB cable
         )
@@ -44,21 +44,39 @@ class PicoScope:
     configFrequency = configMeasurement.configFrequency
     configSetup = configMeasurement.configSetup
 
-    assert type(configSetup.input_Vp) == type(PS5000Range.R_MAX)
+    assert type(configSetup.input_Vp) == self.scope.enRange
 
     self.scope.set_channel('A', coupling='dc', scale=configSetup.input_Vp)
-    self.scope.set_channel('D', coupling='dc', scale=PS5000Range.R_5V)
+    self.scope.set_channel('B', coupling='dc', scale=PS5000ARange.R_5V)
 
-    # This section would use the maximal sample rate
-    # But the results are messed up...
-    # max_sample_rate = 62.5e6
-    max_sample_rate = 6e6
-    desired_buffer_size = 10e6
-    desired_sample_rate = max_sample_rate/2
+    max_samples_bytes = self.scope.memory_segments(num_segments=1)
+
+    desired_buffer_size = max_samples_bytes//2  # 2 channels
+    max_sampling_rate = 125e6
+    desired_sample_rate = max_sampling_rate//2
     desired_dt_s = 1.0/desired_sample_rate
     desired_sample_time_s = desired_buffer_size*desired_dt_s
     total_samples = int(configFrequency.duration_s/desired_dt_s)
     assert total_samples > 1000
+
+    # PicoScope 6
+    # 8ns
+    # 125MS/s
+    # 250000 Samples
+    # 15bits
+
+    # a, b = self.scope.get_timebase(timebase=4, num_samples=250000)
+
+
+    # resolution_ = self.scope.enDeviceResolution.RES_15BIT
+    # channels_ = self.scope.enChannelFlags.A + self.scope.enChannelFlags.B
+    # timebaseA_, time_interval_nanosecondsA_ = self.scope.get_minimum_timebase(resolution_, channels_)
+    # # timebaseA_=3, time_interval_nanosecondsA_=8e-09
+
+    # resolution_ = self.scope.enDeviceResolution.RES_16BIT
+    # channels_ = self.scope.enChannelFlags.A
+    # timebaseB_, time_interval_nanosecondsB_ = self.scope.get_minimum_timebase(resolution_, channels_)
+    # # timebaseA_=4, time_interval_nanosecondsA_=1.6e-09
 
     dt_s, num_samples = self.scope.set_timebase(desired_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
 
@@ -69,9 +87,9 @@ class PicoScope:
     self.scope.set_sig_gen_builtin_v2(start_frequency=configFrequency.frequency_Hz, wave_type='sine', pk_to_pk=pk_to_pk, sweeps=0)
 
     self.scope.set_data_buffer('A')
-    self.scope.set_data_buffer('D')
+    self.scope.set_data_buffer('B')
     channelA_raw = self.scope.channel['A'].raw
-    channelD_raw = self.scope.channel['D'].raw
+    channelD_raw = self.scope.channel['B'].raw
 
     # logfile = configMeasurement.get_logfile()
     measurementData = program.MeasurementData(configMeasurement)
@@ -130,7 +148,7 @@ class PicoScope:
 
     measurementData.close_files()
     measurementData.channelA_volts_per_adu = self.scope.channel['A'].volts_per_adu
-    measurementData.channelD_volts_per_adu = self.scope.channel['D'].volts_per_adu
+    measurementData.channelD_volts_per_adu = self.scope.channel['B'].volts_per_adu
     measurementData.dt_s = dt_s
     measurementData.num_samples = self.actual_sample_count
     measurementData.write()

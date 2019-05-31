@@ -1,8 +1,8 @@
-from msl.equipment.resources.picotech.picoscope.enums import PS5000Range
+from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 
 dict_config_setup = dict(
   diagram_legend = 'Gain 1 of DUT',
-  input_Vp = PS5000Range.R_5V,
+  input_Vp = PS5000ARange.R_5V,
   reference = 'calibrate_picoscope' # run_setup_calibrate_picoscope.py
 )
 
