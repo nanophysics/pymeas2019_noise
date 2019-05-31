@@ -92,19 +92,21 @@ if __name__ == '__main__':
     picoscope = PicoScope()
     picoscope.connect()
 
-    import program
-    config = program.Configuration()
-    config.duration_s = 2.0
-    config.frequency_Hz = 1000.0
-    config.input_set_Vp = 1.0
-    config.input_Vp = 1.0
-    config.skalierungsfaktor = 1.0
-    config.diagram_legend = 'Test'
-    config.channel_name = 'Channel X'
-    picoscope.acquire(config)
+    # import program
+    # config = program.Setup()
+    # config.duration_s = 2.0
+    # config.frequency_Hz = 1000.0
+    # config.input_set_Vp = 1.0
+    # config.input_Vp = 1.0
+    # config.skalierungsfaktor = 1.0
+    # config.diagram_legend = 'Test'
+    # config.setup_name = 'Channel X'
+    # picoscope.acquire(config)
+
+
 #   pymeas = program.PyMeas2019()
 
 #   picoscope = PicoScope()
 #   picoscope.connect()
 #   for frequency_hz in (1e2, 1e4, 1e6):
-#     picoscope.acquire(channel_name='ch1', frequency_hz=frequency_hz, duration_s=5.0, amplitude_Vpp=2.0)
+#     picoscope.acquire(setup_name='ch1', frequency_hz=frequency_hz, duration_s=5.0, amplitude_Vpp=2.0)

@@ -1,8 +1,7 @@
-import helpers
+import program
 from msl.equipment.resources.picotech.picoscope.enums import PS5000Range
 
-frequencies_Hz = helpers.eseries(series='E6', minimal=0.033, maximal=1e6)
-list_measurements = helpers.get_list_measurements(frequencies_Hz)
+list_ConfigFrequency = program.getConfigFrequencies(series='E6', minimal=100, maximal=1e3)
 
 
 # .Waiting for thread 0.033Hz
@@ -26,7 +25,7 @@ list_measurements = helpers.get_list_measurements(frequencies_Hz)
 # PICO_SIG_GEN_PARAM: Incorrect parameter passed to signal generator.
 
 
-# list_measurements = (
+# list_ConfigFrequency = (
 #   dict(frequency_Hz=50, duration_s=1e0),
 #   dict(frequency_Hz=1000, duration_s=1e-1),
 #   dict(frequency_Hz=2000, duration_s=1e-1),
@@ -49,7 +48,7 @@ list_measurements = helpers.get_list_measurements(frequencies_Hz)
 #     R_50V   = 11
 #     R_MAX   = 12
 
-dict_config = dict(
+dict_config_setup_defaults = dict(
   skalierungsfaktor=1.0,
   input_Vp=PS5000Range.R_2V,
   input_set_Vp=2.0, # set voltage input, out is adjusted automatically

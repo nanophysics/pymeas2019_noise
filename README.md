@@ -2,6 +2,39 @@
 
 simple measure and documentation with python
 
+## Terms
+
+- Config_Setup
+  - How and what is connected to the instrument
+  - Input ranges
+  - Output amplitude
+  - A title of the setup. For example
+    - Calibration measurement for Picoscope
+    - DUT Gain 1
+    - DUT Gain 2
+- Config_Frequency
+  - Frequency
+  - Measurement duration
+  - Sampling frequency
+- Config_Common (Config_Measurement): Definitions for all Setups.
+  - frequency list
+    - Defaults for Config_Setup
+- Config: The combination of
+  - frequency (from Config_Common)
+  - Config_Setup
+- Measurement: A measurement from
+  - frequency (from Config_Common)
+  - Config_Setup
+- Measurement_Condensed: The condensed results from a Measurement
+  - frequency
+  - Config_Setup
+  - A+D: Complex
+  - A+D: min/max
+  - A+D: overload
+- Result_Setup: All Measurement_Condensed for one Setup
+  - Complex for every frequency
+- Result_Common:
+
 ## Workflow
 
 ### Step 0: measure

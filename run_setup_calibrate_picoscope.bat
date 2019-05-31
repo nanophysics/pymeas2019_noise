@@ -1,0 +1,2 @@
+python run_setup_calibrate_picoscope.py
+pause

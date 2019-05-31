@@ -9,7 +9,7 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 
-import config_measurements
+import program_config_frequencies
 import program_picoscope_5442D as program_picoscope
 # import program_picoscope_2204A as program_picoscope
 
@@ -17,30 +17,30 @@ logger = logging.getLogger(__name__)
 
 logger.setLevel(logging.DEBUG)
 
-import config_measurements
-
 DIRECTORY_TOP = os.path.dirname(os.path.abspath(__file__))
 
 DIRECTORY_RAW = os.path.join(DIRECTORY_TOP, '0_raw')
 DIRECTORY_CONDENSED = os.path.join(DIRECTORY_TOP, '1_condensed')
 DIRECTORY_RESULT = os.path.join(DIRECTORY_TOP, '2_result')
 
-RE_CONFIG_CHANNEL = re.compile('run_config_(?P<channel>.*?).py')
+# run_setup_calibrate_picoscope.py
+RE_CONFIG_SETUP = re.compile('run_setup_(?P<setup>.*?).py')
 
 DEFINED_BY_MEASUREMENTS='DEFINED_BY_MEASUREMENTS'
-DEFINED_BY_CHANNEL='DEFINED_BY_CHANNEL'
-DEFINED_BY_FREQUENCY='DEFINED_BY_FREQUENCY'
+DEFINED_BY_SETUP='DEFINED_BY_SETUP'
 
 class MeasurementData:
-  def __init__(self, config, read=False):
-    self.config = config
+  def __init__(self, configMeasurement, read=False):
+    assert isinstance(configMeasurement, ConfigMeasurement)
+
+    self.configMeasurement = configMeasurement
     self.fA = None
     self.fD = None
 
     if not read:
       return
 
-    with open(self.config.get_filename_data('txt'), 'r') as f:
+    with open(self.configMeasurement.get_filename_data('txt'), 'r') as f:
       d = eval(f.read())
     self.dt_s = d['dt_s']
     self.num_samples = d['num_samples']
@@ -52,8 +52,8 @@ class MeasurementData:
     assert mode in ('rb', 'wb')
     assert self.fA is None
     assert self.fD is None
-    self.fA = open(self.config.get_filename_data('a_bin'), mode)
-    self.fD = open(self.config.get_filename_data('d_bin'), mode)
+    self.fA = open(self.configMeasurement.get_filename_data('a_bin'), mode)
+    self.fD = open(self.configMeasurement.get_filename_data('d_bin'), mode)
 
   def close_files(self):
     assert self.fA is not None
@@ -87,25 +87,11 @@ class MeasurementData:
       num_samples = num_samples,
     )
 
-    with open(self.config.get_filename_data('txt'), 'w') as f:
+    with open(self.configMeasurement.get_filename_data('txt'), 'w') as f:
       f.write(str(aux_data))
 
-  def calculate_transfer(self):
-    # Peter
-    # todo: overload
-    # https://www.numpy.org/
-    # https://www.scipy.org/
-
-    print('f={:0.1f} a={} d={}:'.format(self.config.frequency_Hz, self.GainPhase(self.channelA), self.GainPhase(self.channelD)))
-
-    channelA = self.channelA
-    channalAmal2 = 2*channelA
-    self.config.frequency_Hz
-    self.num_samples
-    pass
-
   def __prepareGainPhase(self, i_start, i_end, points):
-    a = self.dt_s * 2 * np.pi * self.config.frequency_Hz
+    a = self.dt_s * 2 * np.pi * self.configMeasurement.configFrequency.frequency_Hz
     phasevector = np.linspace(a * i_start, a * i_end, num=i_end-i_start)
 
     # corresponds to np.hanning(points)
@@ -150,12 +136,12 @@ class MeasurementData:
     if True:
       fig, ax = plt.subplots()
 
-      def reduce(channel):
+      def reduce(setup):
         x_points = 1000
-        reduce_factor = len(channel)//x_points
+        reduce_factor = len(setup)//x_points
         if reduce_factor < 1:
           reduce_factor = 1
-        data = channel[::reduce_factor]
+        data = setup[::reduce_factor]
         return data
 
       lineA, = ax.plot(reduce(self.channelA), linewidth=0.1, color='blue')
@@ -179,38 +165,25 @@ class MeasurementData:
       plt.ylabel('channel D')
       plt.show()
 
-class Configuration:
+class ConfigSetup:
   def __init__(self):
     self.skalierungsfaktor = DEFINED_BY_MEASUREMENTS
     self.input_Vp = DEFINED_BY_MEASUREMENTS
     self.input_set_Vp = DEFINED_BY_MEASUREMENTS
-    self.channel_name = DEFINED_BY_CHANNEL
-    self.diagram_legend = DEFINED_BY_CHANNEL
-    self.frequency_Hz = DEFINED_BY_FREQUENCY
-    self.duration_s = DEFINED_BY_FREQUENCY
+    self.setup_name = DEFINED_BY_SETUP
+    self.diagram_legend = DEFINED_BY_SETUP
 
   def create_directories(self):
     for directory in (DIRECTORY_RAW, DIRECTORY_CONDENSED, DIRECTORY_RESULT):
         if not os.path.exists(directory):
           os.makedirs(directory)
 
-  def __str__(self):
-    return f'{self.diagram_legend} ({self.channel_name}, {self.frequency_Hz:012.2f}hz, {self.duration_s:0.3f}s)'
-    return f'{self.diagram_legend} ({self.channel_name}, {self.frequency_Hz:0.0e}hz, {self.duration_s:0.0e}s)'
-
-  def get_filename_data(self, extension, directory=DIRECTORY_RAW):
-    filename = f'data_{self.channel_name}_{self.frequency_Hz:012.2f}hz'
-    # filename = f'data_{self.channel_name}_{self.frequency_Hz:0.2e}hz'
-    # filename = f'data_{self.channel_name}_{self.frequency_Hz:012.2e}hz'
-    # filename = f'data_{self.channel_name}_{self.frequency_Hz:06d}hz'
-    return os.path.join(directory, f'{filename}.{extension}')
-
   def _update_element(self, key, value):
     assert key in self.__dict__
     self.__dict__[key] = value
 
-  def update_by_dict(self, dict_config):
-    for key, value in dict_config.items():
+  def update_by_dict(self, dict_config_setup):
+    for key, value in dict_config_setup.items():
       self._update_element(key, value)
 
   def update_by_channel_file(self, filename_channel):
@@ -218,25 +191,24 @@ class Configuration:
     dict_globals = {}
     with open(filename_channel) as f:
       exec(f.read(), dict_globals)
-    dict_config = dict_globals['dict_config']
-    self.update_by_dict(dict_config)
+    dict_config_setup = dict_globals['dict_config_setup']
+    self.update_by_dict(dict_config_setup)
 
-    match = RE_CONFIG_CHANNEL.match(os.path.basename(filename_channel))
+    match = RE_CONFIG_SETUP.match(os.path.basename(filename_channel))
     assert match is not None
-    channel_name = match.group('channel')
-    self._update_element('channel_name', channel_name)
+    setup_name = match.group('setup')
+    self._update_element('setup_name', setup_name)
 
-  def iter_frequencies(self):
-    for dict_measurement in config_measurements.list_measurements:
-      self.update_by_dict(dict_measurement)
-      yield self
+  def iterConfigMeasurements(self):
+    import config_common
+    for configFrequency in config_common.list_ConfigFrequency:
+      yield ConfigMeasurement(self, configFrequency)
 
   def measure_for_all_frequencies(self, measured_only_first=False):
     picoscope = program_picoscope.PicoScope(self)
     picoscope.connect()
-    for config in self.iter_frequencies():
-      # picoscope.acquire(channel_name='ch1', frequency_hz=config.frequency_Hz, duration_s=config.duration_s, amplitude_Vpp=config.input_set_Vp)
-      picoscope.acquire(config)
+    for configMeasurement in self.iterConfigMeasurements():
+      configMeasurement.measure(picoscope)
       if measured_only_first:
         return
   
@@ -258,10 +230,10 @@ class Configuration:
     start = time.time()
     list_measurement = []
     listX = []
-    for config in self.iter_frequencies():
-      print(f'config.frequency_Hz: {config.frequency_Hz}')
-      listX.append(config.frequency_Hz)
-      measurementData = MeasurementData(self, read=True)
+    for configMeasurement in self.iterConfigMeasurements():
+      print(f'configMeasurement.configFrequency.frequency_Hz: {configMeasurement.configFrequency.frequency_Hz}')
+      listX.append(configMeasurement.configFrequency.frequency_Hz)
+      measurementData = MeasurementData(configMeasurement, read=True)
       list_measurement.append(Measurement(measurementData))
     print('Duration {}s'.format(time.time()-start))
 
@@ -339,17 +311,62 @@ class Configuration:
       plt.close()
 
 
+class ConfigFrequency:
+  def __init__(self, frequency_Hz):
+    MINIMAL_DURATION_S = 0.1
+    MAXIMAL_DURATION_S = 150.0
+    PERIODS_SINE_OPTIMAL = 5.0
+    self.frequency_Hz = frequency_Hz
+    self.duration_s = 1.0 / frequency_Hz * PERIODS_SINE_OPTIMAL
+    if self.duration_s > MAXIMAL_DURATION_S:
+      self.duration_s = MAXIMAL_DURATION_S
+    if self.duration_s < MINIMAL_DURATION_S:
+      self.duration_s = MINIMAL_DURATION_S
+
+
+def getConfigFrequencies(series='E6', minimal=100, maximal=1e3):
+  frequencies_Hz = program_config_frequencies.eseries(series='E6', minimal=100, maximal=1e3)
+
+  # First the high frequencies, then low frequencies
+  frequencies_Hz.sort(reverse=True)
+  list_ConfigFrequency = list(map(ConfigFrequency, frequencies_Hz))
+  return list_ConfigFrequency
+
+class ConfigMeasurement:
+  def __init__(self, configSetup, configFrequency):
+    assert isinstance(configSetup, ConfigSetup)
+    assert isinstance(configFrequency, ConfigFrequency)
+
+    self.configSetup = configSetup
+    self.configFrequency = configFrequency
+
+  def __str__(self):
+    return f'{self.configSetup.diagram_legend} ({self.configSetup.setup_name}, {self.configFrequency.frequency_Hz:012.2f}hz, {self.configFrequency.duration_s:0.3f}s)'
+    return f'{self.configSetup.diagram_legend} ({self.configSetup.setup_name}, {self.configFrequency.frequency_Hz:0.0e}hz, {self.configFrequency.duration_s:0.0e}s)'
+
+  def get_filename_data(self, extension, directory=DIRECTORY_RAW):
+    filename = f'data_{self.configSetup.setup_name}_{self.configFrequency.frequency_Hz:012.2f}hz'
+    # filename = f'data_{self.setup_name}_{self.frequency_Hz:0.2e}hz'
+    # filename = f'data_{self.setup_name}_{self.frequency_Hz:012.2e}hz'
+    # filename = f'data_{self.setup_name}_{self.frequency_Hz:06d}hz'
+    return os.path.join(directory, f'{filename}.{extension}')
+
+
+  def measure(self, picoscope):
+    # picoscope.acquire(setup_name='ch1', frequency_hz=config.frequency_Hz, duration_s=config.duration_s, amplitude_Vpp=config.input_set_Vp)
+    picoscope.acquire(self)
 
 def get_config_by_config_filename(channel_config_filename):
-  config = Configuration()
-  config.update_by_dict(config_measurements.dict_config)
+  import config_common
+  config = ConfigSetup()
+  config.update_by_dict(config_common.dict_config_setup_defaults)
   config.update_by_channel_file(channel_config_filename)
   return config
 
 def get_configs():
   list_configs = []
   for filename in os.listdir(DIRECTORY_TOP):
-    match = RE_CONFIG_CHANNEL.match(os.path.basename(filename))
+    match = RE_CONFIG_SETUP.match(os.path.basename(filename))
     if match:
       list_configs.append(os.path.join(DIRECTORY_TOP, filename))
   return list_configs
