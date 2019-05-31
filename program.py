@@ -388,21 +388,27 @@ def run_condense_0to1():
     config = get_configSetup_by_filename(configsetup_filename)
     config.condense_0to1_for_all_frequencies()
 
-def run_condense_1to2_result():
-  print('get_configSetups: {}'.format(get_configSetups()))
-  list_resultSetup = []
-  dict_resultSetupReference = {}
-  for configsetup_filename in get_configSetups():
-    config = get_configSetup_by_filename(configsetup_filename)
-    resultSetup = config.condense_1to2()
-    if config.reference == None:
-      dict_resultSetupReference[config.setup_name] = resultSetup
-    else:
-      list_resultSetup.append(resultSetup)
+class ResultCommon:
+  def __init__(self):
+    print('get_configSetups: {}'.format(get_configSetups()))
+    self.list_resultSetup = []
+    self.dict_resultSetupReference = {}
+    for configsetup_filename in get_configSetups():
+      config = get_configSetup_by_filename(configsetup_filename)
+      resultSetup = config.condense_1to2()
+      if config.reference == None:
+        self.dict_resultSetupReference[config.setup_name] = resultSetup
+      else:
+        self.list_resultSetup.append(resultSetup)
   
-  for resultSetup in list_resultSetup:
-    resultSetupReference = dict_resultSetupReference[resultSetup.configSetup.reference]
-    plot_for_one_setup(resultSetup, resultSetupReference)
+  def plot(self):
+    for resultSetup in self.list_resultSetup:
+      resultSetupReference = self.dict_resultSetupReference[resultSetup.configSetup.reference]
+      plot_for_one_setup(resultSetup, resultSetupReference)
+
+def run_condense_1to2_result():
+  resultCommon = ResultCommon()
+  resultCommon.plot()
 
 def plot_for_one_setup(resultSetup, resultSetupReference):
   assert isinstance(resultSetup, ResultSetup)
