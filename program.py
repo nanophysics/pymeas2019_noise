@@ -105,7 +105,7 @@ class MeasurementData:
   def update_min_max(self, buf, channelA, test_max):
     assert isinstance(channelA, bool)
     assert isinstance(test_max, bool)
-    key = f'channelA={channelA}_max={test_max}'
+    key = f'channel{"A" if channelA else "D"}_{"max" if test_max else "min"}'
 
     f_V = self.dictMinMax_V.get(key, -1000.0 if test_max else 1000.0)
     if test_max:
