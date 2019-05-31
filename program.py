@@ -105,9 +105,9 @@ class MeasurementData:
   def update_min_max(self, buf, channelA, test_max):
     assert isinstance(channelA, bool)
     assert isinstance(test_max, bool)
-    key = f'channelA={channelA}_max={max}'
+    key = f'channelA={channelA}_max={test_max}'
 
-    f_V = self.dictMinMax_V.get(key, 1000.0 if max else -1000.0)
+    f_V = self.dictMinMax_V.get(key, -1000.0 if test_max else 1000.0)
     if test_max:
       f_V = max(f_V, buf.max())
     else:
@@ -156,22 +156,7 @@ class MeasurementData:
     return complexA, complexD
 
   def condense_0to1(self):
-    start = time.time()
-    list_result_1 = []
-
-    for configMeasurement in self.configMeasurement.configSetup.iterConfigMeasurements():
-      print(f'configMeasurement.configFrequency.frequency_Hz: {configMeasurement.configFrequency.frequency_Hz}')
-      measurementData = MeasurementData(configMeasurement, read=True)
-      complexA, complexD = measurementData.read()
-      list_result_1.append(dict(
-        frequency_Hz=configMeasurement.configFrequency.frequency_Hz,
-        complexA=complexA,
-        complexD=complexD,
-      ))
-    print('Duration {}s'.format(time.time()-start))
-
-    with open(configMeasurement.configSetup.get_filename_data('txt', DIRECTORY_1_CONDENSED), 'w') as f:
-      pprint.pprint(list_result_1, stream=f)
+    pass
 
   def dump_plot(self):
     # t = np.arange(-scope.pre_trigger, dt*num_samples-scope.pre_trigger, dt)
@@ -265,6 +250,26 @@ class ConfigSetup:
     for configMeasurement in self.iterConfigMeasurements():
       measurementData = MeasurementData(configMeasurement, read=True)
       measurementData.condense_0to1()
+
+    start = time.time()
+    list_result_1 = []
+
+    for configMeasurement in self.iterConfigMeasurements():
+      print(f'configMeasurement.configFrequency.frequency_Hz: {configMeasurement.configFrequency.frequency_Hz}')
+      measurementData = MeasurementData(configMeasurement, read=True)
+      complexA, complexD = measurementData.read()
+      dict_data = dict(
+        frequency_Hz=configMeasurement.configFrequency.frequency_Hz,
+        list_overflow=measurementData.list_overflow,
+        complexA=complexA,
+        complexD=complexD,
+      )
+      dict_data.update(measurementData.dictMinMax_V)
+      list_result_1.append(dict_data)
+    print('Duration {}s'.format(time.time()-start))
+
+    with open(configMeasurement.configSetup.get_filename_data('txt', DIRECTORY_1_CONDENSED), 'w') as f:
+      pprint.pprint(list_result_1, stream=f)
 
   def condense_1to2(self):
     resultSetup = ResultSetup(self)
