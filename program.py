@@ -34,8 +34,12 @@ class MeasurementData:
     assert isinstance(configMeasurement, ConfigMeasurement)
 
     self.configMeasurement = configMeasurement
+    self.list_overflow = []
     self.fA = None
     self.fD = None
+    self.dt_s = None
+    self.num_samples = None
+    self.dictMinMax_V = {}
 
     if not read:
       return
@@ -44,6 +48,7 @@ class MeasurementData:
       d = eval(f.read())
     self.dt_s = d['dt_s']
     self.num_samples = d['num_samples']
+    self.list_overflow = d['list_overflow']
 
     self.channelA_volts_per_adu = d['channelA_volts_per_adu']
     self.channelD_volts_per_adu = d['channelD_volts_per_adu']
@@ -79,19 +84,8 @@ class MeasurementData:
     bufD_V = read_buf(self.fD, self.channelD_volts_per_adu)
     return bufA_V, bufD_V
 
-  def write(self, channelA_volts_per_adu, channelD_volts_per_adu, dt_s, num_samples):
-    aux_data = dict(
-      channelA_volts_per_adu = channelA_volts_per_adu,
-      channelD_volts_per_adu = channelD_volts_per_adu,
-      dt_s = dt_s,
-      num_samples = num_samples,
-    )
-
-    with open(self.configMeasurement.get_filename_data('txt'), 'w') as f:
-      f.write(str(aux_data))
-
   def __prepareGainPhase(self, i_start, i_end, points):
-    a = self.dt_s * 2 * np.pi * self.configMeasurement.configFrequency.frequency_Hz
+    a = self.dt_s * 2.0 * np.pi * self.configMeasurement.configFrequency.frequency_Hz
     phasevector = np.linspace(a * i_start, a * i_end, num=i_end-i_start)
 
     # corresponds to np.hanning(points)
@@ -104,6 +98,30 @@ class MeasurementData:
     Xp = np.mean(self.Xvector * signalvector)
     Yp = np.mean(self.Yvector * signalvector)
     return complex(Xp, Yp)
+
+  def update_min_max(self, buf, channelA, test_max):
+    assert isinstance(channelA, bool)
+    assert isinstance(test_max, bool)
+    key = f'channelA={channelA}_max={max}'
+
+    f_V = self.dictMinMax_V.get(key, 1000.0 if max else -1000.0)
+    if test_max:
+      f_V = max(f_V, buf.max())
+    else:
+      f_V = min(f_V, buf.min())
+    self.dictMinMax_V[key] = f_V
+
+  def write(self):
+    aux_data = dict(
+      channelA_volts_per_adu = self.channelA_volts_per_adu,
+      channelD_volts_per_adu = self.channelD_volts_per_adu,
+      dt_s = self.dt_s,
+      num_samples = self.num_samples,
+      list_overflow = self.list_overflow,
+    )
+
+    with open(self.configMeasurement.get_filename_data('txt'), 'w') as f:
+      f.write(str(aux_data))
 
   def read(self):
     complexA = complex(0.0, 0.0)
@@ -118,6 +136,12 @@ class MeasurementData:
       assert len(bufA_V) == len(bufD_V)
       if len(bufA_V) == 0:
         break
+
+      self.update_min_max(bufA_V, channelA=True, test_max=True)
+      self.update_min_max(bufA_V, channelA=True, test_max=False)
+      self.update_min_max(bufD_V, channelA=False, test_max=True)
+      self.update_min_max(bufD_V, channelA=False, test_max=False)
+      
       i_end = i_start + len(bufA_V)
       self.__prepareGainPhase(i_start, i_end, points)
       complexA += self.__GainPhase(bufA_V)
@@ -325,7 +349,7 @@ class ConfigFrequency:
 
 
 def getConfigFrequencies(series='E6', minimal=100, maximal=1e3):
-  frequencies_Hz = program_config_frequencies.eseries(series='E6', minimal=100, maximal=1e3)
+  frequencies_Hz = program_config_frequencies.eseries(series=series, minimal=minimal, maximal=maximal)
 
   # First the high frequencies, then low frequencies
   frequencies_Hz.sort(reverse=True)
@@ -350,13 +374,15 @@ class ConfigMeasurement:
     # filename = f'data_{self.setup_name}_{self.frequency_Hz:012.2e}hz'
     # filename = f'data_{self.setup_name}_{self.frequency_Hz:06d}hz'
     return os.path.join(directory, f'{filename}.{extension}')
-
+  
+  def get_logfile(self, directory=DIRECTORY_RAW):
+    return open(self.get_filename_data('log.txt', directory), 'w')
 
   def measure(self, picoscope):
     # picoscope.acquire(setup_name='ch1', frequency_hz=config.frequency_Hz, duration_s=config.duration_s, amplitude_Vpp=config.input_set_Vp)
     picoscope.acquire(self)
 
-def get_config_by_config_filename(channel_config_filename):
+def get_configSetup_by_filename(channel_config_filename):
   import config_common
   config = ConfigSetup()
   config.update_by_dict(config_common.dict_config_setup_defaults)
@@ -374,7 +400,7 @@ def get_configs():
 def run_condense_0_to_1():
   print('get_configs: {}'.format(get_configs()))
   for config_filename in get_configs():
-    config = get_config_by_config_filename(config_filename)
+    config = get_configSetup_by_filename(config_filename)
     config.condense_for_all_frequencies()
 
 class PyMeas2019:
@@ -386,7 +412,7 @@ class PyMeas2019:
 if __name__ == '__main__':
   if True:
     filename_config = os.path.join(DIRECTORY_TOP, 'run_config_ch1.py')
-    config = get_config_by_config_filename(filename_config)
+    config = get_configSetup_by_filename(filename_config)
     config.measure_for_all_frequencies(measured_only_first=False)
     config.condense_for_all_frequencies()
 
@@ -395,6 +421,6 @@ if __name__ == '__main__':
 
   print('get_configs: {}'.format(get_configs()))
   for config_filename in get_configs():
-    config = get_config_by_config_filename(config_filename)
+    config = get_configSetup_by_filename(config_filename)
     config.condense_for_all_frequencies()
 

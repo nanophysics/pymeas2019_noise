@@ -10,7 +10,7 @@ list_ConfigFrequency = program.getConfigFrequencies(series='E6', minimal=100, ma
 # PicoScope5000A<Pico Technology|5442D| at SDK::ps5000a> PICO_SIG_GEN_PARAM: Incorrect parameter passed to signal generator.
 # Traceback (most recent call last):
 #   File "run_config_ch1.py", line 12, in <module>
-#     configuration.measure_for_all_frequencies()
+#     configSetup.measure_for_all_frequencies()
 #   File "C:\Projekte\ETH-Compact\versuche_picoscope\pymeas2019\program.py", line 239, in measure_for_all_frequencies
 #     picoscope.acquire(config)
 #   File "C:\Projekte\ETH-Compact\versuche_picoscope\pymeas2019\program_picoscope_5442D.py", line 65, in acquire

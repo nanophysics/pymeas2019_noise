@@ -73,6 +73,7 @@ class PicoScope:
     channelA_raw = self.scope.channel['A'].raw
     channelD_raw = self.scope.channel['D'].raw
 
+    # logfile = configMeasurement.get_logfile()
     measurementData = program.MeasurementData(configMeasurement)
     measurementData.open_files('wb')
 
@@ -102,6 +103,10 @@ class PicoScope:
 
       self.queue.put((start_index, num_samples))
 
+      if overflow:
+        # logfile.write(f'Overflow: {self.actual_sample_count+start_index}\n')
+        measurementData.list_overflow.append(self.actual_sample_count+start_index)
+
       self.actual_sample_count += num_samples
       if self.actual_sample_count > total_samples:
         self.streaming_done = True
@@ -124,13 +129,12 @@ class PicoScope:
     thread.join()
 
     measurementData.close_files()
-    measurementData.write(
-      channelA_volts_per_adu = self.scope.channel['A'].volts_per_adu,
-      channelD_volts_per_adu = self.scope.channel['D'].volts_per_adu,
-      dt_s = dt_s,
-      num_samples = self.actual_sample_count,
-    )
-
+    measurementData.channelA_volts_per_adu = self.scope.channel['A'].volts_per_adu
+    measurementData.channelD_volts_per_adu = self.scope.channel['D'].volts_per_adu
+    measurementData.dt_s = dt_s
+    measurementData.num_samples = self.actual_sample_count
+    measurementData.write()
+    # logfile.close()
 
     print('Done')
     self.scope.stop()

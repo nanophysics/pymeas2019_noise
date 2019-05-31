@@ -8,7 +8,7 @@ dict_config_setup = dict(
 
 if __name__ == '__main__':
   import program
-  configuration = program.get_config_by_config_filename(__file__)
-  configuration.measure_for_all_frequencies()
+  configSetup = program.get_configSetup_by_filename(__file__)
+  configSetup.measure_for_all_frequencies()
   pass
   program.run_condense_0_to_1()
