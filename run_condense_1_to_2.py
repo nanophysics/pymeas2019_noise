@@ -1,3 +1,3 @@
 if __name__ == '__main__':
   import program
-  program.run_condense_0to1()
+  program.run_condense_1to2()

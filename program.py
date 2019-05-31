@@ -5,6 +5,7 @@ import os
 import math
 import time
 import cmath
+import pprint
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -19,15 +20,17 @@ logger.setLevel(logging.DEBUG)
 
 DIRECTORY_TOP = os.path.dirname(os.path.abspath(__file__))
 
-DIRECTORY_RAW = os.path.join(DIRECTORY_TOP, '0_raw')
-DIRECTORY_CONDENSED = os.path.join(DIRECTORY_TOP, '1_condensed')
-DIRECTORY_RESULT = os.path.join(DIRECTORY_TOP, '2_result')
+DIRECTORY_0_RAW = os.path.join(DIRECTORY_TOP, '0_raw')
+DIRECTORY_1_CONDENSED = os.path.join(DIRECTORY_TOP, '1_condensed')
+DIRECTORY_2_RESULT = os.path.join(DIRECTORY_TOP, '2_result')
 
 # run_setup_calibrate_picoscope.py
 RE_CONFIG_SETUP = re.compile('run_setup_(?P<setup>.*?).py')
 
 DEFINED_BY_MEASUREMENTS='DEFINED_BY_MEASUREMENTS'
 DEFINED_BY_SETUP='DEFINED_BY_SETUP'
+
+pp = pprint.PrettyPrinter(indent=2)
 
 class MeasurementData:
   def __init__(self, configMeasurement, read=False):
@@ -121,7 +124,7 @@ class MeasurementData:
     )
 
     with open(self.configMeasurement.get_filename_data('txt'), 'w') as f:
-      f.write(str(aux_data))
+      pprint.pprint(aux_data, stream=f)
 
   def read(self):
     complexA = complex(0.0, 0.0)
@@ -152,6 +155,24 @@ class MeasurementData:
 
     return complexA, complexD
 
+  def condense_0to1(self):
+    start = time.time()
+    list_result_1 = []
+
+    for configMeasurement in self.configMeasurement.configSetup.iterConfigMeasurements():
+      print(f'configMeasurement.configFrequency.frequency_Hz: {configMeasurement.configFrequency.frequency_Hz}')
+      measurementData = MeasurementData(configMeasurement, read=True)
+      complexA, complexD = measurementData.read()
+      list_result_1.append(dict(
+        frequency_Hz=configMeasurement.configFrequency.frequency_Hz,
+        complexA=complexA,
+        complexD=complexD,
+      ))
+    print('Duration {}s'.format(time.time()-start))
+
+    with open(configMeasurement.configSetup.get_filename_data('txt', DIRECTORY_1_CONDENSED), 'w') as f:
+      pprint.pprint(list_result_1, stream=f)
+
   def dump_plot(self):
     # t = np.arange(-scope.pre_trigger, dt*num_samples-scope.pre_trigger, dt)
     
@@ -178,7 +199,7 @@ class MeasurementData:
       ax.set_title(self.config)
       # ax.legend()
 
-      filename_png = self.config.get_filename_data(extension='png', directory=DIRECTORY_CONDENSED)
+      filename_png = self.config.get_filename_data(extension='png', directory=DIRECTORY_1_CONDENSED)
       print(f'writing: {filename_png}')
       fig.savefig(filename_png)
       fig.clf()
@@ -197,8 +218,12 @@ class ConfigSetup:
     self.setup_name = DEFINED_BY_SETUP
     self.diagram_legend = DEFINED_BY_SETUP
 
+  def get_filename_data(self, extension, directory=DIRECTORY_0_RAW):
+    filename = f'data_{self.setup_name}'
+    return os.path.join(directory, f'{filename}.{extension}')
+
   def create_directories(self):
-    for directory in (DIRECTORY_RAW, DIRECTORY_CONDENSED, DIRECTORY_RESULT):
+    for directory in (DIRECTORY_0_RAW, DIRECTORY_1_CONDENSED, DIRECTORY_2_RESULT):
         if not os.path.exists(directory):
           os.makedirs(directory)
 
@@ -235,105 +260,46 @@ class ConfigSetup:
       configMeasurement.measure(picoscope)
       if measured_only_first:
         return
-  
-  def condense(self):
-    measurementData = MeasurementData(self, read=True)
-    measurementData.calculate_transfer()
-    measurementData.dump_plot()
-    pass
 
-  def condense_for_all_frequencies(self):
-    if False:
-      for config in self.iter_frequencies():
-        config.condense()
-
-    class Measurement:
-      def __init__(self, measurementData):
-        self.complexA, self.complexD = measurementData.read()
-
-    start = time.time()
-    list_measurement = []
-    listX = []
+  def condense_0to1_for_all_frequencies(self):
     for configMeasurement in self.iterConfigMeasurements():
-      print(f'configMeasurement.configFrequency.frequency_Hz: {configMeasurement.configFrequency.frequency_Hz}')
-      listX.append(configMeasurement.configFrequency.frequency_Hz)
       measurementData = MeasurementData(configMeasurement, read=True)
-      list_measurement.append(Measurement(measurementData))
-    print('Duration {}s'.format(time.time()-start))
+      measurementData.condense_0to1()
 
-    print('A')
+  def condense_1to2(self):
+    resultSetup = ResultSetup(self)
+    resultSetup.pyplot()
 
-    def get_list(f):
-      return list(map(f, list_measurement))
+class ResultSetup:
+  def __init__(self, configSetup):
+    self.configSetup = configSetup
 
-    listY = get_list(lambda m: (m.complexA/m.complexD).real)
+    with open(self.configSetup.get_filename_data('txt', DIRECTORY_1_CONDENSED), 'r') as f:
+      list_result_1 = eval(f.read())
 
-    if False:
-      # X of channel A and D
-      listAY = get_list(lambda m: m.complexA.real)
-      listDY = get_list(lambda m: m.complexD.real)
+    self.listX = []
+    self.listY = []
+    for configMeasurement, result_1 in zip(self.configSetup.iterConfigMeasurements(), list_result_1):
+      complexA=result_1['complexA']
+      complexD=result_1['complexD']
+      frequency_Hz=result_1['frequency_Hz']
+      assert frequency_Hz == configMeasurement.configFrequency.frequency_Hz
+      self.listY.append((complexA/complexD).real)
+      self.listX.append(frequency_Hz)
 
+  def pyplot(self):
       fig, ax1 = plt.subplots()
 
       ax1.tick_params('y', colors='blue')
-      lineA, = ax1.plot(listX, listAY, linewidth=1.0, color='blue')
-      lineA.set_label('Channel A')
-
-      ax2 = ax1.twinx()
-
-      ax2.tick_params('y', colors='red')
-      lineD, = ax2.plot(listX, listDY, linewidth=1.0, color='red')
-      lineD.set_label('Channel D')
-      # lineD.set_dashes([2, 2, 10, 2])  # 2pt line, 2pt break, 10pt line, 2pt break
-
-      # ax.set_title(self.config)
-      fig.legend()
-      plt.show()
-      plt.close()
-
-    if False:
-      # Phase of channel A and D
-      
-      listAY = get_list(lambda m: cmath.phase(m.complexA))
-      listDY = get_list(lambda m: cmath.phase(m.complexD))
-
-      fig, ax1 = plt.subplots()
-
-      ax1.tick_params('y', colors='blue')
-      lineA, = ax1.plot(listX, listAY, linewidth=1.0, color='blue')
-      lineA.set_label('Channel A')
-
-      ax2 = ax1.twinx()
-
-      ax2.tick_params('y', colors='red')
-      lineD, = ax2.plot(listX, listDY, linewidth=1.0, color='red')
-      lineD.set_label('Channel D')
-      # lineD.set_dashes([2, 2, 10, 2])  # 2pt line, 2pt break, 10pt line, 2pt break
-
-      # ax.set_title(self.config)
-      fig.legend()
-      plt.show()
-      plt.close()
-
-    if True:
-      # Phase of channel A and D
-      
-      listY = get_list(lambda m: (m.complexA/m.complexD).real)
-      print('B')
-
-      fig, ax1 = plt.subplots()
-
-      ax1.tick_params('y', colors='blue')
-      lineA, = ax1.plot(listX, listY, linewidth=1.0, color='blue')
+      lineA, = ax1.plot(self.listX, self.listY, linewidth=1.0, color='blue')
       lineA.set_label('m.complexA/m.complexD')
 
       fig.legend()
-      # filename_png = self.config.get_filename_data(extension='png', directory=DIRECTORY_CONDENSED)
-      # print(f'writing: {filename_png}')
-      # fig.savefig(filename_png)
-      plt.show()
+      filename_png = self.configSetup.get_filename_data('png', DIRECTORY_1_CONDENSED)
+      print(f'writing: {filename_png}')
+      fig.savefig(filename_png)
+      # plt.show()
       plt.close()
-
 
 class ConfigFrequency:
   def __init__(self, frequency_Hz):
@@ -368,14 +334,14 @@ class ConfigMeasurement:
     return f'{self.configSetup.diagram_legend} ({self.configSetup.setup_name}, {self.configFrequency.frequency_Hz:012.2f}hz, {self.configFrequency.duration_s:0.3f}s)'
     return f'{self.configSetup.diagram_legend} ({self.configSetup.setup_name}, {self.configFrequency.frequency_Hz:0.0e}hz, {self.configFrequency.duration_s:0.0e}s)'
 
-  def get_filename_data(self, extension, directory=DIRECTORY_RAW):
+  def get_filename_data(self, extension, directory=DIRECTORY_0_RAW):
     filename = f'data_{self.configSetup.setup_name}_{self.configFrequency.frequency_Hz:012.2f}hz'
     # filename = f'data_{self.setup_name}_{self.frequency_Hz:0.2e}hz'
     # filename = f'data_{self.setup_name}_{self.frequency_Hz:012.2e}hz'
     # filename = f'data_{self.setup_name}_{self.frequency_Hz:06d}hz'
     return os.path.join(directory, f'{filename}.{extension}')
   
-  def get_logfile(self, directory=DIRECTORY_RAW):
+  def get_logfile(self, directory=DIRECTORY_0_RAW):
     return open(self.get_filename_data('log.txt', directory), 'w')
 
   def measure(self, picoscope):
@@ -389,7 +355,7 @@ def get_configSetup_by_filename(channel_config_filename):
   config.update_by_channel_file(channel_config_filename)
   return config
 
-def get_configs():
+def get_configSetups():
   list_configs = []
   for filename in os.listdir(DIRECTORY_TOP):
     match = RE_CONFIG_SETUP.match(os.path.basename(filename))
@@ -397,15 +363,21 @@ def get_configs():
       list_configs.append(os.path.join(DIRECTORY_TOP, filename))
   return list_configs
 
-def run_condense_0_to_1():
-  print('get_configs: {}'.format(get_configs()))
-  for config_filename in get_configs():
-    config = get_configSetup_by_filename(config_filename)
-    config.condense_for_all_frequencies()
+def run_condense_0to1():
+  print('get_configSetups: {}'.format(get_configSetups()))
+  for configsetup_filename in get_configSetups():
+    config = get_configSetup_by_filename(configsetup_filename)
+    config.condense_0to1_for_all_frequencies()
+
+def run_condense_1to2():
+  print('get_configSetups: {}'.format(get_configSetups()))
+  for configsetup_filename in get_configSetups():
+    config = get_configSetup_by_filename(configsetup_filename)
+    config.condense_1to2()
 
 class PyMeas2019:
   def __init__(self):
-    for directory in (DIRECTORY_RAW, DIRECTORY_CONDENSED, DIRECTORY_RESULT):
+    for directory in (DIRECTORY_0_RAW, DIRECTORY_1_CONDENSED, DIRECTORY_2_RESULT):
       if not os.path.exists(directory):
         os.makedirs(directory)
 
@@ -419,8 +391,8 @@ if __name__ == '__main__':
     import sys
     sys.exit(0)
 
-  print('get_configs: {}'.format(get_configs()))
-  for config_filename in get_configs():
-    config = get_configSetup_by_filename(config_filename)
-    config.condense_for_all_frequencies()
+  print('get_configSetups: {}'.format(get_configSetups()))
+  for configsetup_filename in get_configSetups():
+    config = get_configSetup_by_filename(configsetup_filename)
+    config.condense_0to1_for_all_frequencies()
 

@@ -54,7 +54,7 @@ Input directory: `0_raw`
 
 Output directory: `1_condensed`
 
-run: `pymeas2019\run_condense_0_to_1.py`
+run: `pymeas2019\run_condense_0to1.py`
 
 ### Step 2: write result
 
