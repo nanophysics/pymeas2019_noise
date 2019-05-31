@@ -2,7 +2,8 @@ from msl.equipment.resources.picotech.picoscope.enums import PS5000Range
 
 dict_config_setup = dict(
   diagram_legend = 'Gain 1 of DUT',
-  input_Vp = PS5000Range.R_20MV,
+  input_Vp = PS5000Range.R_5V,
+  reference = 'calibrate_picoscope' # run_setup_calibrate_picoscope.py
 )
 
 if __name__ == '__main__':
@@ -10,3 +11,5 @@ if __name__ == '__main__':
   configSetup = program.get_configSetup_by_filename(__file__)
   configSetup.measure_for_all_frequencies()
   pass
+  configSetup.condense_0to1_for_all_frequencies()
+  configSetup.condense_1to2()

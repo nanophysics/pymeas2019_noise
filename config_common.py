@@ -52,4 +52,7 @@ dict_config_setup_defaults = dict(
   skalierungsfaktor=1.0,
   input_Vp=PS5000Range.R_2V,
   input_set_Vp=2.0, # set voltage input, out is adjusted automatically
+  result_gain=1.0,
+  result_unit='1',
+  reference = None,
 )

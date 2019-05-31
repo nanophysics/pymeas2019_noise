@@ -202,6 +202,9 @@ class ConfigSetup:
     self.input_set_Vp = DEFINED_BY_MEASUREMENTS
     self.setup_name = DEFINED_BY_SETUP
     self.diagram_legend = DEFINED_BY_SETUP
+    self.result_gain = DEFINED_BY_SETUP
+    self.result_unit = DEFINED_BY_SETUP
+    self.reference = DEFINED_BY_SETUP
 
   def get_filename_data(self, extension, directory=DIRECTORY_0_RAW):
     filename = f'data_{self.setup_name}'
@@ -274,37 +277,47 @@ class ConfigSetup:
   def condense_1to2(self):
     resultSetup = ResultSetup(self)
     resultSetup.pyplot()
+    return resultSetup
 
 class ResultSetup:
   def __init__(self, configSetup):
     self.configSetup = configSetup
 
     with open(self.configSetup.get_filename_data('txt', DIRECTORY_1_CONDENSED), 'r') as f:
-      list_result_1 = eval(f.read())
+      self.list_result_1 = eval(f.read())
 
-    self.listX = []
-    self.listY = []
-    for configMeasurement, result_1 in zip(self.configSetup.iterConfigMeasurements(), list_result_1):
+    list_frequency = []
+    list_complexA = []
+    list_complexD = []
+    for configMeasurement, result_1 in zip(self.configSetup.iterConfigMeasurements(), self.list_result_1):
       complexA=result_1['complexA']
       complexD=result_1['complexD']
       frequency_Hz=result_1['frequency_Hz']
       assert frequency_Hz == configMeasurement.configFrequency.frequency_Hz
-      self.listY.append((complexA/complexD).real)
-      self.listX.append(frequency_Hz)
+      list_complexA.append(complexA)
+      list_complexD.append(complexD)
+      list_frequency.append(frequency_Hz)
+
+    self.arr_frequency_Hz = np.array(list_frequency)
+    self.arr_complexA = np.array(list_complexA)
+    self.arr_complexD = np.array(list_complexD)
+    self.arr_gainAD = self.arr_complexA/self.arr_complexD
 
   def pyplot(self):
-      fig, ax1 = plt.subplots()
 
-      ax1.tick_params('y', colors='blue')
-      lineA, = ax1.plot(self.listX, self.listY, linewidth=1.0, color='blue')
-      lineA.set_label('m.complexA/m.complexD')
+    arr_Y = self.arr_gainAD.real
+    fig, ax1 = plt.subplots()
 
-      fig.legend()
-      filename_png = self.configSetup.get_filename_data('png', DIRECTORY_1_CONDENSED)
-      print(f'writing: {filename_png}')
-      fig.savefig(filename_png)
-      # plt.show()
-      plt.close()
+    ax1.tick_params('y', colors='blue')
+    lineA, = ax1.plot(self.arr_frequency_Hz, arr_Y, linewidth=1.0, color='blue')
+    lineA.set_label('m.complexA/m.complexD')
+
+    fig.legend()
+    filename_png = self.configSetup.get_filename_data('png', DIRECTORY_1_CONDENSED)
+    print(f'writing: {filename_png}')
+    fig.savefig(filename_png)
+    # plt.show()
+    plt.close()
 
 class ConfigFrequency:
   def __init__(self, frequency_Hz):
@@ -353,11 +366,11 @@ class ConfigMeasurement:
     # picoscope.acquire(setup_name='ch1', frequency_hz=config.frequency_Hz, duration_s=config.duration_s, amplitude_Vpp=config.input_set_Vp)
     picoscope.acquire(self)
 
-def get_configSetup_by_filename(channel_config_filename):
+def get_configSetup_by_filename(config_setup_filename):
   import config_common
   config = ConfigSetup()
   config.update_by_dict(config_common.dict_config_setup_defaults)
-  config.update_by_channel_file(channel_config_filename)
+  config.update_by_channel_file(config_setup_filename)
   return config
 
 def get_configSetups():
@@ -376,28 +389,47 @@ def run_condense_0to1():
 
 def run_condense_1to2():
   print('get_configSetups: {}'.format(get_configSetups()))
+  list_resultSetup = []
+  dict_resultSetupReference = {}
   for configsetup_filename in get_configSetups():
     config = get_configSetup_by_filename(configsetup_filename)
-    config.condense_1to2()
+    resultSetup = config.condense_1to2()
+    if config.reference == None:
+      dict_resultSetupReference[config.setup_name] = resultSetup
+    else:
+      list_resultSetup.append(resultSetup)
+  
+  for resultSetup in list_resultSetup:
+    resultSetupReference = dict_resultSetupReference[resultSetup.configSetup.reference]
+    plot_for_one_setup(resultSetup, resultSetupReference)
 
-class PyMeas2019:
-  def __init__(self):
-    for directory in (DIRECTORY_0_RAW, DIRECTORY_1_CONDENSED, DIRECTORY_2_RESULT):
-      if not os.path.exists(directory):
-        os.makedirs(directory)
+def plot_for_one_setup(resultSetup, resultSetupReference):
+  assert isinstance(resultSetup, ResultSetup)
+  assert isinstance(resultSetupReference, ResultSetup)
 
-if __name__ == '__main__':
-  if True:
-    filename_config = os.path.join(DIRECTORY_TOP, 'run_config_ch1.py')
-    config = get_configSetup_by_filename(filename_config)
-    config.measure_for_all_frequencies(measured_only_first=False)
-    config.condense_for_all_frequencies()
+  arr_Y = (resultSetup.arr_gainAD / resultSetupReference.arr_gainAD).real
 
-    import sys
-    sys.exit(0)
+  fig, ax1 = plt.subplots()
 
-  print('get_configSetups: {}'.format(get_configSetups()))
-  for configsetup_filename in get_configSetups():
-    config = get_configSetup_by_filename(configsetup_filename)
-    config.condense_0to1_for_all_frequencies()
+  ax1.tick_params('y', colors='blue')
+  lineA, = ax1.plot(resultSetup.arr_frequency_Hz, arr_Y, linewidth=1.0, color='blue')
+  lineA.set_label('m.complexA/m.complexD referenced')
+
+  fig.legend()
+  filename_png = resultSetup.configSetup.get_filename_data('png', DIRECTORY_2_RESULT)
+  print(f'writing: {filename_png}')
+  fig.savefig(filename_png)
+  # plt.show()
+  plt.close()
+
+# class PyMeas2019:
+#   def __init__(self):
+#     for directory in (DIRECTORY_0_RAW, DIRECTORY_1_CONDENSED, DIRECTORY_2_RESULT):
+#       if not os.path.exists(directory):
+#         os.makedirs(directory)
+
+#   print('get_configSetups: {}'.format(get_configSetups()))
+#   for configsetup_filename in get_configSetups():
+#     config = get_configSetup_by_filename(configsetup_filename)
+#     config.condense_0to1_for_all_frequencies()
 
