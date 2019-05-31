@@ -28,9 +28,9 @@ simple measure and documentation with python
 - Measurement_Condensed: The condensed results from a Measurement
   - frequency
   - Config_Setup
-  - A+D: Complex
-  - A+D: min/max
-  - A+D: overload
+  - A+B: Complex
+  - A+B: min/max
+  - A+B: overload
 - Result_Setup: All Measurement_Condensed for one Setup
   - Complex for every frequency
 - Result_Common:

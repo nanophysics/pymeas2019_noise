@@ -39,7 +39,7 @@ class MeasurementData:
     self.configMeasurement = configMeasurement
     self.list_overflow = []
     self.fA = None
-    self.fD = None
+    self.fB = None
     self.dt_s = None
     self.num_samples = None
     self.dictMinMax_V = {}
@@ -54,22 +54,22 @@ class MeasurementData:
     self.list_overflow = d['list_overflow']
 
     self.channelA_volts_per_adu = d['channelA_volts_per_adu']
-    self.channelD_volts_per_adu = d['channelD_volts_per_adu']
+    self.channelB_volts_per_adu = d['channelB_volts_per_adu']
 
   def open_files(self, mode):
     assert mode in ('rb', 'wb')
     assert self.fA is None
-    assert self.fD is None
+    assert self.fB is None
     self.fA = open(self.configMeasurement.get_filename_data('a_bin'), mode)
-    self.fD = open(self.configMeasurement.get_filename_data('d_bin'), mode)
+    self.fB = open(self.configMeasurement.get_filename_data('d_bin'), mode)
 
   def close_files(self):
     assert self.fA is not None
     self.fA.close()
     self.fA=None
-    assert self.fD is not None
-    self.fD.close()
-    self.fD=None
+    assert self.fB is not None
+    self.fB.close()
+    self.fB=None
 
   def get_samples(self, num_samples_chunk):
 
@@ -84,8 +84,8 @@ class MeasurementData:
       return buf_V
 
     bufA_V = read_buf(self.fA, self.channelA_volts_per_adu)
-    bufD_V = read_buf(self.fD, self.channelD_volts_per_adu)
-    return bufA_V, bufD_V
+    bufB_V = read_buf(self.fB, self.channelB_volts_per_adu)
+    return bufA_V, bufB_V
 
   def __prepareGainPhase(self, i_start, i_end, points):
     a = self.dt_s * 2.0 * np.pi * self.configMeasurement.configFrequency.frequency_Hz
@@ -105,7 +105,7 @@ class MeasurementData:
   def update_min_max(self, buf, channelA, test_max):
     assert isinstance(channelA, bool)
     assert isinstance(test_max, bool)
-    key = f'channel{"A" if channelA else "D"}_{"max" if test_max else "min"}'
+    key = f'channel{"A" if channelA else "B"}_{"max" if test_max else "min"}'
 
     f_V = self.dictMinMax_V.get(key, -1000.0 if test_max else 1000.0)
     if test_max:
@@ -117,7 +117,7 @@ class MeasurementData:
   def write(self):
     aux_data = dict(
       channelA_volts_per_adu = self.channelA_volts_per_adu,
-      channelD_volts_per_adu = self.channelD_volts_per_adu,
+      channelB_volts_per_adu = self.channelB_volts_per_adu,
       dt_s = self.dt_s,
       num_samples = self.num_samples,
       list_overflow = self.list_overflow,
@@ -128,32 +128,32 @@ class MeasurementData:
 
   def read(self):
     complexA = complex(0.0, 0.0)
-    complexD = complex(0.0, 0.0)
+    complexB = complex(0.0, 0.0)
     vector_size = 1000000
     points = self.num_samples
 
     self.open_files('rb')
     i_start = 0
     while True:
-      bufA_V, bufD_V = self.get_samples(vector_size)
-      assert len(bufA_V) == len(bufD_V)
+      bufA_V, bufB_V = self.get_samples(vector_size)
+      assert len(bufA_V) == len(bufB_V)
       if len(bufA_V) == 0:
         break
 
       self.update_min_max(bufA_V, channelA=True, test_max=True)
       self.update_min_max(bufA_V, channelA=True, test_max=False)
-      self.update_min_max(bufD_V, channelA=False, test_max=True)
-      self.update_min_max(bufD_V, channelA=False, test_max=False)
+      self.update_min_max(bufB_V, channelA=False, test_max=True)
+      self.update_min_max(bufB_V, channelA=False, test_max=False)
       
       i_end = i_start + len(bufA_V)
       self.__prepareGainPhase(i_start, i_end, points)
       complexA += self.__GainPhase(bufA_V)
-      complexD += self.__GainPhase(bufD_V)
+      complexB += self.__GainPhase(bufB_V)
       i_start = i_end
 
     self.close_files()
 
-    return complexA, complexD
+    return complexA, complexB
 
   def condense_0to1(self):
     pass
@@ -177,9 +177,9 @@ class MeasurementData:
       lineA, = ax.plot(reduce(self.channelA), linewidth=0.1, color='blue')
       # lineA.set_label('Channel A')
 
-      lineD, = ax.plot(reduce(self.channelD), linewidth=0.1, color='red')
-      # lineD.set_label('Channel D')
-      # lineD.set_dashes([2, 2, 10, 2])  # 2pt line, 2pt break, 10pt line, 2pt break
+      lineB, = ax.plot(reduce(self.channelB), linewidth=0.1, color='red')
+      # lineB.set_label('Channel B')
+      # lineB.set_dashes([2, 2, 10, 2])  # 2pt line, 2pt break, 10pt line, 2pt break
 
       ax.set_title(self.config)
       # ax.legend()
@@ -191,8 +191,8 @@ class MeasurementData:
       # plt.show()
 
     if False:
-      plt.plot(self.channelD)
-      plt.ylabel('channel D')
+      plt.plot(self.channelA)
+      plt.ylabel('channel B')
       plt.show()
 
 class ConfigSetup:
@@ -260,12 +260,12 @@ class ConfigSetup:
     for configMeasurement in self.iterConfigMeasurements():
       print(f'configMeasurement.configFrequency.frequency_Hz: {configMeasurement.configFrequency.frequency_Hz}')
       measurementData = MeasurementData(configMeasurement, read=True)
-      complexA, complexD = measurementData.read()
+      complexA, complexB = measurementData.read()
       dict_data = dict(
         frequency_Hz=configMeasurement.configFrequency.frequency_Hz,
         list_overflow=measurementData.list_overflow,
         complexA=complexA,
-        complexD=complexD,
+        complexB=complexB,
       )
       dict_data.update(measurementData.dictMinMax_V)
       list_result_1.append(dict_data)
@@ -288,30 +288,30 @@ class ResultSetup:
 
     list_frequency = []
     list_complexA = []
-    list_complexD = []
+    list_compexB = []
     for configMeasurement, result_1 in zip(self.configSetup.iterConfigMeasurements(), self.list_result_1):
       complexA=result_1['complexA']
-      complexD=result_1['complexD']
+      complexB=result_1['complexB']
       frequency_Hz=result_1['frequency_Hz']
       assert frequency_Hz == configMeasurement.configFrequency.frequency_Hz
       list_complexA.append(complexA)
-      list_complexD.append(complexD)
+      list_compexB.append(complexB)
       list_frequency.append(frequency_Hz)
 
     self.arr_frequency_Hz = np.array(list_frequency)
     self.arr_complexA = np.array(list_complexA)
-    self.arr_complexD = np.array(list_complexD)
-    self.arr_gainAD = self.arr_complexA/self.arr_complexD
+    self.arr_complexB = np.array(list_compexB)
+    self.arr_gainAB = self.arr_complexA/self.arr_complexB
 
   def pyplot(self):
 
-    arr_Y = self.arr_gainAD.real
+    arr_Y = self.arr_gainAB.real
     fig, ax1 = plt.subplots()
 
     ax1.tick_params('y', colors='blue')
     ax1.ticklabel_format(useOffset=False)
     lineA, = ax1.plot(self.arr_frequency_Hz, arr_Y, linewidth=1.0, color='blue')
-    lineA.set_label('m.complexA/m.complexD')
+    lineA.set_label('m.complexA/m.complexB')
 
     fig.legend()
     filename_png = self.configSetup.get_filename_data('png', DIRECTORY_1_CONDENSED)
@@ -414,14 +414,14 @@ def plot_for_one_setup(resultSetup, resultSetupReference):
   assert isinstance(resultSetup, ResultSetup)
   assert isinstance(resultSetupReference, ResultSetup)
 
-  arr_Y = (resultSetup.arr_gainAD / resultSetupReference.arr_gainAD).real
+  arr_Y = (resultSetup.arr_gainAB / resultSetupReference.arr_gainAB).real
 
   fig, ax1 = plt.subplots()
 
   ax1.tick_params('y', colors='blue')
   ax1.ticklabel_format(useOffset=False)
   lineA, = ax1.plot(resultSetup.arr_frequency_Hz, arr_Y, linewidth=1.0, color='blue')
-  lineA.set_label('m.complexA/m.complexD referenced')
+  lineA.set_label('m.complexA/m.complexB referenced')
 
   fig.legend()
   filename_png = resultSetup.configSetup.get_filename_data('png', DIRECTORY_2_RESULT)

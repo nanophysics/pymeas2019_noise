@@ -51,13 +51,23 @@ class PicoScope:
 
     max_samples_bytes = self.scope.memory_segments(num_segments=1)
 
-    desired_buffer_size = max_samples_bytes//2  # 2 channels
     max_sampling_rate = 125e6
-    desired_sample_rate = max_sampling_rate//2
-    desired_dt_s = 1.0/desired_sample_rate
-    desired_sample_time_s = desired_buffer_size*desired_dt_s
-    total_samples = int(configFrequency.duration_s/desired_dt_s)
-    assert total_samples > 1000
+    while True:
+      desired_buffer_size = max_samples_bytes//2  # 2 channels
+      desired_sample_rate = max_sampling_rate//2
+      desired_dt_s = 1.0/desired_sample_rate
+      desired_sample_time_s = desired_buffer_size*desired_dt_s
+      total_samples = int(configFrequency.duration_s/desired_dt_s)
+      assert total_samples > 1000
+      
+      max_filesize = 200e6
+      max_samples = max_filesize // 2  # 2 bytes/sample
+      if total_samples <= max_samples*1.001:
+        break
+
+      reduction = max_samples/total_samples
+      max_sampling_rate *= reduction
+      print(f'Reducing sample rate by {reduction}')
 
     # PicoScope 6
     # 8ns
@@ -89,7 +99,7 @@ class PicoScope:
     self.scope.set_data_buffer('A')
     self.scope.set_data_buffer('B')
     channelA_raw = self.scope.channel['A'].raw
-    channelD_raw = self.scope.channel['B'].raw
+    channelB_raw = self.scope.channel['B'].raw
 
     # logfile = configMeasurement.get_logfile()
     measurementData = program.MeasurementData(configMeasurement)
@@ -104,7 +114,7 @@ class PicoScope:
           break
         start_index, num_samples = item
         measurementData.fA.write(channelA_raw[start_index:start_index+num_samples].tobytes())
-        measurementData.fD.write(channelD_raw[start_index:start_index+num_samples].tobytes())
+        measurementData.fB.write(channelB_raw[start_index:start_index+num_samples].tobytes())
 
     thread = threading.Thread(target=worker)
     thread.start()
@@ -148,7 +158,7 @@ class PicoScope:
 
     measurementData.close_files()
     measurementData.channelA_volts_per_adu = self.scope.channel['A'].volts_per_adu
-    measurementData.channelD_volts_per_adu = self.scope.channel['B'].volts_per_adu
+    measurementData.channelB_volts_per_adu = self.scope.channel['B'].volts_per_adu
     measurementData.dt_s = dt_s
     measurementData.num_samples = self.actual_sample_count
     measurementData.write()

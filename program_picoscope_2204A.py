@@ -45,7 +45,7 @@ class PicoScope:
     dt_s, num_samples = self.scope.set_timebase(desired_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
     # self.scope.set_sig_gen_builtin_v2(start_frequency=config.frequency_Hz, pk_to_pk=config.input_set_Vp, offset_voltage=0.4, trigger_source='scope_trig', sweeps=0)  # create a sine wave
     # self.scope.set_data_buffer('A')  # set the data buffer for Channel A
-    # self.scope.set_data_buffer('D')  # set the data buffer for Channel A
+    # self.scope.set_data_buffer('B')  # set the data buffer for Channel A
 
     # no_of_samples = 150
     # duration = 0.4
@@ -79,7 +79,7 @@ class PicoScope:
     measurementData = program.MeasurementData(config)
     measurementData.write(
       channelA = self.scope.channel['A'].volts,
-      channelD = self.scope.channel['D'].volts,
+      channelB = self.scope.channel['B'].volts,
       dt_s = dt_s,
       num_samples = num_samples,
       trigger_at = self.trigger_at,
