@@ -1,7 +1,7 @@
 import program
 from msl.equipment.resources.picotech.picoscope.enums import PS5000Range
 
-list_ConfigFrequency = program.getConfigFrequencies(series='E6', minimal=100, maximal=1e3)
+list_ConfigFrequency = program.getConfigFrequencies(series='E6', minimal=1, maximal=1e6)
 
 
 # .Waiting for thread 0.033Hz

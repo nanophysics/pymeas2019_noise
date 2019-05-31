@@ -309,6 +309,7 @@ class ResultSetup:
     fig, ax1 = plt.subplots()
 
     ax1.tick_params('y', colors='blue')
+    ax1.ticklabel_format(useOffset=False)
     lineA, = ax1.plot(self.arr_frequency_Hz, arr_Y, linewidth=1.0, color='blue')
     lineA.set_label('m.complexA/m.complexD')
 
@@ -387,7 +388,7 @@ def run_condense_0to1():
     config = get_configSetup_by_filename(configsetup_filename)
     config.condense_0to1_for_all_frequencies()
 
-def run_condense_1to2():
+def run_condense_1to2_result():
   print('get_configSetups: {}'.format(get_configSetups()))
   list_resultSetup = []
   dict_resultSetupReference = {}
@@ -412,6 +413,7 @@ def plot_for_one_setup(resultSetup, resultSetupReference):
   fig, ax1 = plt.subplots()
 
   ax1.tick_params('y', colors='blue')
+  ax1.ticklabel_format(useOffset=False)
   lineA, = ax1.plot(resultSetup.arr_frequency_Hz, arr_Y, linewidth=1.0, color='blue')
   lineA.set_label('m.complexA/m.complexD referenced')
 

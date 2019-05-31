@@ -12,4 +12,4 @@ if __name__ == '__main__':
   configSetup.measure_for_all_frequencies()
   pass
   configSetup.condense_0to1_for_all_frequencies()
-  configSetup.condense_1to2()
+  program.run_condense_1to2_result()

@@ -11,4 +11,6 @@ if __name__ == '__main__':
   configSetup = program.get_configSetup_by_filename(__file__)
   configSetup.measure_for_all_frequencies()
   pass
-  program.run_condense_0to1()
+  configSetup.condense_0to1_for_all_frequencies()
+  program.run_condense_1to2_result()
+  
