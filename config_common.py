@@ -49,11 +49,12 @@ from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 __list_ConfigFrequency = program.getConfigFrequencies(series='E6', minimal=0.03, maximal=1e7)
 
 dict_config_setup_defaults = dict(
-  list_frequency_Hz=__list_ConfigFrequency,
-  skalierungsfaktor=1.0,
-  input_Vp=PS5000ARange.R_2V,
-  input_set_Vp=2.0, # set voltage input, out is adjusted automatically
-  result_gain=1.0,
-  result_unit='1',
+  list_frequency_Hz = __list_ConfigFrequency,
+  skalierungsfaktor = 1.0,
+  input_Vp = PS5000ARange.R_2V,
+  input_set_Vp = 2.0, # set voltage input, out is adjusted automatically
+  result_gain = 1.0,
+  result_unit = '1',
   reference = None,
+  max_filesize_bytes = 200e6,
 )

@@ -50,24 +50,25 @@ class PicoScope:
     self.scope.set_channel('B', coupling='dc', scale=PS5000ARange.R_5V)
 
     max_samples_bytes = self.scope.memory_segments(num_segments=1)
+    desired_buffer_size = max_samples_bytes//2  # 2 channels
 
     max_sampling_rate = 125e6
     while True:
-      desired_buffer_size = max_samples_bytes//2  # 2 channels
       desired_sample_rate = max_sampling_rate//2
       desired_dt_s = 1.0/desired_sample_rate
       desired_sample_time_s = desired_buffer_size*desired_dt_s
       total_samples = int(configFrequency.duration_s/desired_dt_s)
       assert total_samples > 1000
-      
-      max_filesize = 200e6
+
+      max_filesize = configSetup.max_filesize_bytes
       max_samples = max_filesize // 2  # 2 bytes/sample
       if total_samples <= max_samples*1.001:
         break
 
       reduction = max_samples/total_samples
+      max_sampling_rate_before = max_sampling_rate
       max_sampling_rate *= reduction
-      print(f'Reducing sample rate by {reduction}')
+      print(f'Reducing sample rate by {reduction}. {max_sampling_rate_before:.4e} -> {max_sampling_rate:.4e}')
 
     # PicoScope 6
     # 8ns
@@ -89,6 +90,8 @@ class PicoScope:
     # # timebaseA_=4, time_interval_nanosecondsA_=1.6e-09
 
     dt_s, num_samples = self.scope.set_timebase(desired_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
+    print(f'set_timebase({desired_dt_s:.4e}) -> {dt_s:.4e}')
+    print(f'configFrequency.duration_s={configFrequency.duration_s:.4e}, total_samples*dt_s={total_samples*dt_s:.4e}')
 
     # Make sure the is no signal before the trigger
     pk_to_pk=2.0*configSetup.input_set_Vp

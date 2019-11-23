@@ -201,6 +201,7 @@ class ConfigSetup:
     self.input_Vp = DEFINED_BY_MEASUREMENTS
     self.input_set_Vp = DEFINED_BY_MEASUREMENTS
     self.list_frequency_Hz = DEFINED_BY_SETUP
+    self.max_filesize_bytes = DEFINED_BY_SETUP
     self.setup_name = DEFINED_BY_SETUP
     self.diagram_legend = DEFINED_BY_SETUP
     self.result_gain = DEFINED_BY_SETUP
