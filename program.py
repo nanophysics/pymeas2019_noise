@@ -200,6 +200,7 @@ class ConfigSetup:
     self.skalierungsfaktor = DEFINED_BY_MEASUREMENTS
     self.input_Vp = DEFINED_BY_MEASUREMENTS
     self.input_set_Vp = DEFINED_BY_MEASUREMENTS
+    self.list_frequency_Hz = DEFINED_BY_SETUP
     self.setup_name = DEFINED_BY_SETUP
     self.diagram_legend = DEFINED_BY_SETUP
     self.result_gain = DEFINED_BY_SETUP
@@ -237,8 +238,7 @@ class ConfigSetup:
     self._update_element('setup_name', setup_name)
 
   def iterConfigMeasurements(self):
-    import config_common
-    for configFrequency in config_common.list_ConfigFrequency:
+    for configFrequency in self.list_frequency_Hz:
       yield ConfigMeasurement(self, configFrequency)
 
   def measure_for_all_frequencies(self, measured_only_first=False):

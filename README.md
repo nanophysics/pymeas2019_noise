@@ -1,3 +1,8 @@
+# 2019-11-23
+# TODO: config_common.py, list_ConfigFrequency = 
+#   This should be possible to overwrite in run_setup_noise_density.py
+
+
 # pymeas2019
 
 simple measure and documentation with python

@@ -1,0 +1,2 @@
+python run_setup_noise_density.py
+pause
