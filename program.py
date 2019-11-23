@@ -63,32 +63,26 @@ class MeasurementData:
     self.fA.close()
     self.fA=None
 
-  def get_samples(self, num_samples_chunk):
+  def read(self):
+    self.open_files('rb')
 
-    def read_buf(fData, adu):
-      # See: msl-equipment\msl\equipment\resources\picotech\picoscope\channel.py
-      # np.empty((0, 0), dtype=np.int16)
-      bytes_per_sample = 2
+    # See: msl-equipment\msl\equipment\resources\picotech\picoscope\channel.py
+    # np.empty((0, 0), dtype=np.int16)
+    bytes_per_sample = 2
 
-      data_bytes = fData.read(bytes_per_sample*num_samples_chunk)
-      rawA = np.frombuffer(data_bytes, dtype=np.int16)
-      buf_V = adu * rawA
-      return buf_V
+    data_bytes = self.fA.read(bytes_per_sample*self.num_samples)
+    rawA = np.frombuffer(data_bytes, dtype=np.int16)
+    bufA_V = self.channelA_volts_per_adu * rawA
+    assert len(bufA_V) == self.num_samples
 
-    bufA_V = read_buf(self.fA, self.channelA_volts_per_adu)
+    self.close_files()
+
     return bufA_V
 
-  def update_min_max(self, buf, channelA, test_max):
-    assert isinstance(channelA, bool)
-    assert isinstance(test_max, bool)
-    key = f'channel{"A" if channelA else "B"}_{"max" if test_max else "min"}'
+  def condense_0to1(self):
+    bufA_V = self.read()
+    pass
 
-    f_V = self.dictMinMax_V.get(key, -1000.0 if test_max else 1000.0)
-    if test_max:
-      f_V = max(f_V, buf.max())
-    else:
-      f_V = min(f_V, buf.min())
-    self.dictMinMax_V[key] = f_V
 
   def write(self):
     aux_data = dict(
@@ -188,6 +182,8 @@ class ConfigSetup:
 
   def condense_0to1(self):
     print('condense_0to1')
+    measurementData = MeasurementData(self, read=True)
+    measurementData.condense_0to1()
 
   def condense_1to2(self):
     print('condense_1to2')
@@ -211,7 +207,7 @@ def run_condense_0to1():
   print('get_configSetups: {}'.format(get_configSetups()))
   for configsetup_filename in get_configSetups():
     config = get_configSetup_by_filename(configsetup_filename)
-    config.condense_0to1_for_all_frequencies()
+    config.condense_0to1()
 
 class ResultCommon:
   def __init__(self):
@@ -234,16 +230,4 @@ class ResultCommon:
 def run_condense_1to2_result():
   resultCommon = ResultCommon()
   resultCommon.plot()
-
-
-# class PyMeas2019:
-#   def __init__(self):
-#     for directory in (DIRECTORY_0_RAW, DIRECTORY_1_CONDENSED, DIRECTORY_2_RESULT):
-#       if not os.path.exists(directory):
-#         os.makedirs(directory)
-
-#   print('get_configSetups: {}'.format(get_configSetups()))
-#   for configsetup_filename in get_configSetups():
-#     config = get_configSetup_by_filename(configsetup_filename)
-#     config.condense_0to1_for_all_frequencies()
 
