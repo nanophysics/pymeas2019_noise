@@ -10,7 +10,6 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 
-import program_config_frequencies
 import program_picoscope_5442D as program_picoscope
 # import program_picoscope_2204A as program_picoscope
 
@@ -33,10 +32,10 @@ DEFINED_BY_SETUP='DEFINED_BY_SETUP'
 pp = pprint.PrettyPrinter(indent=2)
 
 class MeasurementData:
-  def __init__(self, configMeasurement, read=False):
-    assert isinstance(configMeasurement, ConfigMeasurement)
+  def __init__(self, configSetup, read=False):
+    assert isinstance(configSetup, ConfigSetup)
 
-    self.configMeasurement = configMeasurement
+    self.configSetup = configSetup
     self.list_overflow = []
     self.fA = None
     self.fB = None
@@ -47,7 +46,7 @@ class MeasurementData:
     if not read:
       return
 
-    with open(self.configMeasurement.get_filename_data('txt'), 'r') as f:
+    with open(self.configSetup.get_filename_data('txt'), 'r') as f:
       d = eval(f.read())
     self.dt_s = d['dt_s']
     self.num_samples = d['num_samples']
@@ -60,8 +59,8 @@ class MeasurementData:
     assert mode in ('rb', 'wb')
     assert self.fA is None
     assert self.fB is None
-    self.fA = open(self.configMeasurement.get_filename_data('a_bin'), mode)
-    self.fB = open(self.configMeasurement.get_filename_data('d_bin'), mode)
+    self.fA = open(self.configSetup.get_filename_data('a_bin'), mode)
+    self.fB = open(self.configSetup.get_filename_data('d_bin'), mode)
 
   def close_files(self):
     assert self.fA is not None
@@ -88,7 +87,7 @@ class MeasurementData:
     return bufA_V, bufB_V
 
   def __prepareGainPhase(self, i_start, i_end, points):
-    a = self.dt_s * 2.0 * np.pi * self.configMeasurement.configFrequency.frequency_Hz
+    a = self.dt_s * 2.0 * np.pi * self.configSetup.configFrequency.frequency_Hz
     phasevector = np.linspace(a * i_start, a * i_end, num=i_end-i_start)
 
     # corresponds to np.hanning(points)
@@ -123,7 +122,7 @@ class MeasurementData:
       list_overflow = self.list_overflow,
     )
 
-    with open(self.configMeasurement.get_filename_data('txt'), 'w') as f:
+    with open(self.configSetup.get_filename_data('txt'), 'w') as f:
       pprint.pprint(aux_data, stream=f)
 
   def read(self):
@@ -199,8 +198,7 @@ class ConfigSetup:
   def __init__(self):
     self.skalierungsfaktor = DEFINED_BY_MEASUREMENTS
     self.input_Vp = DEFINED_BY_MEASUREMENTS
-    self.input_set_Vp = DEFINED_BY_MEASUREMENTS
-    self.list_frequency_Hz = DEFINED_BY_SETUP
+    self.duration_s = DEFINED_BY_SETUP
     self.max_filesize_bytes = DEFINED_BY_SETUP
     self.setup_name = DEFINED_BY_SETUP
     self.diagram_legend = DEFINED_BY_SETUP
@@ -238,20 +236,13 @@ class ConfigSetup:
     setup_name = match.group('setup')
     self._update_element('setup_name', setup_name)
 
-  def iterConfigMeasurements(self):
-    for configFrequency in self.list_frequency_Hz:
-      yield ConfigMeasurement(self, configFrequency)
-
-  def measure_for_all_frequencies(self, measured_only_first=False):
+  def measure_for_all_frequencies(self):
     picoscope = program_picoscope.PicoScope(self)
     picoscope.connect()
-    for configMeasurement in self.iterConfigMeasurements():
-      configMeasurement.measure(picoscope)
-      if measured_only_first:
-        return
+    picoscope.acquire(self)
 
   def condense_0to1_for_all_frequencies(self):
-    for configMeasurement in self.iterConfigMeasurements():
+    for configSetup in self.iterConfigMeasurements():
       measurementData = MeasurementData(configMeasurement, read=True)
       measurementData.condense_0to1()
 
@@ -321,38 +312,16 @@ class ResultSetup:
     # plt.show()
     plt.close()
 
-class ConfigFrequency:
-  def __init__(self, frequency_Hz):
-    MINIMAL_DURATION_S = 0.1
-    MAXIMAL_DURATION_S = 150.0
-    PERIODS_SINE_OPTIMAL = 5.0
-    self.frequency_Hz = frequency_Hz
-    self.duration_s = 1.0 / frequency_Hz * PERIODS_SINE_OPTIMAL
-    if self.duration_s > MAXIMAL_DURATION_S:
-      self.duration_s = MAXIMAL_DURATION_S
-    if self.duration_s < MINIMAL_DURATION_S:
-      self.duration_s = MINIMAL_DURATION_S
-
-
-def getConfigFrequencies(series='E6', minimal=100, maximal=1e3):
-  frequencies_Hz = program_config_frequencies.eseries(series=series, minimal=minimal, maximal=maximal)
-
-  # First the high frequencies, then low frequencies
-  frequencies_Hz.sort(reverse=True)
-  list_ConfigFrequency = list(map(ConfigFrequency, frequencies_Hz))
-  return list_ConfigFrequency
 
 class ConfigMeasurement:
-  def __init__(self, configSetup, configFrequency):
+  def __init__(self, configSetup):
     assert isinstance(configSetup, ConfigSetup)
-    assert isinstance(configFrequency, ConfigFrequency)
 
     self.configSetup = configSetup
-    self.configFrequency = configFrequency
 
   def __str__(self):
-    return f'{self.configSetup.diagram_legend} ({self.configSetup.setup_name}, {self.configFrequency.frequency_Hz:012.2f}hz, {self.configFrequency.duration_s:0.3f}s)'
-    return f'{self.configSetup.diagram_legend} ({self.configSetup.setup_name}, {self.configFrequency.frequency_Hz:0.0e}hz, {self.configFrequency.duration_s:0.0e}s)'
+    return f'{self.configSetup.diagram_legend} ({self.configSetup.setup_name}, {self.configFrequency.duration_s:0.3f}s)'
+    return f'{self.configSetup.diagram_legend} ({self.configSetup.setup_name}, {self.configFrequency.duration_s:0.0e}s)'
 
   def get_filename_data(self, extension, directory=DIRECTORY_0_RAW):
     filename = f'data_{self.configSetup.setup_name}_{self.configFrequency.frequency_Hz:012.2f}hz'

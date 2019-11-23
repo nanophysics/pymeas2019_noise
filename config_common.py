@@ -22,15 +22,6 @@ from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 # msl.equipment.exceptions.PicoTechError: PicoScope5000A<Pico Technology|5442D| at SDK::ps5000a>
 # PICO_SIG_GEN_PARAM: Incorrect parameter passed to signal generator.
 
-
-# list_ConfigFrequency = (
-#   dict(frequency_Hz=50, duration_s=1e0),
-#   dict(frequency_Hz=1000, duration_s=1e-1),
-#   dict(frequency_Hz=2000, duration_s=1e-1),
-#   dict(frequency_Hz=5000, duration_s=1e-1),
-#   dict(frequency_Hz=10000, duration_s=1e-2),
-# )
-
 # class PS5000Range(IntEnum):
 #     R_10MV  = 0
 #     R_20MV  = 1
@@ -46,13 +37,10 @@ from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 #     R_50V   = 11
 #     R_MAX   = 12
 
-__list_ConfigFrequency = program.getConfigFrequencies(series='E6', minimal=0.03, maximal=1e7)
-
 dict_config_setup_defaults = dict(
-  list_frequency_Hz = __list_ConfigFrequency,
+  duration_s = 10.0,
   skalierungsfaktor = 1.0,
   input_Vp = PS5000ARange.R_2V,
-  input_set_Vp = 2.0, # set voltage input, out is adjusted automatically
   result_gain = 1.0,
   result_unit = '1',
   reference = None,
