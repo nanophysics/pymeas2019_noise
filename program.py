@@ -38,7 +38,6 @@ class MeasurementData:
     self.configSetup = configSetup
     self.list_overflow = []
     self.fA = None
-    self.fB = None
     self.dt_s = None
     self.num_samples = None
     self.dictMinMax_V = {}
@@ -53,22 +52,16 @@ class MeasurementData:
     self.list_overflow = d['list_overflow']
 
     self.channelA_volts_per_adu = d['channelA_volts_per_adu']
-    self.channelB_volts_per_adu = d['channelB_volts_per_adu']
 
   def open_files(self, mode):
     assert mode in ('rb', 'wb')
     assert self.fA is None
-    assert self.fB is None
     self.fA = open(self.configSetup.get_filename_data('a_bin'), mode)
-    self.fB = open(self.configSetup.get_filename_data('d_bin'), mode)
 
   def close_files(self):
     assert self.fA is not None
     self.fA.close()
     self.fA=None
-    assert self.fB is not None
-    self.fB.close()
-    self.fB=None
 
   def get_samples(self, num_samples_chunk):
 
@@ -83,23 +76,7 @@ class MeasurementData:
       return buf_V
 
     bufA_V = read_buf(self.fA, self.channelA_volts_per_adu)
-    bufB_V = read_buf(self.fB, self.channelB_volts_per_adu)
-    return bufA_V, bufB_V
-
-  def __prepareGainPhase(self, i_start, i_end, points):
-    a = self.dt_s * 2.0 * np.pi * self.configSetup.configFrequency.frequency_Hz
-    phasevector = np.linspace(a * i_start, a * i_end, num=i_end-i_start)
-
-    # corresponds to np.hanning(points)
-    ivektor = np.linspace(i_start/points, i_end/points, num=i_end-i_start)
-    windowvector = 1 - np.cos(2 * np.pi * ivektor)
-    self.Xvector = np.sin(phasevector) * windowvector
-    self.Yvector = np.cos(phasevector) * windowvector
-
-  def __GainPhase(self, signalvector):
-    Xp = np.mean(self.Xvector * signalvector)
-    Yp = np.mean(self.Yvector * signalvector)
-    return complex(Xp, Yp)
+    return bufA_V
 
   def update_min_max(self, buf, channelA, test_max):
     assert isinstance(channelA, bool)
@@ -116,7 +93,6 @@ class MeasurementData:
   def write(self):
     aux_data = dict(
       channelA_volts_per_adu = self.channelA_volts_per_adu,
-      channelB_volts_per_adu = self.channelB_volts_per_adu,
       dt_s = self.dt_s,
       num_samples = self.num_samples,
       list_overflow = self.list_overflow,
@@ -125,37 +101,6 @@ class MeasurementData:
     with open(self.configSetup.get_filename_data('txt'), 'w') as f:
       pprint.pprint(aux_data, stream=f)
 
-  def read(self):
-    complexA = complex(0.0, 0.0)
-    complexB = complex(0.0, 0.0)
-    vector_size = 1000000
-    points = self.num_samples
-
-    self.open_files('rb')
-    i_start = 0
-    while True:
-      bufA_V, bufB_V = self.get_samples(vector_size)
-      assert len(bufA_V) == len(bufB_V)
-      if len(bufA_V) == 0:
-        break
-
-      self.update_min_max(bufA_V, channelA=True, test_max=True)
-      self.update_min_max(bufA_V, channelA=True, test_max=False)
-      self.update_min_max(bufB_V, channelA=False, test_max=True)
-      self.update_min_max(bufB_V, channelA=False, test_max=False)
-      
-      i_end = i_start + len(bufA_V)
-      self.__prepareGainPhase(i_start, i_end, points)
-      complexA += self.__GainPhase(bufA_V)
-      complexB += self.__GainPhase(bufB_V)
-      i_start = i_end
-
-    self.close_files()
-
-    return complexA, complexB
-
-  def condense_0to1(self):
-    pass
 
   def dump_plot(self):
     # t = np.arange(-scope.pre_trigger, dt*num_samples-scope.pre_trigger, dt)
@@ -241,101 +186,11 @@ class ConfigSetup:
     picoscope.connect()
     picoscope.acquire(self)
 
-  def condense_0to1_for_all_frequencies(self):
-    for configSetup in self.iterConfigMeasurements():
-      measurementData = MeasurementData(configMeasurement, read=True)
-      measurementData.condense_0to1()
-
-    start = time.time()
-    list_result_1 = []
-
-    for configMeasurement in self.iterConfigMeasurements():
-      print(f'configMeasurement.configFrequency.frequency_Hz: {configMeasurement.configFrequency.frequency_Hz}')
-      measurementData = MeasurementData(configMeasurement, read=True)
-      complexA, complexB = measurementData.read()
-      dict_data = dict(
-        frequency_Hz=configMeasurement.configFrequency.frequency_Hz,
-        list_overflow=measurementData.list_overflow,
-        complexA=complexA,
-        complexB=complexB,
-      )
-      dict_data.update(measurementData.dictMinMax_V)
-      list_result_1.append(dict_data)
-    print('Duration {}s'.format(time.time()-start))
-
-    with open(configMeasurement.configSetup.get_filename_data('txt', DIRECTORY_1_CONDENSED), 'w') as f:
-      pprint.pprint(list_result_1, stream=f)
+  def condense_0to1(self):
+    print('condense_0to1')
 
   def condense_1to2(self):
-    resultSetup = ResultSetup(self)
-    resultSetup.pyplot()
-    return resultSetup
-
-class ResultSetup:
-  def __init__(self, configSetup):
-    self.configSetup = configSetup
-
-    with open(self.configSetup.get_filename_data('txt', DIRECTORY_1_CONDENSED), 'r') as f:
-      self.list_result_1 = eval(f.read())
-
-    list_frequency = []
-    list_complexA = []
-    list_compexB = []
-    for configMeasurement, result_1 in zip(self.configSetup.iterConfigMeasurements(), self.list_result_1):
-      complexA=result_1['complexA']
-      complexB=result_1['complexB']
-      frequency_Hz=result_1['frequency_Hz']
-      assert frequency_Hz == configMeasurement.configFrequency.frequency_Hz
-      list_complexA.append(complexA)
-      list_compexB.append(complexB)
-      list_frequency.append(frequency_Hz)
-
-    self.arr_frequency_Hz = np.array(list_frequency)
-    self.arr_complexA = np.array(list_complexA)
-    self.arr_complexB = np.array(list_compexB)
-    self.arr_gainAB = self.arr_complexA/self.arr_complexB
-
-  def pyplot(self):
-
-    arr_Y = self.arr_gainAB.real
-    fig, ax1 = plt.subplots()
-
-    ax1.tick_params('y', colors='blue')
-    ax1.ticklabel_format(useOffset=False)
-    lineA, = ax1.plot(self.arr_frequency_Hz, arr_Y, linewidth=1.0, color='blue')
-    lineA.set_label('m.complexA/m.complexB')
-
-    fig.legend()
-    filename_png = self.configSetup.get_filename_data('png', DIRECTORY_1_CONDENSED)
-    print(f'writing: {filename_png}')
-    fig.savefig(filename_png)
-    # plt.show()
-    plt.close()
-
-
-class ConfigMeasurement:
-  def __init__(self, configSetup):
-    assert isinstance(configSetup, ConfigSetup)
-
-    self.configSetup = configSetup
-
-  def __str__(self):
-    return f'{self.configSetup.diagram_legend} ({self.configSetup.setup_name}, {self.configFrequency.duration_s:0.3f}s)'
-    return f'{self.configSetup.diagram_legend} ({self.configSetup.setup_name}, {self.configFrequency.duration_s:0.0e}s)'
-
-  def get_filename_data(self, extension, directory=DIRECTORY_0_RAW):
-    filename = f'data_{self.configSetup.setup_name}_{self.configFrequency.frequency_Hz:012.2f}hz'
-    # filename = f'data_{self.setup_name}_{self.frequency_Hz:0.2e}hz'
-    # filename = f'data_{self.setup_name}_{self.frequency_Hz:012.2e}hz'
-    # filename = f'data_{self.setup_name}_{self.frequency_Hz:06d}hz'
-    return os.path.join(directory, f'{filename}.{extension}')
-  
-  def get_logfile(self, directory=DIRECTORY_0_RAW):
-    return open(self.get_filename_data('log.txt', directory), 'w')
-
-  def measure(self, picoscope):
-    # picoscope.acquire(setup_name='ch1', frequency_hz=config.frequency_Hz, duration_s=config.duration_s, amplitude_Vpp=config.input_set_Vp)
-    picoscope.acquire(self)
+    print('condense_1to2')
 
 def get_configSetup_by_filename(config_setup_filename):
   import config_common
@@ -380,25 +235,6 @@ def run_condense_1to2_result():
   resultCommon = ResultCommon()
   resultCommon.plot()
 
-def plot_for_one_setup(resultSetup, resultSetupReference):
-  assert isinstance(resultSetup, ResultSetup)
-  assert isinstance(resultSetupReference, ResultSetup)
-
-  arr_Y = (resultSetup.arr_gainAB / resultSetupReference.arr_gainAB).real
-
-  fig, ax1 = plt.subplots()
-
-  ax1.tick_params('y', colors='blue')
-  ax1.ticklabel_format(useOffset=False)
-  lineA, = ax1.plot(resultSetup.arr_frequency_Hz, arr_Y, linewidth=1.0, color='blue')
-  lineA.set_label('m.complexA/m.complexB referenced')
-
-  fig.legend()
-  filename_png = resultSetup.configSetup.get_filename_data('png', DIRECTORY_2_RESULT)
-  print(f'writing: {filename_png}')
-  fig.savefig(filename_png)
-  # plt.show()
-  plt.close()
 
 # class PyMeas2019:
 #   def __init__(self):

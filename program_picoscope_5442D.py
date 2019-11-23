@@ -29,8 +29,8 @@ class PicoScope:
         address='SDK::ps5000a',
         # properties={'open_async': True},  # opening in async mode is done in the properties
         properties=dict(
-          resolution='15bit',
-          # resolution='16bit',  # only used for ps5000a series PicoScope's
+          # resolution='15bit',
+          resolution='16bit',  # only used for ps5000a series PicoScope's
           auto_select_power=False,  # for PicoScopes that can be powered by an AC adaptor or by a USB cable
         )
       )
@@ -45,12 +45,11 @@ class PicoScope:
     assert type(configSetup.input_Vp) == self.scope.enRange
 
     self.scope.set_channel('A', coupling='dc', scale=configSetup.input_Vp)
-    self.scope.set_channel('B', coupling='dc', scale=PS5000ARange.R_5V)
 
     max_samples_bytes = self.scope.memory_segments(num_segments=1)
-    desired_buffer_size = max_samples_bytes//2  # 2 channels
+    desired_buffer_size = max_samples_bytes//1  # 1 channels
 
-    max_sampling_rate = 125e6
+    max_sampling_rate = 250e6
     while True:
       desired_sample_rate = max_sampling_rate//2
       desired_dt_s = 1.0/desired_sample_rate
@@ -89,12 +88,10 @@ class PicoScope:
 
     dt_s, num_samples = self.scope.set_timebase(desired_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
     print(f'set_timebase({desired_dt_s:.4e}) -> {dt_s:.4e}')
-    print(f'configFrequency.duration_s={configSetup.duration_s:.4e}, total_samples*dt_s={total_samples*dt_s:.4e}')
+    print(f'configSetup.duration_s={configSetup.duration_s:.4e}, total_samples*dt_s={total_samples*dt_s:.4e}')
 
     self.scope.set_data_buffer('A')
-    self.scope.set_data_buffer('B')
     channelA_raw = self.scope.channel['A'].raw
-    channelB_raw = self.scope.channel['B'].raw
 
     # logfile = configMeasurement.get_logfile()
     measurementData = program.MeasurementData(configSetup)
@@ -109,7 +106,6 @@ class PicoScope:
           break
         start_index, num_samples = item
         measurementData.fA.write(channelA_raw[start_index:start_index+num_samples].tobytes())
-        measurementData.fB.write(channelB_raw[start_index:start_index+num_samples].tobytes())
 
     thread = threading.Thread(target=worker)
     thread.start()
@@ -153,7 +149,6 @@ class PicoScope:
 
     measurementData.close_files()
     measurementData.channelA_volts_per_adu = self.scope.channel['A'].volts_per_adu
-    measurementData.channelB_volts_per_adu = self.scope.channel['B'].volts_per_adu
     measurementData.dt_s = dt_s
     measurementData.num_samples = self.actual_sample_count
     measurementData.write()
