@@ -9,6 +9,7 @@ import pprint
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
+import program_fir
 
 import program_picoscope_5442D as program_picoscope
 # import program_picoscope_2204A as program_picoscope
@@ -63,27 +64,6 @@ class MeasurementData:
     self.fA.close()
     self.fA=None
 
-  def read(self):
-    self.open_files('rb')
-
-    # See: msl-equipment\msl\equipment\resources\picotech\picoscope\channel.py
-    # np.empty((0, 0), dtype=np.int16)
-    bytes_per_sample = 2
-
-    data_bytes = self.fA.read(bytes_per_sample*self.num_samples)
-    rawA = np.frombuffer(data_bytes, dtype=np.int16)
-    bufA_V = self.channelA_volts_per_adu * rawA
-    assert len(bufA_V) == self.num_samples
-
-    self.close_files()
-
-    return bufA_V
-
-  def condense_0to1(self):
-    bufA_V = self.read()
-    pass
-
-
   def write(self):
     aux_data = dict(
       channelA_volts_per_adu = self.channelA_volts_per_adu,
@@ -95,6 +75,47 @@ class MeasurementData:
     with open(self.configSetup.get_filename_data('txt'), 'w') as f:
       pprint.pprint(aux_data, stream=f)
 
+  # def read(self):
+  #   self.open_files('rb')
+
+  #   # See: msl-equipment\msl\equipment\resources\picotech\picoscope\channel.py
+  #   # np.empty((0, 0), dtype=np.int16)
+  #   bytes_per_sample = 2
+
+  #   data_bytes = self.fA.read(bytes_per_sample*self.num_samples)
+  #   rawA = np.frombuffer(data_bytes, dtype=np.int16)
+  #   bufA_V = self.channelA_volts_per_adu * rawA
+  #   assert self.num_samples == len(bufA_V)
+
+  #   self.close_files()
+
+  #   return bufA_V
+
+  def condense_0to1(self):
+    start = time.time()
+    o = program_fir.OutTrash()
+
+    density_directory = DIRECTORY_1_CONDENSED
+    for i in range(program_fir.FIR_COUNT):
+      o = program_fir.Density(o, directory=density_directory)
+      o = program_fir.FIR(o)
+
+    o = program_fir.Density(o, directory=density_directory)
+    i = program_fir.InFile(o, self.configSetup.get_filename_data('a_bin'))
+    i.process()
+    print(f'Duration {time.time()-start:0.2f}')
+
+    # bufA_V = self.read()
+    # self.dump_sub(bufA_V, 0.001)
+
+  # def dump_sub(self, bufA_V, time_s):
+  #   samples = int(time_s/self.dt_s)
+  #   print(f'self.dt_s={self.dt_s:.4e} / f={1.0/self.dt_s:.4e} -> samples={self.num_samples}, t_s={self.num_samples*self.dt_s}')
+  #   print(f'time_s={time_s:.4e} -> samples={samples}')
+  #   a = bufA_V[0:samples]
+  #   plt.plot(a)
+  #   plt.ylabel('V')
+  #   plt.show()
 
   def dump_plot(self):
     # t = np.arange(-scope.pre_trigger, dt*num_samples-scope.pre_trigger, dt)

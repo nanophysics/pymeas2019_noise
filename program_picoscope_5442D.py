@@ -39,6 +39,33 @@ class PicoScope:
   def connect(self):
     self.scope = self.record.connect()  # establish a connection to the PicoScope
 
+  def calculate_dt_s(self, configSetup, max_samples_bytes):
+    # Given: configSetup.duration_s
+    # Required: selected_dt_s
+    # Limited by: self.scope.set_timebase
+    # Limited by: Maximum filesize
+
+    # Programmers Guide "3.6 Timebases", only one channel
+    max_sampling_rate = 62.5e6
+    min_dt_s = 1.0/max_sampling_rate
+    max_filesize_samples = configSetup.max_filesize_bytes/2 # 2 Bytes per Sample
+    # filesize_dt_s: The sampling rate for maximal filesize
+    filesize_dt_s = configSetup.duration_s/max_filesize_samples
+    selected1_dt_s = min_dt_s
+    if filesize_dt_s > min_dt_s:
+      selected1_dt_s = filesize_dt_s
+      print(f'Filesize limits dt_s: {min_dt_s:.3e}s -> {filesize_dt_s:.3e}s')
+
+    selected2_dt_s, num_samples = self.scope.set_timebase(selected1_dt_s, max_samples_bytes*selected1_dt_s)  # sample the voltage on Channel A every 1 us, for 100 us
+
+    return selected2_dt_s
+    # print(f'configSetup.duration_s={configSetup.duration_s:.4e}, total_samples={total_samples}, total_samples*selected_dt_s={total_samples*selected_dt_s:.4e}')
+    # print(f'set_timebase({desired_dt_s:.4e}) -> {selected_dt_s:.4e}')
+    # total_samples_before = total_samples
+    # total_samples = int(configSetup.duration_s/selected_dt_s)
+    # print(f'total_samples={total_samples_before}) -> {total_samples}')
+
+
   def acquire(self, configSetup):
     assert isinstance(configSetup, program.ConfigSetup)
 
@@ -47,25 +74,10 @@ class PicoScope:
     self.scope.set_channel('A', coupling='dc', scale=configSetup.input_Vp)
 
     max_samples_bytes = self.scope.memory_segments(num_segments=1)
-    desired_buffer_size = max_samples_bytes//1  # 1 channels
 
-    max_sampling_rate = 250e6
-    while True:
-      desired_sample_rate = max_sampling_rate//2
-      desired_dt_s = 1.0/desired_sample_rate
-      desired_sample_time_s = desired_buffer_size*desired_dt_s
-      total_samples = int(configSetup.duration_s/desired_dt_s)
-      assert total_samples > 1000
-
-      max_filesize = configSetup.max_filesize_bytes
-      max_samples = max_filesize // 2  # 2 bytes/sample
-      if total_samples <= max_samples*1.001:
-        break
-
-      reduction = max_samples/total_samples
-      max_sampling_rate_before = max_sampling_rate
-      max_sampling_rate *= reduction
-      print(f'Reducing sample rate by {reduction}. {max_sampling_rate_before:.4e} -> {max_sampling_rate:.4e}')
+    dt_s = self.calculate_dt_s(configSetup, max_samples_bytes)
+    total_samples = int(configSetup.duration_s/dt_s)
+    print(f'Choosen dt_s {dt_s:.3e}s and filesize {total_samples*2}Bytes')
 
     # PicoScope 6
     # 8ns
@@ -85,10 +97,6 @@ class PicoScope:
     # channels_ = self.scope.enChannelFlags.A
     # timebaseB_, time_interval_nanosecondsB_ = self.scope.get_minimum_timebase(resolution_, channels_)
     # # timebaseA_=4, time_interval_nanosecondsA_=1.6e-09
-
-    dt_s, num_samples = self.scope.set_timebase(desired_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
-    print(f'set_timebase({desired_dt_s:.4e}) -> {dt_s:.4e}')
-    print(f'configSetup.duration_s={configSetup.duration_s:.4e}, total_samples*dt_s={total_samples*dt_s:.4e}')
 
     self.scope.set_data_buffer('A')
     channelA_raw = self.scope.channel['A'].raw
@@ -130,6 +138,7 @@ class PicoScope:
       if self.actual_sample_count > total_samples:
         self.streaming_done = True
         self.queue.put(None)
+        print('STOP', end='')
 
       if overflow:
         print('\noverflow')
@@ -138,13 +147,17 @@ class PicoScope:
       assert auto_stop == False
       assert triggered == False
 
+    start = time.time()
     self.scope.run_streaming(auto_stop=False)
     while not self.streaming_done:
       self.scope.wait_until_ready()  # wait until the latest streaming values are ready
       self.scope.get_streaming_latest_values(my_streaming_ready)  # get the latest streaming values
+      # print(',', end='')
+      # print(f'{int(100*self.actual_sample_count/total_samples)} %')
 
-
-    print(f'Waiting for thread ...')
+    print()
+    print(f'Time spent in aquisition {time.time()-start:1.1f}s')
+    print('Waiting for thread ...')
     thread.join()
 
     measurementData.close_files()
