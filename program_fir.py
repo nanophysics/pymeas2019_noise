@@ -1,7 +1,9 @@
+import math
 import time
 import numpy as np
 import scipy.signal
 import matplotlib.pyplot as plt
+import program_config_frequencies
 
 #   <---------------- INPUT ---------========------->
 #
@@ -79,6 +81,7 @@ class Density:
     self.out = out
     self.time_s = 0.0
     self.next_s = 0.0
+    self.frequencies = None
     self.Pxx_sum = None
     self.Pxx_n = 0
     self.directory = directory
@@ -96,6 +99,7 @@ class Density:
     self.time_s += self.dt_s * len(array_in)
     if self.time_s > self.next_s:
       self.next_s += self.interval_s
+      # self.next_s = self.time_s + self.interval_s
       self.density(array_in)
 
     self.out.push(array_in)
@@ -107,7 +111,7 @@ class Density:
 
     print(f'Stage {self.stage:02d}: Density: {self.dt_s:016.12f}, len(self.array)={len(array_in)} -> {len(array_density)}')
 
-    f, Pxx = scipy.signal.periodogram(array_density, 1/self.dt_s, window='hamming',) #Hz, V^2/Hz
+    self.frequencies, Pxx = scipy.signal.periodogram(array_density, 1/self.dt_s, window='hamming',) #Hz, V^2/Hz
     self.__density_averaging(array_density, Pxx)
 
     fig, ax = plt.subplots()
@@ -118,7 +122,7 @@ class Density:
       if self.Pxx_n == 1:
         color = 'fuchsia'
     Dxx = np.sqrt(Pxx) # V/Hz^0.5
-    ax.loglog(f, Dxx, linewidth=0.1, color=color)
+    ax.loglog(self.frequencies, Dxx, linewidth=0.1, color=color)
     plt.ylabel(f'Density stage dt_s {self.dt_s:.3e}s ')
     fig.savefig(f'{self.directory}/density_{self.stage:02d}_{self.dt_s:016.12f}.png')
     fig.clf()
@@ -138,6 +142,60 @@ class Density:
       self.Pxx_sum += Pxx
 
 
+class DensitySummary:
+  def __init__(self, list_density, directory='.'):
+    self.directory = directory
+    self.list_density = list_density
+    self.summary_f = program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8)
+    self.summary_d = [0,] * len(self.summary_f)
+    self.summary_n = [0,] * len(self.summary_f)
+    for density in list_density:
+      assert isinstance(density, Density)
+      if density.Pxx_sum is None:
+        continue
+      Pxx = density.Pxx_sum / density.Pxx_n
+      len_array = len(density.Pxx_sum)
+      for idx in range(len(density.frequencies)):
+        f = density.frequencies[idx]
+        d = Pxx[idx]
+        if f == 0:
+          # frequency not required in summary
+          continue
+        if f > 1.0/density.dt_s*len_array/2.0*0.8:
+          # frequency not required in summary
+          continue
+        nearest_idx = self.__find_nearest(self.summary_f, f)
+        self.summary_n[nearest_idx] += 1
+        self.summary_d[nearest_idx] += d
+  
+    # Calculate average
+    for idx in range(len(self.summary_f)):
+      n = self.summary_n[idx]
+      if n == 0:
+        continue
+      self.summary_d[idx] = math.sqrt(self.summary_d[idx] / n)
+
+  def __find_nearest(self, frequencies, frequency):
+    best_idx = 0
+    best_diff = 1e24
+    for idx, f in enumerate(frequencies):
+      diff = abs(frequency-f)
+      if diff < best_diff:
+        best_diff = diff
+        best_idx = idx
+      if idx > best_idx:
+        # Save time and bail out
+        break
+    return best_idx
+
+  def plot(self):
+    fig, ax = plt.subplots()
+    ax.loglog(self.summary_f, self.summary_d, linewidth=0.1, color='blue')
+    plt.ylabel(f'Density [V/Hz^0.5]')
+    fig.savefig(f'{self.directory}/density.png')
+    fig.clf()
+    plt.close(fig)
+    plt.clf()
 
 class OutTrash:
   def __init__(self):
@@ -181,6 +239,7 @@ class InFile:
 
         self.out.push(buf_V)
 
+
 class InSin:
   def __init__(self, out, time_total_s=10, dt_s=0.01):
     self.out = out
@@ -212,6 +271,7 @@ if __name__ == '__main__':
   #
   #
   #
+  assert False
 
   start = time.time()
   o = OutTrash()

@@ -3,7 +3,7 @@ from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 
 dict_config_setup = dict(
   diagram_legend = 'Measure Noise Density',
-  duration_s = 1.0,
+  duration_s = 200.0,
   # input_Vp = PS5000ARange.R_5V,
   input_Vp = PS5000ARange.R_100MV,
   # input_Vp = PS5000ARange.R_10MV,

@@ -92,17 +92,22 @@ class MeasurementData:
   #   return bufA_V
 
   def condense_0to1(self):
+    list_density = []
     start = time.time()
     o = program_fir.OutTrash()
 
-    density_directory = DIRECTORY_1_CONDENSED
     for i in range(program_fir.FIR_COUNT):
-      o = program_fir.Density(o, directory=density_directory)
+      o = program_fir.Density(o, directory=DIRECTORY_1_CONDENSED)
+      list_density.append(o)
       o = program_fir.FIR(o)
 
-    o = program_fir.Density(o, directory=density_directory)
+    o = program_fir.Density(o, directory=DIRECTORY_1_CONDENSED)
     i = program_fir.InFile(o, self.configSetup.get_filename_data('a_bin'))
     i.process()
+
+    ds = program_fir.DensitySummary(list_density, directory=DIRECTORY_1_CONDENSED)
+    ds.plot()
+
     print(f'Duration {time.time()-start:0.2f}')
 
     # bufA_V = self.read()
