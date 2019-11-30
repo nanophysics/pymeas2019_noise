@@ -16,7 +16,7 @@ dict_config_setup = dict(
   # input_Vp = PS5000ARange.R_5V,
   # input_Vp = PS5000ARange.R_10V,
   # input_Vp = PS5000ARange.R_20V,
-  # input_Vp = PS5000ARange.R_50V,
+  # input_Vp = PS5000ARange.R_50V, 
 
   max_filesize_bytes = 5e9,
 )

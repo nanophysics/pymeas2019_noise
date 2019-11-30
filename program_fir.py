@@ -200,7 +200,7 @@ class DensitySummary:
     ax.loglog(self.summary_f, self.summary_d, linewidth=0.1, color='blue')
     plt.ylabel(f'Density [V/Hz^0.5]')
     plt.ylim( 1e-8,1e-6)
-    plt.xlim(1e-2, 1e5)
+    plt.xlim(1e-2, 1e5) # temp Peter
     plt.grid(True)
     fig.savefig(f'{self.directory}/density.png')
     fig.clf()
