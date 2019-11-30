@@ -154,14 +154,13 @@ class DensitySummary:
       if density.Pxx_sum is None:
         continue
       Pxx = density.Pxx_sum / density.Pxx_n
-      len_array = len(density.Pxx_sum)
       for idx in range(len(density.frequencies)):
         f = density.frequencies[idx]
         d = Pxx[idx]
         if f == 0:
           # frequency not required in summary
           continue
-        if f > 1.0/density.dt_s*len_array/2.0*0.8:
+        if f > 1.0/density.dt_s*len(density.Pxx_sum)/2.0*0.8:
           # frequency not required in summary
           continue
         nearest_idx = self.__find_nearest(self.summary_f, f)
