@@ -7,12 +7,11 @@ simple measure and documentation with python
 - Picoscope Application - SDK is not required
 - MSL-Equipment libaries
   - `git clone https://github.com/tempstabilizer2018group/msl-equipment`
-  - `cd msl-equipment`
-  - `pip3 install -r requirements.txt`
+  - `pip install -e msl-equipment`
 - Pymeas2019_noise
   - `git clone https://github.com/tempstabilizer2018group/pymeas2019_noise.git`
-  - `cd pymeas2019_noise`
 - Start measurement
+  - `cd pymeas2019_noise`
   - `run_setup_noise_density.bat`
 
 ## Terms
