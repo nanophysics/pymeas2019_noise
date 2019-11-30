@@ -124,6 +124,13 @@ class Density:
     Dxx = np.sqrt(Pxx) # V/Hz^0.5
     ax.loglog(self.frequencies, Dxx, linewidth=0.1, color=color)
     plt.ylabel(f'Density stage dt_s {self.dt_s:.3e}s ')
+    plt.ylim( 1e-8,1e-6)
+
+    #plt.xlim(1e2, 1e5)
+    f_limit_low = 1.0/self.dt_s/2.0*0.6
+    f_limit_high = 1.0/self.dt_s/2.0
+    plt.axvspan(f_limit_low, f_limit_high, color='red', alpha=0.2)
+    plt.grid(True)
     fig.savefig(f'{self.directory}/density_{self.stage:02d}_{self.dt_s:016.12f}.png')
     fig.clf()
     plt.close(fig)
@@ -160,7 +167,7 @@ class DensitySummary:
         if f == 0:
           # frequency not required in summary
           continue
-        if f > 1.0/density.dt_s*len(density.Pxx_sum)/2.0*0.8:
+        if f > 1.0/density.dt_s/2.0*0.6:
           # frequency not required in summary
           continue
         nearest_idx = self.__find_nearest(self.summary_f, f)
@@ -188,9 +195,13 @@ class DensitySummary:
     return best_idx
 
   def plot(self):
+    np.savetxt('summary.txt',np.transpose((self.summary_f, self.summary_d)), fmt='%.5e', delimiter='\t', newline='\n', header='', footer='', comments='# ', encoding=None)
     fig, ax = plt.subplots()
     ax.loglog(self.summary_f, self.summary_d, linewidth=0.1, color='blue')
     plt.ylabel(f'Density [V/Hz^0.5]')
+    plt.ylim( 1e-8,1e-6)
+    plt.xlim(1e-2, 1e5)
+    plt.grid(True)
     fig.savefig(f'{self.directory}/density.png')
     fig.clf()
     plt.close(fig)
@@ -234,7 +245,7 @@ class InFile:
           print('DONE')
           return
         rawA = np.frombuffer(data_bytes, dtype=np.int16)
-        buf_V = FILE_adu * rawA
+        buf_V = FILE_adu * rawA * 0.001 # todoPeter skalierungsfaktor korrekt einbauen
 
         self.out.push(buf_V)
 

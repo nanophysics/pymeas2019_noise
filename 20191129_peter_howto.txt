@@ -1,0 +1,25 @@
+visual studio code installieren
+
+cmd
+python -m pip install --upgrade pip
+
+
+https://msl-equipment.readthedocs.io/en/latest/_api/msl.equipment.resources.picotech.picoscope.html
+
+
+https://www.picotech.com/downloads
+PicoSDK 10.6.13 (32-bit)
+installation der sachen für 5000...
+
+
+(python -m pip install https://github.com/MSLNZ/msl-equipment/archive/master.zip)
+
+python -m pip install msl-package-manager
+(msl list --github)
+msl install equipment
+
+
+peter auf Tisch:
+A: 1 MOhm mal 1000 soll 128 nV
+B: 1 kOhm mal 1000 soll 4.06 nV
+C: short
