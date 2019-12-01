@@ -71,7 +71,7 @@ class PicoScope:
 
     assert type(configSetup.input_Vp) == self.scope.enRange
 
-    self.scope.set_channel('A', coupling='dc', scale=configSetup.input_Vp)
+    self.scope.set_channel('A', coupling='dc', bandwidth='BW_20MHZ', scale=configSetup.input_Vp)
 
     max_samples_bytes = self.scope.memory_segments(num_segments=1)
 
