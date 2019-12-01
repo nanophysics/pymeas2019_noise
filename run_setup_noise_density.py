@@ -3,7 +3,7 @@ from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 
 dict_config_setup = dict(
   diagram_legend = 'Measure Noise Density',
-  duration_s = 1.0,
+  duration_s = 200.0,
   input_channel = 'A',
   skalierungsfaktor = 1.0E-3,   # Amplifier Gain 1000   todoPeter spaeter korrrekt einbauen
   # input_Vp = PS5000ARange.R_10MV,
@@ -27,5 +27,5 @@ if __name__ == '__main__':
   configSetup.measure_for_all_frequencies()
   pass
   configSetup.condense_0to1()
-  program.run_condense_1to2_result()
+  # program.run_condense_1to2_result()
   

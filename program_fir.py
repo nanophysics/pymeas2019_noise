@@ -119,7 +119,7 @@ class Density:
     Dxx = np.sqrt(Pxx) # V/Hz^0.5
     ax.loglog(self.frequencies, Dxx, linewidth=0.1, color=color)
     plt.ylabel(f'Density stage dt_s {self.dt_s:.3e}s ')
-    plt.ylim( 1e-8,1e-6)
+    #plt.ylim( 1e-8,1e-6)
 
     #plt.xlim(1e2, 1e5)
     f_limit_low = 1.0/self.dt_s/2.0*0.6
@@ -194,7 +194,7 @@ class DensitySummary:
     fig, ax = plt.subplots()
     ax.loglog(self.summary_f, self.summary_d, linewidth=0.1, color='blue')
     plt.ylabel(f'Density [V/Hz^0.5]')
-    plt.ylim( 1e-8,1e-6)
+    #plt.ylim( 1e-11,1e-6)
     plt.xlim(1e-2, 1e5) # temp Peter
     plt.grid(True)
     fig.savefig(f'{self.directory}/density.png')
