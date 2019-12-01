@@ -1,3 +1,4 @@
+import os
 import math
 import time
 import numpy as np
@@ -148,9 +149,10 @@ class DensitySummary:
   def __init__(self, list_density, directory='.'):
     self.directory = directory
     self.list_density = list_density
-    self.summary_f = program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8)
-    self.summary_d = [0,] * len(self.summary_f)
-    self.summary_n = [0,] * len(self.summary_f)
+    summary_f = program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8)
+    self.summary_f = np.array(summary_f)
+    self.summary_d = np.zeros(len(self.summary_f), dtype=float)
+    self.summary_n = np.zeros(len(self.summary_f), dtype=int)
     for density in list_density:
       assert isinstance(density, Density)
       if density.Pxx_sum is None:
@@ -201,8 +203,13 @@ class DensitySummary:
       comments='# ',
       encoding=None
     )
+
     fig, ax = plt.subplots()
-    ax.loglog(self.summary_f, self.summary_d, linewidth=0.1, color='blue')
+    # An array with True/False values. True, if the bin-count > 0.5
+    mask = np.array([v > 0.5 for v in self.summary_n])
+    f = self.summary_f[mask]
+    d = self.summary_d[mask]
+    ax.loglog(f, d, linestyle='', marker='o', markersize=2, color='blue')
     plt.ylabel(f'Density [V/Hz^0.5]')
     #plt.ylim( 1e-11,1e-6)
     plt.xlim(1e-2, 1e5) # temp Peter
