@@ -190,7 +190,17 @@ class DensitySummary:
     return best_idx
 
   def plot(self):
-    np.savetxt('summary.txt',np.transpose((self.summary_f, self.summary_d)), fmt='%.5e', delimiter='\t', newline='\n', header='', footer='', comments='# ', encoding=None)
+    filename_summary = os.path.join(self.directory, 'summary.txt')
+    np.savetxt(filename_summary,
+      np.transpose((self.summary_f, self.summary_d)),
+      fmt='%.5e', 
+      delimiter='\t',
+      newline='\n', 
+      header='',
+      footer='', 
+      comments='# ',
+      encoding=None
+    )
     fig, ax = plt.subplots()
     ax.loglog(self.summary_f, self.summary_d, linewidth=0.1, color='blue')
     plt.ylabel(f'Density [V/Hz^0.5]')
