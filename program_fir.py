@@ -21,11 +21,6 @@ assert SAMPLES_SELECT % DECIMATE_FACTOR == 0
 
 FIR_COUNT = 18
 
-# From datafile
-# TODO: Read from file
-FILE_adu = 3.0518509475997192e-06
-FILE_dt_s = 1.6e-08
-
 class FIR:
   def __init__(self, out):
     self.out = out
@@ -225,10 +220,12 @@ class OutTrash:
     pass
 
 class InFile:
-  def __init__(self, out, filename):
+  def __init__(self, out, filename, dt_s, volts_per_adu, skalierungsfaktor):
     self.out = out
     self.filename = filename
-    out.init(stage=0, dt_s=FILE_dt_s)
+    self.volts_per_adu = volts_per_adu
+    self.skalierungsfaktor = skalierungsfaktor
+    out.init(stage=0, dt_s=dt_s)
 
   def process(self):
     with open(self.filename, 'rb') as fA:
@@ -244,8 +241,8 @@ class InFile:
           self.out.flush()
           print('DONE')
           return
-        rawA = np.frombuffer(data_bytes, dtype=np.int16)
-        buf_V = FILE_adu * rawA * 0.001 # todoPeter skalierungsfaktor korrekt einbauen
+        raw16Bit = np.frombuffer(data_bytes, dtype=np.int16)
+        buf_V = self.volts_per_adu * self.skalierungsfaktor * raw16Bit
 
         self.out.push(buf_V)
 
@@ -275,36 +272,4 @@ class InSin:
         return
       self.out.push(s[offset:offset+SAMPLES_SELECT])
       offset += SAMPLES_SELECT
-
-
-if __name__ == '__main__':
-  #
-  #
-  #
-  assert False
-
-  start = time.time()
-  o = OutTrash()
-
-  # 5*1e9 / 2 / (2**12) = 610'351 Samples
-  for i in range(FIR_COUNT):
-    o = Density(o)
-    o = FIR(o)
-
-  o = Density(o)
-  i = InFile(o, 'C:\\Projekte\\ETH-Compact\\versuche_picoscope\\pymeas2019_noise\\0_raw_1s\\data_noise_density.a_bin')
-  # i = InSin(o, time_total_s=200.0, dt_s=0.01)
-  i.process()
-  print(f'Duration {time.time()-start:0.2f}')
-
-  if False:
-      #
-      #
-      #
-      o = OutTrash('file_out.data')
-      for i in range(12):
-        o = FIR(o)
-      with open('file_in.data', 'r') as fin:
-        while array in fin:
-          o.push(array)
 

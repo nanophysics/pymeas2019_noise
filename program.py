@@ -102,7 +102,12 @@ class MeasurementData:
       o = program_fir.FIR(o)
 
     o = program_fir.Density(o, directory=DIRECTORY_1_CONDENSED)
-    i = program_fir.InFile(o, self.configSetup.get_filename_data('a_bin'))
+    i = program_fir.InFile(o,
+      self.configSetup.get_filename_data('a_bin'),
+      dt_s=self.dt_s,
+      volts_per_adu=self.channelA_volts_per_adu,
+      skalierungsfaktor = self.configSetup.skalierungsfaktor
+    )
     i.process()
 
     ds = program_fir.DensitySummary(list_density, directory=DIRECTORY_1_CONDENSED)
@@ -180,6 +185,10 @@ class ConfigSetup:
         if not os.path.exists(directory):
           os.makedirs(directory)
 
+  def delete_directory_contents(self, directory):
+    for filename in os.listdir(directory):
+      os.remove(os.path.join(directory, filename))
+
   def _update_element(self, key, value):
     assert key in self.__dict__
     self.__dict__[key] = value
@@ -208,6 +217,7 @@ class ConfigSetup:
 
   def condense_0to1(self):
     print('condense_0to1')
+    self.delete_directory_contents(DIRECTORY_1_CONDENSED)
     measurementData = MeasurementData(self, read=True)
     measurementData.condense_0to1()
 
