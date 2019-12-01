@@ -22,6 +22,8 @@ assert SAMPLES_SELECT % DECIMATE_FACTOR == 0
 
 FIR_COUNT = 18
 
+useful_part = 0.6 # depending on the downsampling, useful part is the non influenced part by the low pass filtering
+
 class FIR:
   def __init__(self, out):
     self.out = out
@@ -123,7 +125,7 @@ class Density:
     #plt.ylim( 1e-8,1e-6)
 
     #plt.xlim(1e2, 1e5)
-    f_limit_low = 1.0/self.dt_s/2.0*0.6
+    f_limit_low = 1.0/self.dt_s/2.0 * useful_part
     f_limit_high = 1.0/self.dt_s/2.0
     plt.axvspan(f_limit_low, f_limit_high, color='red', alpha=0.2)
     plt.grid(True)
@@ -164,7 +166,7 @@ class DensitySummary:
         if f == 0:
           # frequency not required in summary
           continue
-        if f > 1.0/density.dt_s/2.0*0.6:
+        if f > 1.0/density.dt_s/2.0 * useful_part:
           # frequency not required in summary
           continue
         nearest_idx = self.__find_nearest(self.summary_f, f)
