@@ -39,6 +39,7 @@ from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 
 dict_config_setup_defaults = dict(
   duration_s = 10.0,
+  input_channel = 'A',
   skalierungsfaktor = 1.0,
   input_Vp = PS5000ARange.R_2V,
   result_gain = 1.0,

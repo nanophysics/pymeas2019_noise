@@ -70,8 +70,12 @@ class PicoScope:
     assert isinstance(configSetup, program.ConfigSetup)
 
     assert type(configSetup.input_Vp) == self.scope.enRange
+    all_channels = ('A', 'B', 'C', 'D')
+    assert configSetup.input_channel in all_channels
 
-    self.scope.set_channel('A', coupling='dc', bandwidth='BW_20MHZ', scale=configSetup.input_Vp)
+    for channel in all_channels:
+      enabled = channel in configSetup.input_channel
+      self.scope.set_channel(channel, coupling='dc', bandwidth='BW_20MHZ', scale=configSetup.input_Vp, enabled=enabled)
 
     max_samples_bytes = self.scope.memory_segments(num_segments=1)
 
@@ -98,8 +102,8 @@ class PicoScope:
     # timebaseB_, time_interval_nanosecondsB_ = self.scope.get_minimum_timebase(resolution_, channels_)
     # # timebaseA_=4, time_interval_nanosecondsA_=1.6e-09
 
-    self.scope.set_data_buffer('A')
-    channelA_raw = self.scope.channel['A'].raw
+    self.scope.set_data_buffer(configSetup.input_channel)
+    channel_raw = self.scope.channel[configSetup.input_channel].raw
 
     # logfile = configMeasurement.get_logfile()
     measurementData = program.MeasurementData(configSetup)
@@ -113,7 +117,7 @@ class PicoScope:
         if item is None:
           break
         start_index, num_samples = item
-        measurementData.fA.write(channelA_raw[start_index:start_index+num_samples].tobytes())
+        measurementData.fA.write(channel_raw[start_index:start_index+num_samples].tobytes())
 
     thread = threading.Thread(target=worker)
     thread.start()
@@ -161,7 +165,7 @@ class PicoScope:
     thread.join()
 
     measurementData.close_files()
-    measurementData.channelA_volts_per_adu = self.scope.channel['A'].volts_per_adu
+    measurementData.channelA_volts_per_adu = self.scope.channel[configSetup.input_channel].volts_per_adu
     measurementData.dt_s = dt_s
     measurementData.num_samples = self.actual_sample_count
     measurementData.write()

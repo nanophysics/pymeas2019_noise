@@ -166,8 +166,9 @@ class MeasurementData:
 
 class ConfigSetup:
   def __init__(self):
-    self.skalierungsfaktor = DEFINED_BY_MEASUREMENTS
     self.input_Vp = DEFINED_BY_MEASUREMENTS
+    self.skalierungsfaktor = DEFINED_BY_MEASUREMENTS
+    self.input_channel = DEFINED_BY_SETUP
     self.duration_s = DEFINED_BY_SETUP
     self.max_filesize_bytes = DEFINED_BY_SETUP
     self.setup_name = DEFINED_BY_SETUP
