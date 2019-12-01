@@ -4,3 +4,7 @@
 **/data_*.a_bin
 **/data_*.d_bin
 **/__pycache__
+**/density*.png
+**/summary.txt
+1_condensed/*
+.ipynb_checkpoints
