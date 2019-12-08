@@ -1,12 +1,10 @@
 import re
 import os
 import time
-import queue
 import logging
 import numpy as np
-import threading
-import matplotlib.pyplot as plt
 import program
+import program_measurement_stream
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +43,7 @@ class PicoScope:
     # Limited by: self.scope.set_timebase
     # Limited by: Maximum filesize
 
-    # Programmers Guide "3.6 Timebases", only one channel
+    # Programmers Guide "3.6 Timebases", only one channel_raw
     max_sampling_rate = 62.5e6
     min_dt_s = 1.0/max_sampling_rate
     max_filesize_samples = configSetup.max_filesize_bytes/2 # 2 Bytes per Sample
@@ -73,9 +71,9 @@ class PicoScope:
     all_channels = ('A', 'B', 'C', 'D')
     assert configSetup.input_channel in all_channels
 
-    for channel in all_channels:
-      enabled = channel in configSetup.input_channel
-      self.scope.set_channel(channel, coupling='dc', bandwidth='BW_20MHZ', scale=configSetup.input_Vp, enabled=enabled)
+    for channel_raw in all_channels:
+      enabled = channel_raw in configSetup.input_channel
+      self.scope.set_channel(channel_raw, coupling='dc', bandwidth='BW_20MHZ', scale=configSetup.input_Vp, enabled=enabled)
 
     max_samples_bytes = self.scope.memory_segments(num_segments=1)
 
@@ -103,24 +101,10 @@ class PicoScope:
     # # timebaseA_=4, time_interval_nanosecondsA_=1.6e-09
 
     self.scope.set_data_buffer(configSetup.input_channel)
-    channel_raw = self.scope.channel[configSetup.input_channel].raw
+    channel = self.scope.channel[configSetup.input_channel]
 
-    # logfile = configMeasurement.get_logfile()
-    measurementData = program.MeasurementData(configSetup)
-    measurementData.open_files('wb')
-
-    self.queue = queue.Queue()
-
-    def worker():
-      while True:
-        item = self.queue.get()
-        if item is None:
-          break
-        start_index, num_samples = item
-        measurementData.fA.write(channel_raw[start_index:start_index+num_samples].tobytes())
-
-    thread = threading.Thread(target=worker)
-    thread.start()
+    stream = program_measurement_stream.Stream(dt_s)
+    stream.start()
 
     self.actual_sample_count = 0
     self.streaming_done = False
@@ -132,7 +116,11 @@ class PicoScope:
           'triggered={}, auto_stop={}, p_parameter={}'.format(handle, num_samples, start_index, overflow,
                                   trigger_at, triggered, auto_stop, p_parameter))
 
-      self.queue.put((start_index, num_samples))
+      # self.stream.put(channel_raw[start_index:start_index+num_samples])
+      # See: def volts(self):
+      adu_values = channel.raw[start_index:start_index+num_samples]
+      volts = adu_values * channel._volts_per_adu - channel._voltage_offset
+      stream.put(volts)
 
       if overflow:
         # logfile.write(f'Overflow: {self.actual_sample_count+start_index}\n')
@@ -141,7 +129,7 @@ class PicoScope:
       self.actual_sample_count += num_samples
       if self.actual_sample_count > total_samples:
         self.streaming_done = True
-        self.queue.put(None)
+        stream.put_EOF()
         print('STOP', end='')
 
       if overflow:
@@ -162,14 +150,7 @@ class PicoScope:
     print()
     print(f'Time spent in aquisition {time.time()-start:1.1f}s')
     print('Waiting for thread ...')
-    thread.join()
-
-    measurementData.close_files()
-    measurementData.channelA_volts_per_adu = self.scope.channel[configSetup.input_channel].volts_per_adu
-    measurementData.dt_s = dt_s
-    measurementData.num_samples = self.actual_sample_count
-    measurementData.write()
-    # logfile.close()
+    stream.join()
 
     print('Done')
     self.scope.stop()
