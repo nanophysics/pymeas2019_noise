@@ -35,7 +35,7 @@ class FIR:
     self.out.init(stage=stage+1, dt_s=dt_s*DECIMATE_FACTOR)
 
   def push(self, array_in):
-    assert len(array_in) <= SAMPLES_INPUT
+    # assert len(array_in) <= SAMPLES_INPUT
     samples_missing = SAMPLES_INPUT-len(self.array)
     if samples_missing > len(array_in):
       # Not enough data. Add it to 'self.array'

@@ -176,6 +176,10 @@ class ConfigSetup:
     self.result_gain = DEFINED_BY_SETUP
     self.result_unit = DEFINED_BY_SETUP
     self.reference = DEFINED_BY_SETUP
+    self.bandwitdth = DEFINED_BY_SETUP
+    self.offset = DEFINED_BY_SETUP
+    self.resolution = DEFINED_BY_SETUP
+    self.dt_s = DEFINED_BY_SETUP
 
   def get_filename_data(self, extension, directory=DIRECTORY_0_RAW):
     filename = f'data_{self.setup_name}'
