@@ -267,10 +267,11 @@ class InFile:
 
 
 class InSin:
-  def __init__(self, out, time_total_s=10, dt_s=0.01):
+  def __init__(self, out, time_total_s=10.0, dt_s=0.01):
     self.out = out
     self.time_total_s = time_total_s
     self.dt_s = dt_s
+    out.init(stage=0, dt_s=dt_s)
 
   def process(self):
     t = np.arange(0, self.time_total_s, self.dt_s)
@@ -292,3 +293,27 @@ class InSin:
       self.out.push(s[offset:offset+SAMPLES_SELECT])
       offset += SAMPLES_SELECT
 
+class SampleProcess:
+  def __init__(self, fir_count=FIR_COUNT):
+    import time
+    import program
+
+    self.list_density = []
+    self.start = time.time()
+    o = OutTrash()
+
+    for i in range(fir_count):
+      o = Density(o, directory=program.DIRECTORY_1_CONDENSED)
+      self.list_density.append(o)
+      o = FIR(o)
+
+    o = Density(o, directory=program.DIRECTORY_1_CONDENSED)
+    self.output = o
+  
+  def plot(self):
+    import time
+    import program
+    ds = DensitySummary(self.list_density, directory=program.DIRECTORY_1_CONDENSED)
+    ds.plot()
+
+    print(f'Duration {time.time()-self.start:0.2f}')
