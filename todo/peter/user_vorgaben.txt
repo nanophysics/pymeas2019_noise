@@ -1,4 +1,4 @@
-first
+fast
 	picoscope 
 	range	0.1 # oder auto
 	offset	0.0 # oder auto
@@ -7,7 +7,7 @@ first
 	dt_s	1.0 / 125E6
 	duration_s	2
 
-second
+medium
 	picoscope
 	range	0.1 # oder auto
 	offset	0.0 # oder auto
@@ -16,7 +16,7 @@ second
 	dt_s	1.0 / 64E6
 	duration_s	2
 
-third
+slow
 	picoscope
 	range	0.1 # oder auto
 	offset	0.0 # oder auto

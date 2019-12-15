@@ -18,7 +18,7 @@ from msl.equipment.resources.picotech.picoscope import callbacks
 from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 
 class PicoScope:
-  def __init__(self, config):
+  def __init__(self, configStep):
     self.record = msl.equipment.EquipmentRecord(
       manufacturer='Pico Technology',
       model='5442D',
@@ -28,7 +28,7 @@ class PicoScope:
         address='SDK::ps5000a',
         # properties={'open_async': True},  # opening in async mode is done in the properties
         properties=dict(
-          resolution=config.resolution,
+          resolution=configStep.resolution,
           # resolution='15bit',
           # resolution='16bit',  # only used for ps5000a series PicoScope's
           auto_select_power=False,  # for PicoScopes that can be powered by an AC adaptor or by a USB cable
@@ -39,21 +39,24 @@ class PicoScope:
   def connect(self):
     self.scope = self.record.connect()  # establish a connection to the PicoScope
 
-  def calculate_dt_s(self, configSetup, max_samples_bytes):
-    # Given: configSetup.duration_s
+  def close(self):
+    self.scope.disconnect()
+
+  def calculate_dt_s(self, configStep, max_samples_bytes):
+    # Given: configStep.duration_s
     # Required: selected_dt_s
     # Limited by: self.scope.set_timebase
     # Limited by: Maximum filesize
 
     # Programmers Guide "3.6 Timebases", only one channel_raw
     max_sampling_rate = 62.5e6
-    if configSetup.dt_s is not None:
-      selected1_dt_s = configSetup.dt_s
+    if configStep.dt_s is not None:
+      selected1_dt_s = configStep.dt_s
     else:
       min_dt_s = 1.0/max_sampling_rate
-      max_filesize_samples = configSetup.max_filesize_bytes/2 # 2 Bytes per Sample
+      max_filesize_samples = configStep.max_filesize_bytes/2 # 2 Bytes per Sample
       # filesize_dt_s: The sampling rate for maximal filesize
-      filesize_dt_s = configSetup.duration_s/max_filesize_samples
+      filesize_dt_s = configStep.duration_s/max_filesize_samples
       selected1_dt_s = min_dt_s
       if filesize_dt_s > min_dt_s:
         selected1_dt_s = filesize_dt_s
@@ -61,32 +64,32 @@ class PicoScope:
 
     selected2_dt_s, num_samples = self.scope.set_timebase(selected1_dt_s, max_samples_bytes*selected1_dt_s)  # sample the voltage on Channel A every 1 us, for 100 us
 
-    if configSetup.dt_s is not None:
-      assert math.isclose(selected2_dt_s, configSetup.dt_s), f'selected2_dt_s {selected2_dt_s} != configSetup.dt_s {configSetup.dt_s}'
+    if configStep.dt_s is not None:
+      # assert math.isclose(selected2_dt_s, configStep.dt_s), f'selected2_dt_s {selected2_dt_s} != configStep.dt_s {configStep.dt_s}'
+      assert 0.9 < (selected2_dt_s/configStep.dt_s) < 1.1, f'selected2_dt_s {selected2_dt_s} != configStep.dt_s {configStep.dt_s}'
 
     return selected2_dt_s
-    # print(f'configSetup.duration_s={configSetup.duration_s:.4e}, total_samples={total_samples}, total_samples*selected_dt_s={total_samples*selected_dt_s:.4e}')
+    # print(f'configStep.duration_s={configStep.duration_s:.4e}, total_samples={total_samples}, total_samples*selected_dt_s={total_samples*selected_dt_s:.4e}')
     # print(f'set_timebase({desired_dt_s:.4e}) -> {selected_dt_s:.4e}')
     # total_samples_before = total_samples
-    # total_samples = int(configSetup.duration_s/selected_dt_s)
+    # total_samples = int(configStep.duration_s/selected_dt_s)
     # print(f'total_samples={total_samples_before}) -> {total_samples}')
 
+  def acquire(self, configStep, stream_output):
+    assert isinstance(configStep, program.ConfigStep)
 
-  def acquire(self, configSetup, stream_output):
-    assert isinstance(configSetup, program.ConfigSetup)
-
-    assert type(configSetup.input_Vp) == self.scope.enRange
+    assert type(configStep.input_Vp) == self.scope.enRange
     all_channels = ('A', 'B', 'C', 'D')
-    assert configSetup.input_channel in all_channels
+    assert configStep.input_channel in all_channels
 
     for channel_raw in all_channels:
-      enabled = channel_raw in configSetup.input_channel
-      self.scope.set_channel(channel_raw, coupling='dc', bandwidth=configSetup.bandwitdth, offset=configSetup.offset, scale=configSetup.input_Vp, enabled=enabled)
+      enabled = channel_raw in configStep.input_channel
+      self.scope.set_channel(channel_raw, coupling='dc', bandwidth=configStep.bandwitdth, offset=configStep.offset, scale=configStep.input_Vp, enabled=enabled)
 
     max_samples_bytes = self.scope.memory_segments(num_segments=1)
 
-    dt_s = self.calculate_dt_s(configSetup, max_samples_bytes)
-    total_samples = int(configSetup.duration_s/dt_s)
+    dt_s = self.calculate_dt_s(configStep, max_samples_bytes)
+    total_samples = int(configStep.duration_s/dt_s)
     print(f'Choosen dt_s {dt_s:.3e}s and filesize {total_samples*2}Bytes')
 
     # PicoScope 6
@@ -108,8 +111,8 @@ class PicoScope:
     # timebaseB_, time_interval_nanosecondsB_ = self.scope.get_minimum_timebase(resolution_, channels_)
     # # timebaseA_=4, time_interval_nanosecondsA_=1.6e-09
 
-    self.scope.set_data_buffer(configSetup.input_channel)
-    channel = self.scope.channel[configSetup.input_channel]
+    self.scope.set_data_buffer(configStep.input_channel)
+    channel = self.scope.channel[configStep.input_channel]
 
     stream = program_measurement_stream.Stream(stream_output, dt_s=dt_s)
     stream.start()

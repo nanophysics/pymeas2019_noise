@@ -75,17 +75,24 @@ class FIR:
     array_decimated = array_decimated[index_from:index_to]
     return array_decimated
 
+
+class SampleProcessConfig:
+  def __init__(self, configStep, interval_s=0.9):
+    self.fir_count = configStep.fir_count
+    self.stepname = configStep.stepname
+    self.interval_s = interval_s
+
 SAMPLES_DENSITY = 2**12
 
 class Density:
-  def __init__(self, out, directory='.', interval_s=0.9):
+  def __init__(self, out, config, directory):
     self.out = out
     self.time_s = 0.0
     self.next_s = 0.0
     self.Pxx_sum = None
     self.Pxx_n = 0
+    self.config = config
     self.directory = directory
-    self.interval_s = interval_s
 
   def init(self, stage, dt_s):
     self.stage = stage
@@ -98,7 +105,7 @@ class Density:
   def push(self, array_in):
     self.time_s += self.dt_s * len(array_in)
     if self.time_s > self.next_s:
-      self.next_s += self.interval_s
+      self.next_s += self.config.interval_s
       # self.next_s = self.time_s + self.interval_s
       self.density(array_in)
 
@@ -115,7 +122,7 @@ class Density:
     self.frequencies, Pxx = scipy.signal.periodogram(array_density, 1/self.dt_s, window='hamming',) #Hz, V^2/Hz
     self.__density_averaging(array_density, Pxx)
 
-    filenameFull = DensityPlot.save(program.DIRECTORY_1_CONDENSED, self.stage, self.dt_s, self.frequencies, self.Pxx_n, self.Pxx_sum)
+    filenameFull = DensityPlot.save(self.config, self.directory, self.stage, self.dt_s, self.frequencies, self.Pxx_n, self.Pxx_sum)
     if False:
       densityPeriodogram = DensityPlot(filenameFull)
       densityPeriodogram.plot(program.DIRECTORY_1_CONDENSED)
@@ -134,9 +141,10 @@ class Density:
 
 class DensityPlot:
   @classmethod
-  def save(cls, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum):
-    filename = f'density_{stage:02d}.pickle'
+  def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum):
+    filename = f'densitystep_{config.stepname}_{stage:02d}.pickle'
     data = {
+      'stepname': config.stepname,
       'stage': stage,
       'dt_s': dt_s,
       'frequencies': frequencies,
@@ -150,18 +158,18 @@ class DensityPlot:
     return filenameFull
 
   @classmethod
-  def directory_plot(cls, directory):
+  def directory_plot(cls, directory_in, directory_out):
     '''
       Loop for all densitty-files in directory and plot.
     '''
-    for filename in os.listdir(directory):
-      if filename.startswith('density_') and filename.endswith('.pickle'):
-        filenameFull = os.path.join(directory, filename)
+    for filename in os.listdir(directory_in):
+      if filename.startswith('densitystep_') and filename.endswith('.pickle'):
+        filenameFull = os.path.join(directory_in, filename)
         densityPeriodogram = DensityPlot(filenameFull)
-        densityPeriodogram.plot(directory)
+        densityPeriodogram.plot(directory_out)
 
   @classmethod
-  def directory_plot_thread(cls, directory):
+  def directory_plot_thread(cls, directory_in, directory_out):
     class WorkerThread(threading.Thread):
       def __init__(self, *args, **keywords): 
         threading.Thread.__init__(self, *args, **keywords) 
@@ -171,7 +179,7 @@ class DensityPlot:
       def run(self):
         while True:
           time.sleep(2.0)
-          cls.directory_plot(directory)
+          cls.directory_plot(directory_in, directory_out)
           if self.__stop:
             return
 
@@ -184,6 +192,7 @@ class DensityPlot:
   def __init__(self, filenameFull):
     with open(filenameFull, 'rb') as f:
       data = pickle.load(f)
+    self.stepname = data['stepname']
     self.stage = data['stage']
     self.dt_s = data['dt_s']
     self.frequencies = data['frequencies']
@@ -209,15 +218,16 @@ class DensityPlot:
     f_limit_high = 1.0/self.dt_s/2.0
     plt.axvspan(f_limit_low, f_limit_high, color='red', alpha=0.2)
     plt.grid(True)
-    fig.savefig(f'{directory}/density_{self.stage:02d}_{self.dt_s:016.12f}.png')
+    fig.savefig(f'{directory}/density_{self.stepname}_{self.stage:02d}_{self.dt_s:016.12f}.png')
     fig.clf()
     plt.close(fig)
     plt.clf()
 
 class DensitySummary:
-  def __init__(self, list_density, directory='.'):
-    self.directory = directory
+  def __init__(self, list_density, config, directory):
     self.list_density = list_density
+    self.config = config
+    self.directory = directory
     summary_f = program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8)
     self.summary_f = np.array(summary_f)
     self.summary_d = np.zeros(len(self.summary_f), dtype=float)
@@ -261,7 +271,7 @@ class DensitySummary:
     return best_idx
 
   def plot(self):
-    filename_summary = os.path.join(self.directory, 'summary.txt')
+    filename_summary = f'{self.directory}/summary_{self.config.stepname}.txt'
     np.savetxt(filename_summary,
       np.transpose((self.summary_f, self.summary_d)),
       fmt='%.5e', 
@@ -283,7 +293,7 @@ class DensitySummary:
     #plt.ylim( 1e-11,1e-6)
     plt.xlim(1e-2, 1e5) # temp Peter
     plt.grid(True)
-    fig.savefig(f'{self.directory}/density.png')
+    fig.savefig(f'{self.directory}/densitysummary_{self.config.stepname}.png')
     fig.clf()
     plt.close(fig)
     plt.clf()
@@ -360,18 +370,21 @@ class InSin:
       offset += SAMPLES_SELECT
 
 class SampleProcess:
-  def __init__(self, fir_count=FIR_COUNT):
+  def __init__(self, config, directory_raw, directory_condensed):
+    self.config = config
+    self.directory_raw = directory_raw
+    self.directory_condensed = directory_condensed
     self.list_density = []
     o = OutTrash()
 
-    for i in range(fir_count):
-      o = Density(o, directory=program.DIRECTORY_1_CONDENSED)
+    for i in range(config.fir_count):
+      o = Density(o, config=config, directory=self.directory_raw)
       self.list_density.append(o)
       o = FIR(o)
 
-    o = Density(o, directory=program.DIRECTORY_1_CONDENSED)
+    o = Density(o, config=config, directory=self.directory_raw)
     self.output = o
   
   def plot(self):
-    ds = DensitySummary(self.list_density, directory=program.DIRECTORY_1_CONDENSED)
+    ds = DensitySummary(self.list_density, config=self.config, directory=self.directory_condensed)
     ds.plot()

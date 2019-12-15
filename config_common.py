@@ -8,8 +8,8 @@ from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 # PicoScope5000A<Pico Technology|5442D| at SDK::ps5000a> PICO_SIG_GEN_PARAM: Incorrect parameter passed to signal generator.
 # Traceback (most recent call last):
 #   File "run_config_ch1.py", line 12, in <module>
-#     configSetup.measure_for_all_frequencies()
-#   File "C:\Projekte\ETH-Compact\versuche_picoscope\pymeas2019\program.py", line 239, in measure_for_all_frequencies
+#     configSetup.measure_for_all_steps()
+#   File "C:\Projekte\ETH-Compact\versuche_picoscope\pymeas2019\program.py", line 239, in measure_for_all_steps
 #     picoscope.acquire(config)
 #   File "C:\Projekte\ETH-Compact\versuche_picoscope\pymeas2019\program_picoscope_5442D.py", line 65, in acquire
 #     self.scope.set_sig_gen_builtin_v2(start_frequency=config.frequency_Hz, wave_type='sine', pk_to_pk=pk_to_pk, sweeps=0)
@@ -38,12 +38,6 @@ from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 #     R_MAX   = 12
 
 dict_config_setup_defaults = dict(
-  duration_s = 10.0,
-  input_channel = 'A',
-  skalierungsfaktor = 1.0,
-  input_Vp = PS5000ARange.R_2V,
-  result_gain = 1.0,
-  result_unit = '1',
-  reference = None,
-  max_filesize_bytes = 200e6,
+  diagram_legend = 'dummyname',
+  steps = (),
 )
