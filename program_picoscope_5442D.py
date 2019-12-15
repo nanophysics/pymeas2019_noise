@@ -29,6 +29,7 @@ class PicoScope:
         address='SDK::ps5000a',
         # properties={'open_async': True},  # opening in async mode is done in the properties
         properties=dict(
+          # resolution='14bit',
           # resolution='15bit',
           resolution='16bit',  # only used for ps5000a series PicoScope's
           auto_select_power=False,  # for PicoScopes that can be powered by an AC adaptor or by a USB cable
@@ -75,7 +76,8 @@ class PicoScope:
 
     for channel in all_channels:
       enabled = channel in configSetup.input_channel
-      self.scope.set_channel(channel, coupling='dc', bandwidth='BW_20MHZ', scale=configSetup.input_Vp, enabled=enabled)
+      #self.scope.set_channel(channel, coupling='dc', bandwidth='BW_20MHZ', offset = -0.0075, scale=configSetup.input_Vp, enabled=enabled)
+      self.scope.set_channel(channel, coupling='dc', bandwidth='BW_20MHZ', offset = 0.0, scale=configSetup.input_Vp, enabled=enabled)
 
     max_samples_bytes = self.scope.memory_segments(num_segments=1)
 
