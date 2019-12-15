@@ -32,7 +32,7 @@ DEFINED_BY_SETUP='DEFINED_BY_SETUP'
 
 pp = pprint.PrettyPrinter(indent=2)
 
-class MeasurementData:
+class MeasurementDataObsolete:
   def __init__(self, configSetup, read=False):
     assert isinstance(configSetup, ConfigSetup)
 
@@ -216,9 +216,14 @@ class ConfigSetup:
     self._update_element('setup_name', setup_name)
 
   def measure_for_all_frequencies(self):
+    import program_fir
+    sample_process = program_fir.SampleProcess(fir_count=3)
+
     picoscope = program_picoscope.PicoScope(self)
     picoscope.connect()
-    picoscope.acquire(self)
+    picoscope.acquire(self, sample_process.output)
+
+    sample_process.plot()
 
   def condense_0to1(self):
     print('condense_0to1')

@@ -4,7 +4,6 @@ import time
 import logging
 import numpy as np
 import program
-import program_fir
 import program_measurement_stream
 
 logger = logging.getLogger(__name__)
@@ -72,7 +71,7 @@ class PicoScope:
     # print(f'total_samples={total_samples_before}) -> {total_samples}')
 
 
-  def acquire(self, configSetup):
+  def acquire(self, configSetup, stream_output):
     assert isinstance(configSetup, program.ConfigSetup)
 
     assert type(configSetup.input_Vp) == self.scope.enRange
@@ -111,8 +110,7 @@ class PicoScope:
     self.scope.set_data_buffer(configSetup.input_channel)
     channel = self.scope.channel[configSetup.input_channel]
 
-    sample_process = program_fir.SampleProcess(fir_count=3)
-    stream = program_measurement_stream.Stream(sample_process.output, dt_s=dt_s)
+    stream = program_measurement_stream.Stream(stream_output, dt_s=dt_s)
     stream.start()
 
     self.actual_sample_count = 0
@@ -139,10 +137,10 @@ class PicoScope:
       if self.actual_sample_count > total_samples:
         self.streaming_done = True
         stream.put_EOF()
-        print('STOP', end='')
+        print(r'\nSTOP', end='')
 
       if overflow:
-        print('\noverflow')
+        print(r'\noverflow')
       print('.', end='')
 
       assert auto_stop == False
@@ -160,7 +158,6 @@ class PicoScope:
     print(f'Time spent in aquisition {time.time()-start:1.1f}s')
     print('Waiting for thread ...')
     stream.join()
-    sample_process.plot()
 
     print('Done')
     self.scope.stop()

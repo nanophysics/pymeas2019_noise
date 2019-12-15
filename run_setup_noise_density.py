@@ -30,9 +30,14 @@ dict_config_setup = dict(
 )
 
 if __name__ == '__main__':
+  # import program_fir
+  # thread = program_fir.DensityPlot.directory_plot_thread(program.DIRECTORY_1_CONDENSED)
   configSetup = program.get_configSetup_by_filename(__file__)
   configSetup.measure_for_all_frequencies()
+  # import time
+  # time.sleep(10.0)
+  # thread.stop()
   pass
-  configSetup.condense_0to1()
+  # configSetup.condense_0to1()
   # program.run_condense_1to2_result()
   

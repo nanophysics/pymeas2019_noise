@@ -1,9 +1,12 @@
 import os
 import math
 import time
-import numpy as np
 import scipy.signal
+import numpy as np
+import pickle
+import threading
 import matplotlib.pyplot as plt
+import program
 import program_config_frequencies
 
 #   <---------------- INPUT ---------========------->
@@ -79,7 +82,6 @@ class Density:
     self.out = out
     self.time_s = 0.0
     self.next_s = 0.0
-    self.frequencies = None
     self.Pxx_sum = None
     self.Pxx_n = 0
     self.directory = directory
@@ -112,6 +114,83 @@ class Density:
     self.frequencies, Pxx = scipy.signal.periodogram(array_density, 1/self.dt_s, window='hamming',) #Hz, V^2/Hz
     self.__density_averaging(array_density, Pxx)
 
+    filenameFull = DensityPlot.save(program.DIRECTORY_1_CONDENSED, self.stage, self.dt_s, self.frequencies, self.Pxx_n, self.Pxx_sum)
+    if False:
+      densityPeriodogram = DensityPlot(filenameFull)
+      densityPeriodogram.plot(program.DIRECTORY_1_CONDENSED)
+
+  def __density_averaging(self, array_density, Pxx):
+      if len(array_density) < SAMPLES_DENSITY:
+        return
+
+      # Averaging
+      self.Pxx_n += 1
+      if self.Pxx_sum is None:
+        self.Pxx_sum = Pxx
+        return
+      assert len(self.Pxx_sum) == len(Pxx)
+      self.Pxx_sum += Pxx
+
+class DensityPlot:
+  @classmethod
+  def save(cls, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum):
+    filename = f'density_{stage:02d}.pickle'
+    data = {
+      'stage': stage,
+      'dt_s': dt_s,
+      'frequencies': frequencies,
+      'Pxx_n': Pxx_n,
+      'Pxx_sum': Pxx_sum,
+    }
+    filenameFull = os.path.join(directory, filename)
+    with open(filenameFull, 'wb') as f:
+      pickle.dump(data, f)
+
+    return filenameFull
+
+  @classmethod
+  def directory_plot(cls, directory):
+    '''
+      Loop for all densitty-files in directory and plot.
+    '''
+    for filename in os.listdir(directory):
+      if filename.startswith('density_') and filename.endswith('.pickle'):
+        filenameFull = os.path.join(directory, filename)
+        densityPeriodogram = DensityPlot(filenameFull)
+        densityPeriodogram.plot(directory)
+
+  @classmethod
+  def directory_plot_thread(cls, directory):
+    class WorkerThread(threading.Thread):
+      def __init__(self, *args, **keywords): 
+        threading.Thread.__init__(self, *args, **keywords) 
+        self.__stop = False
+        self.start()
+
+      def run(self):
+        while True:
+          time.sleep(2.0)
+          cls.directory_plot(directory)
+          if self.__stop:
+            return
+
+      def stop(self):
+        self.__stop = True
+        self.join()
+
+    return WorkerThread()
+
+  def __init__(self, filenameFull):
+    with open(filenameFull, 'rb') as f:
+      data = pickle.load(f)
+    self.stage = data['stage']
+    self.dt_s = data['dt_s']
+    self.frequencies = data['frequencies']
+    self.Pxx_n = data['Pxx_n']
+    self.Pxx_sum = data['Pxx_sum']
+    print(f'DensityPlot {self.stage} {self.dt_s} {filenameFull}')
+
+  def plot(self, directory):
     fig, ax = plt.subplots()
     color = 'blue'
     if self.Pxx_sum is not None:
@@ -129,23 +208,10 @@ class Density:
     f_limit_high = 1.0/self.dt_s/2.0
     plt.axvspan(f_limit_low, f_limit_high, color='red', alpha=0.2)
     plt.grid(True)
-    fig.savefig(f'{self.directory}/density_{self.stage:02d}_{self.dt_s:016.12f}.png')
+    fig.savefig(f'{directory}/density_{self.stage:02d}_{self.dt_s:016.12f}.png')
     fig.clf()
     plt.close(fig)
     plt.clf()
-
-  def __density_averaging(self, array_density, Pxx):
-      if len(array_density) < SAMPLES_DENSITY:
-        return
-
-      # Averaging
-      self.Pxx_n += 1
-      if self.Pxx_sum is None:
-        self.Pxx_sum = Pxx
-        return
-      assert len(self.Pxx_sum) == len(Pxx)
-      self.Pxx_sum += Pxx
-
 
 class DensitySummary:
   def __init__(self, list_density, directory='.'):
@@ -265,7 +331,6 @@ class InFile:
 
         self.out.push(buf_V)
 
-
 class InSin:
   def __init__(self, out, time_total_s=10.0, dt_s=0.01):
     self.out = out
@@ -295,11 +360,7 @@ class InSin:
 
 class SampleProcess:
   def __init__(self, fir_count=FIR_COUNT):
-    import time
-    import program
-
     self.list_density = []
-    self.start = time.time()
     o = OutTrash()
 
     for i in range(fir_count):
@@ -311,9 +372,5 @@ class SampleProcess:
     self.output = o
   
   def plot(self):
-    import time
-    import program
     ds = DensitySummary(self.list_density, directory=program.DIRECTORY_1_CONDENSED)
     ds.plot()
-
-    print(f'Duration {time.time()-self.start:0.2f}')
