@@ -1,0 +1,34 @@
+first
+	picoscope 
+	range	0.1 # oder auto
+	offset	0.0 # oder auto
+	channel	A
+	bit	15
+	dt_s	1.0 / 125E6
+	duration_s	2
+
+second
+	picoscope
+	range	0.1 # oder auto
+	offset	0.0 # oder auto
+	channel	A
+	bit	16
+	dt_s	1.0 / 64E6
+	duration_s	2
+
+third
+	picoscope
+	range	0.1 # oder auto
+	offset	0.0 # oder auto
+	channel	B  # bereits tiefpass gefiltert fg...
+	bit	16
+	dt_s	1.0 / 100E5
+	duration_s	infinite # bis abbruch durch Benutzer
+
+concentration:
+
+density
+
+first 
+	f_low = 10 E6 
+
