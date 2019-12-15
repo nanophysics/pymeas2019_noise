@@ -22,7 +22,7 @@ assert SAMPLES_SELECT % DECIMATE_FACTOR == 0
 
 FIR_COUNT = 18
 
-useful_part = 0.6 # depending on the downsampling, useful part is the non influenced part by the low pass filtering
+useful_part = 0.75 # depending on the downsampling, useful part is the non influenced part by the low pass filtering
 
 class FIR:
   def __init__(self, out):
@@ -108,6 +108,7 @@ class Density:
       array_density = array_in[:SAMPLES_DENSITY]
 
     print(f'Stage {self.stage:02d}: Density: {self.dt_s:016.12f}, len(self.array)={len(array_in)} -> {len(array_density)}')
+    print("Average: %0.9f V" % np.mean(array_density))
 
     self.frequencies, Pxx = scipy.signal.periodogram(array_density, 1/self.dt_s, window='hamming',) #Hz, V^2/Hz
     self.__density_averaging(array_density, Pxx)
