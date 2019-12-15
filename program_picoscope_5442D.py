@@ -1,5 +1,6 @@
 import re
 import os
+import math
 import time
 import logging
 import numpy as np
@@ -61,7 +62,7 @@ class PicoScope:
     selected2_dt_s, num_samples = self.scope.set_timebase(selected1_dt_s, max_samples_bytes*selected1_dt_s)  # sample the voltage on Channel A every 1 us, for 100 us
 
     if configSetup.dt_s is not None:
-      assert selected2_dt_s == configSetup.dt_s, f'selected2_dt_s {selected2_dt_s} != configSetup.dt_s {configSetup.dt_s}'
+      assert math.isclose(selected2_dt_s, configSetup.dt_s), f'selected2_dt_s {selected2_dt_s} != configSetup.dt_s {configSetup.dt_s}'
 
     return selected2_dt_s
     # print(f'configSetup.duration_s={configSetup.duration_s:.4e}, total_samples={total_samples}, total_samples*selected_dt_s={total_samples*selected_dt_s:.4e}')
@@ -127,7 +128,11 @@ class PicoScope:
       # See: def volts(self):
       adu_values = channel.raw[start_index:start_index+num_samples]
       volts = adu_values * channel._volts_per_adu - channel._voltage_offset
-      stream.put(volts)
+      queueFull = stream.put(volts)
+      if queueFull:
+        self.streaming_done = True
+        stream.put_EOF()
+        print(r'\nSTOP(queue full)', end='')
 
       if overflow:
         # logfile.write(f'Overflow: {self.actual_sample_count+start_index}\n')
@@ -137,7 +142,7 @@ class PicoScope:
       if self.actual_sample_count > total_samples:
         self.streaming_done = True
         stream.put_EOF()
-        print(r'\nSTOP', end='')
+        print(r'\nSTOP(time over)', end='')
 
       if overflow:
         print(r'\noverflow')

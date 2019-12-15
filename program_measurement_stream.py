@@ -1,5 +1,14 @@
+import sys
 import queue
 import threading
+
+is64bit = sys.maxsize > 2**32
+if is64bit:
+  SIZE_MAX_BYTES = 1e9
+else:
+  SIZE_MAX_BYTES = 1e8
+BYTES_FLOAT = 8
+SIZE_MAX_FLOATS = SIZE_MAX_BYTES//BYTES_FLOAT
 
 class Stream:
   def __init__(self, out, dt_s):
@@ -7,6 +16,7 @@ class Stream:
     self.dt_s = dt_s
     self.list_overflow = []
     self.queue = queue.Queue()
+    self.queue_size = 0
     self.out.init(stage=0, dt_s=dt_s)
 
   def worker(self):
@@ -15,6 +25,8 @@ class Stream:
       if array_in is None:
         self.out.flush()
         break
+      self.queue_size -= len(array_in)
+      assert self.queue_size >= 0
       self.out.push(array_in)
 
   def start(self):
@@ -26,6 +38,10 @@ class Stream:
 
   def put(self, volts):
     self.queue.put(volts)
+    assert self.queue_size >= 0
+    self.queue_size += len(volts)
+    # Return True if queue is full
+    return self.queue_size > SIZE_MAX_FLOATS
 
   def join(self):
     self.thread.join()

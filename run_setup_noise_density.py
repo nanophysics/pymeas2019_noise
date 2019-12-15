@@ -22,8 +22,9 @@ dict_config_setup = dict(
   resolution = '16bit',
   # duration_s = 0.1,
   # dt_s = 1.6e-08,
-  duration_s = 1.0,
-  dt_s = 1.6e-07,
+  # dt_s = 1.6e-07,
+  duration_s = 100.0,
+  dt_s = 1.6e-08,
   # dt_s = None,
 
   max_filesize_bytes = 5e9,
@@ -37,6 +38,9 @@ if __name__ == '__main__':
   # import time
   # time.sleep(10.0)
   # thread.stop()
+
+  import program_fir
+  program_fir.DensityPlot.directory_plot(program.DIRECTORY_1_CONDENSED)
   pass
   # configSetup.condense_0to1()
   # program.run_condense_1to2_result()
