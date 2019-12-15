@@ -52,7 +52,7 @@ dict_config_setup = dict(
       # External
       skalierungsfaktor = 1.0E-3,   # Amplifier Gain 1000   todoPeter spaeter korrrekt einbauen
       # Processing
-      fir_count = 3,
+      fir_count = 12,
       # Picoscope
       input_channel = 'A',
       input_Vp = PS5000ARange.R_100MV,
