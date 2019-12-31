@@ -1,0 +1,6 @@
+Peter Maerki 2019-12-02_12_21_02
+
+
+Damit weniger Flickernoise:
+Optimaler Range, Offset automatisch abgleichen und einrechnen.
+
