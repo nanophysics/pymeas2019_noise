@@ -22,7 +22,7 @@ assert SAMPLES_SELECT % DECIMATE_FACTOR == 0
 
 FIR_COUNT = 18
 
-useful_part = 0.6 # depending on the downsampling, useful part is the non influenced part by the low pass filtering
+useful_part = 0.75 # depending on the downsampling, useful part is the non influenced part by the low pass filtering
 
 class FIR:
   def __init__(self, out):

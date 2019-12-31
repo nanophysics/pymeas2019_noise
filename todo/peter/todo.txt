@@ -1,0 +1,33 @@
+Peter Maerki 2019-12-02_12_21_02
+
+
+
+
+
+Damit weniger Flickernoise:
+Optimaler Range, Offset automatisch abgleichen und einrechnen.
+
+
+
+
+je Fir Stufe:
+
+
+namen:
+fft density, ganz am schluss in bändern E12
+step_size sprunghoehen, in bändern E12
+time_series
+
+fmax_Hz = 1.0 / (dt_s * 2) # highest frequency in spectogram
+useful_part = 0.75 # depending on the downsampling, useful part is the non influenced part by the low pass filtering of the FIR stage
+f_high_limit_Hz = useful_part * fmax_Hz
+f_low_limit_Hz = f_high_limit_Hz / DECIMATE_FACTOR   # every FIR stage reduces sampling frequency by factor DECIMATE_FACTOR
+
+
+Spektren zusammenfügen für eine samplefrequenz:
+z.B. first , siehe join.jpg
+
+alle samplefrequenzen zusammen
+gemäss vorgaben user mit frequenzgrenzen je samplefrequenz
+die einzelnen messwerte den E12 bändern zuordnen
+
