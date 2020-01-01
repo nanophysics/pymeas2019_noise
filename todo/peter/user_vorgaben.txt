@@ -51,3 +51,24 @@ plt.ylim( 1e-8,1e-6)
 plt.xlim(1e2, 1e5)
 series='E12'
 
+abspeichern als svg
+
+idee struktur files
+
+1_condensed
+1_condensed/run_create_plot.py
+1_condensed/20191231_23_10_red__input_noise_xy
+1_condensed/20191231_23_10_red__input_noise_xy/run_create_plot.py
+1_condensed/20191231_23_40_black__condensed
+1_condensed/20191231_23_40_black__condensed/run_create_plot.py
+
+im file run_create_plot.py 
+	parameter für den plot vorgegeben
+bei mehreren unterordnern werden alle messwerte in einem plot dargestellt
+allenfalls vorgabe farbe der linie in ordnernahmen
+name der kurve im plot: input_noise_xy, also ohne farbe und ohne datum
+
+
+
+
+

@@ -31,3 +31,7 @@ alle samplefrequenzen zusammen
 gemäss vorgaben user mit frequenzgrenzen je samplefrequenz
 die einzelnen messwerte den E12 bändern zuordnen
 
+
+Idee Live update:
+https://pythonprogramming.net/python-matplotlib-live-updating-graphs/
+https://towardsdatascience.com/animations-with-matplotlib-d96375c5442c
