@@ -160,7 +160,7 @@ class DensityPlot:
   @classmethod
   def directory_plot(cls, directory_in, directory_out):
     '''
-      Loop for all densitty-files in directory and plot.
+      Loop for all densitystage-files in directory and plot.
     '''
     for filename in os.listdir(directory_in):
       if filename.startswith('densitystep_') and filename.endswith('.pickle'):
@@ -201,14 +201,16 @@ class DensityPlot:
     print(f'DensityPlot {self.stage} {self.dt_s} {filenameFull}')
 
   def plot(self, directory):
+    filenameFull = f'{directory}/densitystep_{self.stepname}_{self.stage:02d}_{self.dt_s:016.12f}.png'
+    if self.Pxx_sum is None:
+      print(f'No Pxx: skipped {filenameFull}')
+      return
+
+    # If we have averaged values, use it
     fig, ax = plt.subplots()
-    color = 'blue'
-    if self.Pxx_sum is not None:
-      # If we have averaged values, use it
-      Pxx = self.Pxx_sum/self.Pxx_n
-      if self.Pxx_n == 1:
-        color = 'fuchsia'
+    Pxx = self.Pxx_sum/self.Pxx_n
     Dxx = np.sqrt(Pxx) # V/Hz^0.5
+    color = 'fuchsia' if self.Pxx_n == 1 else 'blue'
     ax.loglog(self.frequencies, Dxx, linewidth=0.1, color=color)
     plt.ylabel(f'Density stage dt_s {self.dt_s:.3e}s ')
     #plt.ylim( 1e-8,1e-6)
@@ -218,7 +220,7 @@ class DensityPlot:
     f_limit_high = 1.0/self.dt_s/2.0
     plt.axvspan(f_limit_low, f_limit_high, color='red', alpha=0.2)
     plt.grid(True)
-    fig.savefig(f'{directory}/density_{self.stepname}_{self.stage:02d}_{self.dt_s:016.12f}.png')
+    fig.savefig(filenameFull)
     fig.clf()
     plt.close(fig)
     plt.clf()

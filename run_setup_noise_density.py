@@ -22,7 +22,7 @@ dict_config_setup = dict(
       # External
       skalierungsfaktor = 1.0E-3,   # Amplifier Gain 1000   todoPeter spaeter korrrekt einbauen
       # Processing
-      fir_count = 5,
+      fir_count = 8,
       # Picoscope
       input_channel = 'A',
       input_Vp = PS5000ARange.R_100MV,
@@ -37,7 +37,7 @@ dict_config_setup = dict(
       # External
       skalierungsfaktor = 1.0E-3,   # Amplifier Gain 1000   todoPeter spaeter korrrekt einbauen
       # Processing
-      fir_count = 5,
+      fir_count = 8,
       # Picoscope
       input_channel = 'A',
       input_Vp = PS5000ARange.R_100MV,
@@ -52,14 +52,14 @@ dict_config_setup = dict(
       # External
       skalierungsfaktor = 1.0E-3,   # Amplifier Gain 1000   todoPeter spaeter korrrekt einbauen
       # Processing
-      fir_count = 12,
+      fir_count = 13,
       # Picoscope
       input_channel = 'A',
       input_Vp = PS5000ARange.R_100MV,
       bandwitdth = 'BW_20MHZ',
       offset = 0.0,
       resolution = '16bit',
-      duration_s = 1000.0,
+      duration_s = 100.0,
       # dt_s = 1.6e-07,
       dt_s = 1 / 1E6,
     ),
