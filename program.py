@@ -1,3 +1,21 @@
+#
+# Make sure that the subrepos are included in the python path
+#
+import sys
+import pathlib
+
+TOPDIR=pathlib.Path(__file__).parent.absolute()
+MSL_EQUIPMENT_PATH = TOPDIR.joinpath('libraries/msl-equipment')
+assert MSL_EQUIPMENT_PATH.joinpath('README.rst').is_file(), f'Subrepo is missing (did you clone with --recursive?): {MSL_EQUIPMENT_PATH}'
+sys.path.insert(0, str(MSL_EQUIPMENT_PATH))
+
+try:
+  import msl.loadlib
+  import numpy as np
+  import matplotlib.pyplot as plt
+except ImportError as ex:
+  print(f'ERROR: Failed to import ({ex}). Try: pip install -r requirements.txt')
+  sys.exit(0)
 
 import gc
 import re
@@ -7,12 +25,10 @@ import time
 import cmath
 import pprint
 import logging
-import numpy as np
-import matplotlib.pyplot as plt
+
 import program_fir
 
 import program_picoscope_5442D as program_picoscope
-# import program_picoscope_2204A as program_picoscope
 
 logger = logging.getLogger(__name__)
 

@@ -1,0 +1,4 @@
+msl-loadlib
+numpy
+matplotlib
+scipy
