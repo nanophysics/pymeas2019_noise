@@ -1,9 +1,12 @@
 import os
 import math
 import time
-import numpy as np
 import scipy.signal
+import numpy as np
+import pickle
+import threading
 import matplotlib.pyplot as plt
+import program
 import program_config_frequencies
 
 #   <---------------- INPUT ---------========------->
@@ -35,7 +38,7 @@ class FIR:
     self.out.init(stage=stage+1, dt_s=dt_s*DECIMATE_FACTOR)
 
   def push(self, array_in):
-    assert len(array_in) <= SAMPLES_INPUT
+    # assert len(array_in) <= SAMPLES_INPUT
     samples_missing = SAMPLES_INPUT-len(self.array)
     if samples_missing > len(array_in):
       # Not enough data. Add it to 'self.array'
@@ -72,18 +75,24 @@ class FIR:
     array_decimated = array_decimated[index_from:index_to]
     return array_decimated
 
+
+class SampleProcessConfig:
+  def __init__(self, configStep, interval_s=0.9):
+    self.fir_count = configStep.fir_count
+    self.stepname = configStep.stepname
+    self.interval_s = interval_s
+
 SAMPLES_DENSITY = 2**12
 
 class Density:
-  def __init__(self, out, directory='.', interval_s=0.9):
+  def __init__(self, out, config, directory):
     self.out = out
     self.time_s = 0.0
     self.next_s = 0.0
-    self.frequencies = None
     self.Pxx_sum = None
     self.Pxx_n = 0
+    self.config = config
     self.directory = directory
-    self.interval_s = interval_s
 
   def init(self, stage, dt_s):
     self.stage = stage
@@ -96,7 +105,7 @@ class Density:
   def push(self, array_in):
     self.time_s += self.dt_s * len(array_in)
     if self.time_s > self.next_s:
-      self.next_s += self.interval_s
+      self.next_s += self.config.interval_s
       # self.next_s = self.time_s + self.interval_s
       self.density(array_in)
 
@@ -113,27 +122,10 @@ class Density:
     self.frequencies, Pxx = scipy.signal.periodogram(array_density, 1/self.dt_s, window='hamming',) #Hz, V^2/Hz
     self.__density_averaging(array_density, Pxx)
 
-    fig, ax = plt.subplots()
-    color = 'blue'
-    if self.Pxx_sum is not None:
-      # If we have averaged values, use it
-      Pxx = self.Pxx_sum/self.Pxx_n
-      if self.Pxx_n == 1:
-        color = 'fuchsia'
-    Dxx = np.sqrt(Pxx) # V/Hz^0.5
-    ax.loglog(self.frequencies, Dxx, linewidth=0.1, color=color)
-    plt.ylabel(f'Density stage dt_s {self.dt_s:.3e}s ')
-    #plt.ylim( 1e-8,1e-6)
-
-    #plt.xlim(1e2, 1e5)
-    f_limit_low = 1.0/self.dt_s/2.0 * useful_part
-    f_limit_high = 1.0/self.dt_s/2.0
-    plt.axvspan(f_limit_low, f_limit_high, color='red', alpha=0.2)
-    plt.grid(True)
-    fig.savefig(f'{self.directory}/density_{self.stage:02d}_{self.dt_s:016.12f}.png')
-    fig.clf()
-    plt.close(fig)
-    plt.clf()
+    filenameFull = DensityPlot.save(self.config, self.directory, self.stage, self.dt_s, self.frequencies, self.Pxx_n, self.Pxx_sum)
+    if False:
+      densityPeriodogram = DensityPlot(filenameFull)
+      densityPeriodogram.plot(program.DIRECTORY_1_CONDENSED)
 
   def __density_averaging(self, array_density, Pxx):
       if len(array_density) < SAMPLES_DENSITY:
@@ -147,11 +139,97 @@ class Density:
       assert len(self.Pxx_sum) == len(Pxx)
       self.Pxx_sum += Pxx
 
+class DensityPlot:
+  @classmethod
+  def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum):
+    filename = f'densitystep_{config.stepname}_{stage:02d}.pickle'
+    data = {
+      'stepname': config.stepname,
+      'stage': stage,
+      'dt_s': dt_s,
+      'frequencies': frequencies,
+      'Pxx_n': Pxx_n,
+      'Pxx_sum': Pxx_sum,
+    }
+    filenameFull = os.path.join(directory, filename)
+    with open(filenameFull, 'wb') as f:
+      pickle.dump(data, f)
+
+    return filenameFull
+
+  @classmethod
+  def directory_plot(cls, directory_in, directory_out):
+    '''
+      Loop for all densitystage-files in directory and plot.
+    '''
+    for filename in os.listdir(directory_in):
+      if filename.startswith('densitystep_') and filename.endswith('.pickle'):
+        filenameFull = os.path.join(directory_in, filename)
+        densityPeriodogram = DensityPlot(filenameFull)
+        densityPeriodogram.plot(directory_out)
+
+  @classmethod
+  def directory_plot_thread(cls, directory_in, directory_out):
+    class WorkerThread(threading.Thread):
+      def __init__(self, *args, **keywords): 
+        threading.Thread.__init__(self, *args, **keywords) 
+        self.__stop = False
+        self.start()
+
+      def run(self):
+        while True:
+          time.sleep(2.0)
+          cls.directory_plot(directory_in, directory_out)
+          if self.__stop:
+            return
+
+      def stop(self):
+        self.__stop = True
+        self.join()
+
+    return WorkerThread()
+
+  def __init__(self, filenameFull):
+    with open(filenameFull, 'rb') as f:
+      data = pickle.load(f)
+    self.stepname = data['stepname']
+    self.stage = data['stage']
+    self.dt_s = data['dt_s']
+    self.frequencies = data['frequencies']
+    self.Pxx_n = data['Pxx_n']
+    self.Pxx_sum = data['Pxx_sum']
+    print(f'DensityPlot {self.stage} {self.dt_s} {filenameFull}')
+
+  def plot(self, directory):
+    filenameFull = f'{directory}/densitystep_{self.stepname}_{self.stage:02d}_{self.dt_s:016.12f}.png'
+    if self.Pxx_sum is None:
+      print(f'No Pxx: skipped {filenameFull}')
+      return
+
+    # If we have averaged values, use it
+    fig, ax = plt.subplots()
+    Pxx = self.Pxx_sum/self.Pxx_n
+    Dxx = np.sqrt(Pxx) # V/Hz^0.5
+    color = 'fuchsia' if self.Pxx_n == 1 else 'blue'
+    ax.loglog(self.frequencies, Dxx, linewidth=0.1, color=color)
+    plt.ylabel(f'Density stage dt_s {self.dt_s:.3e}s ')
+    #plt.ylim( 1e-8,1e-6)
+
+    #plt.xlim(1e2, 1e5)
+    f_limit_low = 1.0/self.dt_s/2.0 * useful_part
+    f_limit_high = 1.0/self.dt_s/2.0
+    plt.axvspan(f_limit_low, f_limit_high, color='red', alpha=0.2)
+    plt.grid(True)
+    fig.savefig(filenameFull)
+    fig.clf()
+    plt.close(fig)
+    plt.clf()
 
 class DensitySummary:
-  def __init__(self, list_density, directory='.'):
-    self.directory = directory
+  def __init__(self, list_density, config, directory):
     self.list_density = list_density
+    self.config = config
+    self.directory = directory
     summary_f = program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8)
     self.summary_f = np.array(summary_f)
     self.summary_d = np.zeros(len(self.summary_f), dtype=float)
@@ -195,7 +273,7 @@ class DensitySummary:
     return best_idx
 
   def plot(self):
-    filename_summary = os.path.join(self.directory, 'summary.txt')
+    filename_summary = f'{self.directory}/summary_{self.config.stepname}.txt'
     np.savetxt(filename_summary,
       np.transpose((self.summary_f, self.summary_d)),
       fmt='%.5e', 
@@ -217,7 +295,7 @@ class DensitySummary:
     #plt.ylim( 1e-11,1e-6)
     plt.xlim(1e-2, 1e5) # temp Peter
     plt.grid(True)
-    fig.savefig(f'{self.directory}/density.png')
+    fig.savefig(f'{self.directory}/densitysummary_{self.config.stepname}.png')
     fig.clf()
     plt.close(fig)
     plt.clf()
@@ -266,12 +344,12 @@ class InFile:
 
         self.out.push(buf_V)
 
-
 class InSin:
-  def __init__(self, out, time_total_s=10, dt_s=0.01):
+  def __init__(self, out, time_total_s=10.0, dt_s=0.01):
     self.out = out
     self.time_total_s = time_total_s
     self.dt_s = dt_s
+    out.init(stage=0, dt_s=dt_s)
 
   def process(self):
     t = np.arange(0, self.time_total_s, self.dt_s)
@@ -293,3 +371,22 @@ class InSin:
       self.out.push(s[offset:offset+SAMPLES_SELECT])
       offset += SAMPLES_SELECT
 
+class SampleProcess:
+  def __init__(self, config, directory_raw, directory_condensed):
+    self.config = config
+    self.directory_raw = directory_raw
+    self.directory_condensed = directory_condensed
+    self.list_density = []
+    o = OutTrash()
+
+    for i in range(config.fir_count):
+      o = Density(o, config=config, directory=self.directory_raw)
+      self.list_density.append(o)
+      o = FIR(o)
+
+    o = Density(o, config=config, directory=self.directory_raw)
+    self.output = o
+  
+  def plot(self):
+    ds = DensitySummary(self.list_density, config=self.config, directory=self.directory_condensed)
+    ds.plot()

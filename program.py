@@ -1,3 +1,21 @@
+#
+# Make sure that the subrepos are included in the python path
+#
+import sys
+import pathlib
+
+TOPDIR=pathlib.Path(__file__).parent.absolute()
+MSL_EQUIPMENT_PATH = TOPDIR.joinpath('libraries/msl-equipment')
+assert MSL_EQUIPMENT_PATH.joinpath('README.rst').is_file(), f'Subrepo is missing (did you clone with --recursive?): {MSL_EQUIPMENT_PATH}'
+sys.path.insert(0, str(MSL_EQUIPMENT_PATH))
+
+try:
+  import msl.loadlib
+  import numpy as np
+  import matplotlib.pyplot as plt
+except ImportError as ex:
+  print(f'ERROR: Failed to import ({ex}). Try: pip install -r requirements.txt')
+  sys.exit(0)
 
 import gc
 import re
@@ -7,12 +25,10 @@ import time
 import cmath
 import pprint
 import logging
-import numpy as np
-import matplotlib.pyplot as plt
+
 import program_fir
 
 import program_picoscope_5442D as program_picoscope
-# import program_picoscope_2204A as program_picoscope
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +43,11 @@ DIRECTORY_2_RESULT = os.path.join(DIRECTORY_TOP, '2_result')
 # run_setup_calibrate_picoscope.py
 RE_CONFIG_SETUP = re.compile('run_setup_(?P<setup>.*?).py')
 
-DEFINED_BY_MEASUREMENTS='DEFINED_BY_MEASUREMENTS'
 DEFINED_BY_SETUP='DEFINED_BY_SETUP'
 
 pp = pprint.PrettyPrinter(indent=2)
 
-class MeasurementData:
+class MeasurementDataObsolete:
   def __init__(self, configSetup, read=False):
     assert isinstance(configSetup, ConfigSetup)
 
@@ -164,18 +179,38 @@ class MeasurementData:
       plt.ylabel('channel B')
       plt.show()
 
-class ConfigSetup:
-  def __init__(self):
-    self.input_Vp = DEFINED_BY_MEASUREMENTS
-    self.skalierungsfaktor = DEFINED_BY_MEASUREMENTS
+class ConfigStep:
+  def __init__(self, dict_values={}):
+    self.stepname = DEFINED_BY_SETUP
+    self.fir_count = DEFINED_BY_SETUP
+    self.input_Vp = DEFINED_BY_SETUP
+    self.skalierungsfaktor = DEFINED_BY_SETUP
     self.input_channel = DEFINED_BY_SETUP
     self.duration_s = DEFINED_BY_SETUP
-    self.max_filesize_bytes = DEFINED_BY_SETUP
-    self.setup_name = DEFINED_BY_SETUP
     self.diagram_legend = DEFINED_BY_SETUP
     self.result_gain = DEFINED_BY_SETUP
     self.result_unit = DEFINED_BY_SETUP
     self.reference = DEFINED_BY_SETUP
+    self.bandwitdth = DEFINED_BY_SETUP
+    self.offset = DEFINED_BY_SETUP
+    self.resolution = DEFINED_BY_SETUP
+    self.dt_s = DEFINED_BY_SETUP
+
+    self.update_by_dict(dict_values)
+
+  def _update_element(self, key, value):
+    assert key in self.__dict__
+    self.__dict__[key] = value
+
+  def update_by_dict(self, dict_config_setup):
+    for key, value in dict_config_setup.items():
+      self._update_element(key, value)
+
+class ConfigSetup:
+  def __init__(self):
+    self.diagram_legend = DEFINED_BY_SETUP
+    self.setup_name = DEFINED_BY_SETUP
+    self.steps = DEFINED_BY_SETUP
 
   def get_filename_data(self, extension, directory=DIRECTORY_0_RAW):
     filename = f'data_{self.setup_name}'
@@ -192,6 +227,9 @@ class ConfigSetup:
 
   def _update_element(self, key, value):
     assert key in self.__dict__
+    if key == 'steps':
+      self.__dict__[key] = [ConfigStep(v) for v in value]
+      return
     self.__dict__[key] = value
 
   def update_by_dict(self, dict_config_setup):
@@ -211,10 +249,17 @@ class ConfigSetup:
     setup_name = match.group('setup')
     self._update_element('setup_name', setup_name)
 
-  def measure_for_all_frequencies(self):
-    picoscope = program_picoscope.PicoScope(self)
-    picoscope.connect()
-    picoscope.acquire(self)
+  def measure_for_all_steps(self):
+    self.delete_directory_contents(DIRECTORY_0_RAW)
+    self.delete_directory_contents(DIRECTORY_1_CONDENSED)
+
+    for configStep in self.steps:
+      picoscope = program_picoscope.PicoScope(configStep)
+      picoscope.connect()
+      sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), DIRECTORY_0_RAW, DIRECTORY_1_CONDENSED)
+      picoscope.acquire(configStep, sample_process.output)
+      picoscope.close()
+      sample_process.plot()
 
   def condense_0to1(self):
     print('condense_0to1')

@@ -1,12 +1,11 @@
 import re
 import os
+import math
 import time
-import queue
 import logging
 import numpy as np
-import threading
-import matplotlib.pyplot as plt
 import program
+import program_measurement_stream
 
 logger = logging.getLogger(__name__)
 
@@ -18,20 +17,36 @@ import msl.equipment
 from msl.equipment.resources.picotech.picoscope import callbacks
 from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 
+PICSCOPE_MODEL_5442D='5442D'
+PICSCOPE_MODEL_2204A='2204A'
+# The picoscope we are going to use
+PICSCOPE_MODEL=PICSCOPE_MODEL_5442D
+
+if PICSCOPE_MODEL==PICSCOPE_MODEL_5442D:
+  PICSCOPE_ADDRESS='SDK::ps5000a'
+  ALL_CHANNELS = ('A', 'B', 'C', 'D')
+
+if PICSCOPE_MODEL==PICSCOPE_MODEL_2204A:
+  # The implementation of the 2204A is a hack. The instrument initializes and measures.
+  # However the returned measurements are not evaluated.
+  # Setting up dt_s and desired_sample_time_s seems to be buggy!
+  PICSCOPE_ADDRESS='SDK::ps2000'
+  ALL_CHANNELS = ('A', 'B')
+
 class PicoScope:
-  def __init__(self, config):
+  def __init__(self, configStep):
     self.record = msl.equipment.EquipmentRecord(
       manufacturer='Pico Technology',
-      model='5442D',
+      model=PICSCOPE_MODEL,
       # serial='GQ903/0003',
       connection=msl.equipment.ConnectionRecord(
         backend=msl.equipment.Backend.MSL,
-        address='SDK::ps5000a',
+        address=PICSCOPE_ADDRESS,
         # properties={'open_async': True},  # opening in async mode is done in the properties
         properties=dict(
-          # resolution='14bit',
+          resolution=configStep.resolution,
           # resolution='15bit',
-          resolution='16bit',  # only used for ps5000a series PicoScope's
+          # resolution='16bit',  # only used for ps5000a series PicoScope's
           auto_select_power=False,  # for PicoScopes that can be powered by an AC adaptor or by a USB cable
         )
       )
@@ -40,49 +55,59 @@ class PicoScope:
   def connect(self):
     self.scope = self.record.connect()  # establish a connection to the PicoScope
 
-  def calculate_dt_s(self, configSetup, max_samples_bytes):
-    # Given: configSetup.duration_s
+  def close(self):
+    self.scope.disconnect()
+
+  def calculate_dt_s(self, configStep, max_samples_bytes):
+    # Given: configStep.duration_s
     # Required: selected_dt_s
     # Limited by: self.scope.set_timebase
     # Limited by: Maximum filesize
 
-    # Programmers Guide "3.6 Timebases", only one channel
-    max_sampling_rate = 62.5e6
-    min_dt_s = 1.0/max_sampling_rate
-    max_filesize_samples = configSetup.max_filesize_bytes/2 # 2 Bytes per Sample
-    # filesize_dt_s: The sampling rate for maximal filesize
-    filesize_dt_s = configSetup.duration_s/max_filesize_samples
-    selected1_dt_s = min_dt_s
-    if filesize_dt_s > min_dt_s:
-      selected1_dt_s = filesize_dt_s
-      print(f'Filesize limits dt_s: {min_dt_s:.3e}s -> {filesize_dt_s:.3e}s')
+    # Programmers Guide "3.6 Timebases", only one channel_raw
+    assert configStep.dt_s is not None
+    selected1_dt_s = configStep.dt_s
+    if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
+      max_sampling_rate = 62.5e6
+      desired_sample_time_s = max_samples_bytes*selected1_dt_s
+    if PICSCOPE_MODEL == PICSCOPE_MODEL_2204A:
+      max_sampling_rate = 10e5
+      selected1_dt_s = 2.0/max_sampling_rate
+      desired_sample_time_s = 5000*selected1_dt_s
 
-    selected2_dt_s, num_samples = self.scope.set_timebase(selected1_dt_s, max_samples_bytes*selected1_dt_s)  # sample the voltage on Channel A every 1 us, for 100 us
+    selected2_dt_s, num_samples = self.scope.set_timebase(selected1_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
+
+    assert configStep.dt_s is not None
+    if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
+      # assert math.isclose(selected2_dt_s, configStep.dt_s), f'selected2_dt_s {selected2_dt_s} != configStep.dt_s {configStep.dt_s}'
+      assert 0.9 < (selected2_dt_s/configStep.dt_s) < 1.1, f'selected2_dt_s {selected2_dt_s} != configStep.dt_s {configStep.dt_s}'
 
     return selected2_dt_s
-    # print(f'configSetup.duration_s={configSetup.duration_s:.4e}, total_samples={total_samples}, total_samples*selected_dt_s={total_samples*selected_dt_s:.4e}')
+    # print(f'configStep.duration_s={configStep.duration_s:.4e}, total_samples={total_samples}, total_samples*selected_dt_s={total_samples*selected_dt_s:.4e}')
     # print(f'set_timebase({desired_dt_s:.4e}) -> {selected_dt_s:.4e}')
     # total_samples_before = total_samples
-    # total_samples = int(configSetup.duration_s/selected_dt_s)
+    # total_samples = int(configStep.duration_s/selected_dt_s)
     # print(f'total_samples={total_samples_before}) -> {total_samples}')
 
+  def acquire(self, configStep, stream_output):
+    assert isinstance(configStep, program.ConfigStep)
 
-  def acquire(self, configSetup):
-    assert isinstance(configSetup, program.ConfigSetup)
+    valid_ranges = set(range.value for range in self.scope.enRange)
+    assert configStep.input_Vp.value in valid_ranges
 
-    assert type(configSetup.input_Vp) == self.scope.enRange
-    all_channels = ('A', 'B', 'C', 'D')
-    assert configSetup.input_channel in all_channels
+    assert configStep.input_channel in ALL_CHANNELS
 
-    for channel in all_channels:
-      enabled = channel in configSetup.input_channel
-      #self.scope.set_channel(channel, coupling='dc', bandwidth='BW_20MHZ', offset = -0.0075, scale=configSetup.input_Vp, enabled=enabled)
-      self.scope.set_channel(channel, coupling='dc', bandwidth='BW_20MHZ', offset = 0.0, scale=configSetup.input_Vp, enabled=enabled)
+    for channel_raw in ALL_CHANNELS:
+      enabled = channel_raw in configStep.input_channel
+      self.scope.set_channel(channel_raw, coupling='dc', bandwidth=configStep.bandwitdth, offset=configStep.offset, scale=configStep.input_Vp, enabled=enabled)
 
-    max_samples_bytes = self.scope.memory_segments(num_segments=1)
+    if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
+      max_samples_bytes = self.scope.memory_segments(num_segments=1)
+    else:
+      max_samples_bytes = 1024*1024
 
-    dt_s = self.calculate_dt_s(configSetup, max_samples_bytes)
-    total_samples = int(configSetup.duration_s/dt_s)
+    dt_s = self.calculate_dt_s(configStep, max_samples_bytes)
+    total_samples = int(configStep.duration_s/dt_s)
     print(f'Choosen dt_s {dt_s:.3e}s and filesize {total_samples*2}Bytes')
 
     # PicoScope 6
@@ -104,74 +129,79 @@ class PicoScope:
     # timebaseB_, time_interval_nanosecondsB_ = self.scope.get_minimum_timebase(resolution_, channels_)
     # # timebaseA_=4, time_interval_nanosecondsA_=1.6e-09
 
-    self.scope.set_data_buffer(configSetup.input_channel)
-    channel_raw = self.scope.channel[configSetup.input_channel].raw
+    if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
+      self.scope.set_data_buffer(configStep.input_channel)
+    channel = self.scope.channel[configStep.input_channel]
 
-    # logfile = configMeasurement.get_logfile()
-    measurementData = program.MeasurementData(configSetup)
-    measurementData.open_files('wb')
-
-    self.queue = queue.Queue()
-
-    def worker():
-      while True:
-        item = self.queue.get()
-        if item is None:
-          break
-        start_index, num_samples = item
-        measurementData.fA.write(channel_raw[start_index:start_index+num_samples].tobytes())
-
-    thread = threading.Thread(target=worker)
-    thread.start()
+    stream = program_measurement_stream.Stream(stream_output, dt_s=dt_s)
+    stream.start()
 
     self.actual_sample_count = 0
     self.streaming_done = False
 
-    @callbacks.ps5000aStreamingReady
-    def my_streaming_ready(handle, num_samples, start_index, overflow, trigger_at, triggered, auto_stop, p_parameter):
-      if False:
-        print('StreamingReady Callback: handle={}, num_samples={}, start_index={}, overflow={}, trigger_at={}, '
-          'triggered={}, auto_stop={}, p_parameter={}'.format(handle, num_samples, start_index, overflow,
-                                  trigger_at, triggered, auto_stop, p_parameter))
+    if PICSCOPE_MODEL == PICSCOPE_MODEL_2204A:
+      @callbacks.GetOverviewBuffersMaxMin
+      def my_get_overview_buffer(overviewBuffers, overflow, triggeredAt, triggered, auto_stop, nValues):
+        if False:
+          print('StreamingReady Callback: overviewBuffers={}, overflow={}, auto_stop={}, nValues={}'.format(overviewBuffers, overflow, auto_stop, nValues))
+        if auto_stop:
+          self.streaming_done = True
+          stream.put_EOF()
+          print(r'\nSTOP(time over)', end='')
 
-      self.queue.put((start_index, num_samples))
+    if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
+      @callbacks.ps5000aStreamingReady
+      def my_streaming_ready(handle, num_samples, start_index, overflow, trigger_at, triggered, auto_stop, p_parameter):
+        if False:
+          print('StreamingReady Callback: handle={}, num_samples={}, start_index={}, overflow={}, trigger_at={}, '
+            'triggered={}, auto_stop={}, p_parameter={}'.format(handle, num_samples, start_index, overflow,
+                                    trigger_at, triggered, auto_stop, p_parameter))
 
-      if overflow:
-        # logfile.write(f'Overflow: {self.actual_sample_count+start_index}\n')
-        measurementData.list_overflow.append(self.actual_sample_count+start_index)
+        # self.stream.put(channel_raw[start_index:start_index+num_samples])
+        # See: def volts(self):
+        adu_values = channel.raw[start_index:start_index+num_samples]
+        volts = adu_values * channel._volts_per_adu - channel._voltage_offset
+        queueFull = stream.put(volts)
+        if queueFull:
+          self.streaming_done = True
+          stream.put_EOF()
+          print(r'\nSTOP(queue full)', end='')
 
-      self.actual_sample_count += num_samples
-      if self.actual_sample_count > total_samples:
-        self.streaming_done = True
-        self.queue.put(None)
-        print('STOP', end='')
+        if overflow:
+          # logfile.write(f'Overflow: {self.actual_sample_count+start_index}\n')
+          stream.list_overflow.append(self.actual_sample_count+start_index)
 
-      if overflow:
-        print('\noverflow')
-      print('.', end='')
+        self.actual_sample_count += num_samples
+        if self.actual_sample_count > total_samples:
+          self.streaming_done = True
+          stream.put_EOF()
+          print(r'\nSTOP(time over)', end='')
 
-      assert auto_stop == False
-      assert triggered == False
+        if overflow:
+          print(r'\noverflow')
+        print('.', end='')
+
+        assert auto_stop == False
+        assert triggered == False
 
     start = time.time()
     self.scope.run_streaming(auto_stop=False)
     while not self.streaming_done:
-      self.scope.wait_until_ready()  # wait until the latest streaming values are ready
-      self.scope.get_streaming_latest_values(my_streaming_ready)  # get the latest streaming values
-      # print(',', end='')
-      # print(f'{int(100*self.actual_sample_count/total_samples)} %')
+      # wait until the latest streaming values are ready
+      self.scope.wait_until_ready()
+      if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
+        # get the latest streaming values
+        self.scope.get_streaming_latest_values(my_streaming_ready)
+      if PICSCOPE_MODEL == PICSCOPE_MODEL_2204A:
+        rc = self.scope.get_streaming_last_values(my_get_overview_buffer)
+        # rc==1: if the callback will be called
+        # rc==0: if the callback will not be called, either because one of the inputs
+        #        is out of range or because there are no samples available
 
     print()
     print(f'Time spent in aquisition {time.time()-start:1.1f}s')
     print('Waiting for thread ...')
-    thread.join()
-
-    measurementData.close_files()
-    measurementData.channelA_volts_per_adu = self.scope.channel[configSetup.input_channel].volts_per_adu
-    measurementData.dt_s = dt_s
-    measurementData.num_samples = self.actual_sample_count
-    measurementData.write()
-    # logfile.close()
+    stream.join()
 
     print('Done')
     self.scope.stop()
