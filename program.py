@@ -106,27 +106,10 @@ class MeasurementDataObsolete:
 
   #   return bufA_V
 
-  def condense_0to1(self):
-    list_density = []
-    start = time.time()
-    o = program_fir.OutTrash()
 
-    for i in range(program_fir.FIR_COUNT):
-      o = program_fir.Density(o, directory=DIRECTORY_1_CONDENSED)
-      list_density.append(o)
-      o = program_fir.FIR(o)
 
-    o = program_fir.Density(o, directory=DIRECTORY_1_CONDENSED)
-    i = program_fir.InFile(o,
-      self.configSetup.get_filename_data('a_bin'),
-      dt_s=self.dt_s,
-      volts_per_adu=self.channelA_volts_per_adu,
-      skalierungsfaktor = self.configSetup.skalierungsfaktor
-    )
-    i.process()
-
-    ds = program_fir.DensitySummary(list_density, directory=DIRECTORY_1_CONDENSED)
-    ds.plot()
+    # ds = DensitySummary(self.list_density, config=self.config, directory=self.directory_condensed)
+    # ds.plot()
 
     print(f'Duration {time.time()-start:0.2f}')
 
@@ -261,14 +244,6 @@ class ConfigSetup:
       picoscope.close()
       sample_process.plot()
 
-  def condense_0to1(self):
-    print('condense_0to1')
-    self.delete_directory_contents(DIRECTORY_1_CONDENSED)
-    measurementData = MeasurementData(self, read=True)
-    measurementData.condense_0to1()
-
-  def condense_1to2(self):
-    print('condense_1to2')
 
 def get_configSetup_by_filename(config_setup_filename):
   import config_common
@@ -286,10 +261,18 @@ def get_configSetups():
   return list_configs
 
 def run_condense_0to1():
-  print('get_configSetups: {}'.format(get_configSetups()))
-  for configsetup_filename in get_configSetups():
-    config = get_configSetup_by_filename(configsetup_filename)
-    config.condense_0to1()
+  list_density = list(program_fir.DensityPlot.plots_from_directory(directory_in=DIRECTORY_0_RAW))
+
+  dictStepnames = {}
+  for density in list_density:
+    list_step_density = dictStepnames.get(density.stepname, [])
+    dictStepnames[density.stepname] = list_step_density
+    list_step_density.append(density)
+
+  for stepname, list_step_density in dictStepnames.items():
+    print(f'DensitySummary {stepname}')
+    ds = program_fir.DensitySummary(list_step_density, stepname=stepname, directory=DIRECTORY_1_CONDENSED)
+    ds.plot()
 
 class ResultCommon:
   def __init__(self):

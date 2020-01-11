@@ -172,14 +172,21 @@ class DensityPlot:
     return filenameFull
 
   @classmethod
-  def directory_plot(cls, directory_in, directory_out):
+  def plots_from_directory(cls, directory_in):
     '''
-      Loop for all densitystage-files in directory and plot.
+      Return all plot (.pickle-files) from directory.
     '''
     for filename in os.listdir(directory_in):
       if filename.startswith('densitystep_') and filename.endswith('.pickle'):
         filenameFull = os.path.join(directory_in, filename)
-        densityPeriodogram = DensityPlot(filenameFull)
+        yield DensityPlot(filenameFull)
+
+  @classmethod
+  def directory_plot(cls, directory_in, directory_out):
+    '''
+      Loop for all densitystage-files in directory and plot.
+    '''
+    for densityPeriodogram in cls.plots_from_directory(directory_in):
         densityPeriodogram.plot(directory_out)
 
   @classmethod
@@ -242,16 +249,17 @@ class DensityPlot:
     plt.clf()
 
 class DensitySummary:
-  def __init__(self, list_density, config, directory):
+  def __init__(self, list_density, stepname, directory):
     self.list_density = list_density
-    self.config = config
+    self.stepname = stepname
     self.directory = directory
     summary_f = program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8)
     self.summary_f = np.array(summary_f)
     self.summary_d = np.zeros(len(self.summary_f), dtype=float)
     self.summary_n = np.zeros(len(self.summary_f), dtype=int)
     for density in list_density:
-      assert isinstance(density, Density)
+      # TODO: Remove 'Density'
+      assert isinstance(density, (Density, DensityPlot))
       # TODO: Do not access directly Pxx_sum.
       if density.Pxx_sum is None:
         continue
@@ -290,7 +298,7 @@ class DensitySummary:
     return best_idx
 
   def plot(self):
-    filename_summary = f'{self.directory}/summary_{self.config.stepname}.txt'
+    filename_summary = f'{self.directory}/summary_{self.stepname}.txt'
     np.savetxt(filename_summary,
       np.transpose((self.summary_f, self.summary_d)),
       fmt='%.5e', 
@@ -312,7 +320,7 @@ class DensitySummary:
     #plt.ylim( 1e-11,1e-6)
     plt.xlim(1e-2, 1e5) # temp Peter
     plt.grid(True)
-    fig.savefig(f'{self.directory}/densitysummary_{self.config.stepname}.png')
+    fig.savefig(f'{self.directory}/densitysummary_{self.stepname}.png')
     fig.clf()
     plt.close(fig)
     plt.clf()
@@ -414,5 +422,5 @@ class SampleProcess:
     self.output = o
   
   def plot(self):
-    ds = DensitySummary(self.list_density, config=self.config, directory=self.directory_condensed)
+    ds = DensitySummary(self.list_density, stepname=self.config.stepname, directory=self.directory_condensed)
     ds.plot()
