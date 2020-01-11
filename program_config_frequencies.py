@@ -1,7 +1,7 @@
 import numpy as np
+import math
 
-
-def eseries(series='E12', minimal=0.01, maximal=300):
+def eseries(series='E12', minimal=0.01, maximal=300, borders = False):
     assert minimal > 10**-10
     assert maximal < 10**20
     minimal *= 0.99999
@@ -35,27 +35,21 @@ def eseries(series='E12', minimal=0.01, maximal=300):
     }
     serie = ereihen[series]
     frequencies_Hz = []
-
-    dekade_min = int(round(np.log10(minimal)-0.5))
-    dekade_max = int(round(np.log10(maximal)+0.5))
+    last1 = 0.0
+    last2 = 0.0
+    dekade_min = int(round(np.log10(minimal)-0.7))
+    dekade_max = int(round(np.log10(maximal)+0.7))
     for decade in range(dekade_min, dekade_max):
         for value in serie:
             entry = value * 10**decade / 100.0
-            if minimal <= entry <= maximal:
-                frequencies_Hz.append(entry)
+            if minimal <= last1 <= maximal:
+                if borders:
+                    frequencies_Hz.append([math.sqrt(last2*last1), last1, math.sqrt(last1*entry)])
+                else:
+                    frequencies_Hz.append(last1)
+            last2 = last1
+            last1 = entry
     return frequencies_Hz
 
-def eseries_grenzen(series='E12', minimal=0.01, maximal=300):
-    l = []
-    f_last = None
-    for f in eseries(series, minimal, maximal):
-        if f_last is not None:
-            l.append((f_last, f))
-        f_last = f
-    return l
-
 if __name__ == '__main__':
-    # def ex():
-    # return ((0.8, 1.0), (1.3, 1.5), (1.8, 2.0))
-    print(eseries(series='E6', minimal=1, maximal=10))
-    print(eseries_grenzen(series='E6', minimal=1, maximal=10))
+    print(eseries(series='E6', minimal=1, maximal=10, borders=True))
