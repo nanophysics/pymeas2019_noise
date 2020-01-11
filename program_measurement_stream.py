@@ -10,7 +10,19 @@ else:
 BYTES_FLOAT = 8
 SIZE_MAX_FLOATS = SIZE_MAX_BYTES//BYTES_FLOAT
 
-class Stream:
+
+class InThread:
+  '''
+  A Stream Source.
+  Given `out`: Stream-Interface to push to.
+  Given `dt_s`: The sampling interval.
+
+  Another thread may push into the stream:
+    put(volts)
+    put_EOF()
+
+  The worker thread of the stream
+  '''
   def __init__(self, out, dt_s):
     self.out = out
     self.dt_s = dt_s
@@ -51,7 +63,7 @@ if __name__ == '__main__':
     import numpy as np
     import program_fir
     sp = program_fir.SampleProcess(fir_count=3)
-    i = Stream(sp.output, dt_s=0.01)
+    i = InThread(sp.output, dt_s=0.01)
     i.start()
 
     if True:

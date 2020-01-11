@@ -28,6 +28,10 @@ FIR_COUNT = 18
 useful_part = 0.75 # depending on the downsampling, useful part is the non influenced part by the low pass filtering
 
 class FIR:
+  '''
+  Stream-Sink: Implements a Stream-Interface
+  Stream-Source: Drives a output of Stream-Interface
+  '''
   def __init__(self, out):
     self.out = out
     self.array = np.empty(0, dtype=np.float)
@@ -85,7 +89,16 @@ class SampleProcessConfig:
 SAMPLES_DENSITY = 2**12
 
 class Density:
+  '''
+  Stream-Sink: Implements a Stream-Interface
+  Stream-Source: Drives a output of Stream-Interface
+
+  This class processes the data-stream and every `self.config.interval_s` does some density calculation...
+  The class DensitySummary will the access self.Pxx_sum/self.Pxx_n to create a density plot.
+  '''
   def __init__(self, out, config, directory):
+    # TODO: Make all members private!
+
     self.out = out
     self.time_s = 0.0
     self.next_s = 0.0
@@ -236,6 +249,7 @@ class DensitySummary:
     self.summary_n = np.zeros(len(self.summary_f), dtype=int)
     for density in list_density:
       assert isinstance(density, Density)
+      # TODO: Do not access directly Pxx_sum.
       if density.Pxx_sum is None:
         continue
       Pxx = density.Pxx_sum / density.Pxx_n
@@ -301,6 +315,9 @@ class DensitySummary:
     plt.clf()
 
 class OutTrash:
+  '''
+    Stream-Sink: Implements a Stream-Interface
+  '''
   def __init__(self):
     self.array = np.empty(0, dtype=np.float)
 
@@ -318,6 +335,9 @@ class OutTrash:
     pass
 
 class InFile:
+  '''
+  Stream-Source: Drives a output of Stream-Interface
+  '''
   def __init__(self, out, filename, dt_s, volts_per_adu, skalierungsfaktor):
     self.out = out
     self.filename = filename
@@ -345,6 +365,9 @@ class InFile:
         self.out.push(buf_V)
 
 class InSin:
+  '''
+  Stream-Source: Drives a output of Stream-Interface
+  '''
   def __init__(self, out, time_total_s=10.0, dt_s=0.01):
     self.out = out
     self.time_total_s = time_total_s

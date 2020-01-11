@@ -133,7 +133,7 @@ class PicoScope:
       self.scope.set_data_buffer(configStep.input_channel)
     channel = self.scope.channel[configStep.input_channel]
 
-    stream = program_measurement_stream.Stream(stream_output, dt_s=dt_s)
+    stream = program_measurement_stream.InThread(stream_output, dt_s=dt_s)
     stream.start()
 
     self.actual_sample_count = 0

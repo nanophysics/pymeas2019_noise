@@ -1,3 +1,27 @@
+## Proposal for directory structure
+
+- `<TOPDIR>/config_x`
+  - Every directory includes these scripts:
+    - `run_setup_noise_density.py`
+      Do a measurement.
+    - `run_plot_updater.py`
+      Have a live-preview of the running measurment.
+    - `run_plot.py`
+      Create a plot of all results.
+
+- Now, the `result`-folder may be renamed. Many such results folders may exist aside.
+- Somehow, every `result`-folder defines it visible attributes.
+- Variant A:
+  - Coded in directoryname `result-color-topic`
+  - File `attributes.txt` in directory.
+  - Attributes programmed in `run_plot.py`
+
+## Vorgehen
+
+- Run using simulator
+- implement directories
+- Try with picoscope
+
 # pymeas2019
 
 simple measure and documentation with python
