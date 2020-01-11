@@ -44,3 +44,18 @@ def eseries(series='E12', minimal=0.01, maximal=300):
             if minimal <= entry <= maximal:
                 frequencies_Hz.append(entry)
     return frequencies_Hz
+
+def eseries_grenzen(series='E12', minimal=0.01, maximal=300):
+    l = []
+    f_last = None
+    for f in eseries(series, minimal, maximal):
+        if f_last is not None:
+            l.append((f_last, f))
+        f_last = f
+    return l
+
+if __name__ == '__main__':
+    # def ex():
+    # return ((0.8, 1.0), (1.3, 1.5), (1.8, 2.0))
+    print(eseries(series='E6', minimal=1, maximal=10))
+    print(eseries_grenzen(series='E6', minimal=1, maximal=10))
