@@ -51,12 +51,12 @@ abspeichern als svg
 
 idee struktur files
 
-1_condensed
-1_condensed/run_create_plot.py
-1_condensed/20191231_23_10_red__input_noise_xy
-1_condensed/20191231_23_10_red__input_noise_xy/run_create_plot.py
-1_condensed/20191231_23_40_black__condensed
-1_condensed/20191231_23_40_black__condensed/run_create_plot.py
+output
+output/run_create_plot.py
+output/20191231_23_10_red__input_noise_xy/0_raw
+output/20191231_23_10_red__input_noise_xy/1_condensed
+output/20191231_23_40_black__condensed/0_raw
+output/20191231_23_40_black__condensed/1_condensed
 
 im file run_create_plot.py 
 	parameter für den plot vorgegeben
