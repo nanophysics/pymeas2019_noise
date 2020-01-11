@@ -1,0 +1,5 @@
+matplotlib animate
+directory structure
+run with simulator
+
+
