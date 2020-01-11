@@ -5,6 +5,7 @@ import scipy.signal
 import numpy as np
 import pickle
 import pathlib
+import itertools
 import threading
 import matplotlib.pyplot as plt
 import program
@@ -248,40 +249,57 @@ class DensityPlot:
     plt.close(fig)
     plt.clf()
 
+class DensityPoint:
+  def __init__(self, f, d, densityPlot, selected):
+    self.f = f
+    self.d = d
+    self.densityPlot = densityPlot
+    self.selected = selected
+
+  def line(self):
+    return f'{self.f} {self.d} {self.densityPlot.stepname} {self.selected}'
+
 class DensitySummary:
   def __init__(self, list_density, stepname, directory):
     self.list_density = list_density
     self.stepname = stepname
     self.directory = directory
+    self.list_density_points = []
+
     summary_f = program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8)
-    self.summary_f = np.array(summary_f)
-    self.summary_d = np.zeros(len(self.summary_f), dtype=float)
-    self.summary_n = np.zeros(len(self.summary_f), dtype=int)
     for density in list_density:
       assert isinstance(density, DensityPlot)
-      # TODO: Do not access directly Pxx_sum.
       if density.Pxx_sum is None:
         continue
+
+      self.summary_f = np.array(summary_f)
+      self.summary_d = np.zeros(len(self.summary_f), dtype=float)
+      self.summary_n = np.zeros(len(self.summary_f), dtype=int)
+      # TODO: Do not access directly Pxx_sum.
       Pxx = density.Pxx_sum / density.Pxx_n
       for idx in range(len(density.frequencies)):
         f = density.frequencies[idx]
         d = Pxx[idx]
-        if f == 0:
-          # frequency not required in summary
-          continue
-        if f > 1.0/density.dt_s/2.0 * useful_part:
-          # frequency not required in summary
-          continue
+        # if f == 0:
+        #   # frequency not required in summary
+        #   continue
+        # if f > 1.0/density.dt_s/2.0 * useful_part:
+        #   # frequency not required in summary
+        #   continue
         nearest_idx = self.__find_nearest(self.summary_f, f)
         self.summary_n[nearest_idx] += 1
         self.summary_d[nearest_idx] += d
   
-    # Calculate average
-    for idx in range(len(self.summary_f)):
-      n = self.summary_n[idx]
-      if n == 0:
-        continue
-      self.summary_d[idx] = math.sqrt(self.summary_d[idx] / n)
+      # Calculate average
+      for idx in range(len(self.summary_f)):
+        n = self.summary_n[idx]
+        if n == 0:
+          continue
+        f = self.summary_f[idx]
+        d = math.sqrt(self.summary_d[idx] / n)
+        dp = DensityPoint(f=f, d=d, densityPlot=density, selected=True)
+        self.list_density_points.append(dp)
+      pass
 
   def __find_nearest(self, frequencies, frequency):
     best_idx = 0
@@ -298,26 +316,22 @@ class DensitySummary:
 
   def plot(self):
     filename_summary = f'{self.directory}/summary_{self.stepname}.txt'
-    np.savetxt(filename_summary,
-      np.transpose((self.summary_f, self.summary_d)),
-      fmt='%.5e', 
-      delimiter='\t',
-      newline='\n', 
-      header='',
-      footer='', 
-      comments='# ',
-      encoding=None
-    )
+    with open(filename_summary, 'w') as f:
+      for dp in self.list_density_points:
+        f.write(dp.line())
+        f.write('\n')
 
     fig, ax = plt.subplots()
-    # An array with True/False values. True, if the bin-count > 0.5
-    mask = np.array([v > 0.5 for v in self.summary_n])
-    f = self.summary_f[mask]
-    d = self.summary_d[mask]
-    ax.loglog(f, d, linestyle='', marker='o', markersize=2, color='blue')
+
+    stages = [(stage, list(g)) for stage, g in itertools.groupby(self.list_density_points, lambda dp: dp.densityPlot.stage)]
+    for stage, list_density_points in stages:
+      f = [dp.f for dp in list_density_points]
+      d = [dp.d for dp in list_density_points]
+      ax.loglog(f, d, linestyle='-', marker='o', markersize=2, color='blue')
+
     plt.ylabel(f'Density [V/Hz^0.5]')
-    #plt.ylim( 1e-11,1e-6)
-    plt.xlim(1e-2, 1e5) # temp Peter
+    # plt.ylim( 1e-11,1e-6)
+    # plt.xlim(1e-2, 1e5) # temp Peter
     plt.grid(True)
     fig.savefig(f'{self.directory}/densitysummary_{self.stepname}.png')
     fig.clf()

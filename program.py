@@ -3,6 +3,7 @@
 #
 import sys
 import pathlib
+import itertools
 
 TOPDIR=pathlib.Path(__file__).parent.absolute()
 MSL_EQUIPMENT_PATH = TOPDIR.joinpath('libraries/msl-equipment')
@@ -264,16 +265,11 @@ def get_configSetups():
 def run_condense_0to1():
   list_density = list(program_fir.DensityPlot.plots_from_directory(directory_in=DIRECTORY_0_RAW))
 
-  dictStepnames = {}
-  for density in list_density:
-    list_step_density = dictStepnames.get(density.stepname, [])
-    dictStepnames[density.stepname] = list_step_density
-    list_step_density.append(density)
-
-  for stepname, list_step_density in dictStepnames.items():
-    print(f'DensitySummary {stepname}')
-    ds = program_fir.DensitySummary(list_step_density, stepname=stepname, directory=DIRECTORY_1_CONDENSED)
-    ds.plot()
+  stepnames = [(stepname, list(g)) for stepname, g in itertools.groupby(list_density, lambda density: density.stepname)]
+  for stepname, list_step_density in stepnames:
+      print(f'DensitySummary {stepname}')
+      ds = program_fir.DensitySummary(list_step_density, stepname=stepname, directory=DIRECTORY_1_CONDENSED)
+      ds.plot()
 
 class ResultCommon:
   def __init__(self):

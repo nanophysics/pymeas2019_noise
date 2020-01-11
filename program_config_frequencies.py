@@ -36,20 +36,23 @@ def eseries(series='E12', minimal=0.01, maximal=300, borders = False):
     serie = ereihen[series]
     frequencies_Hz = []
     last1 = 0.0
-    last2 = 0.0
+    last2 = None
     dekade_min = int(round(np.log10(minimal)-0.7))
     dekade_max = int(round(np.log10(maximal)+0.7))
     for decade in range(dekade_min, dekade_max):
         for value in serie:
             entry = value * 10**decade / 100.0
-            if minimal <= last1 <= maximal:
+            if last1 > maximal:
+                return frequencies_Hz
+            if minimal <= last1:
                 if borders:
-                    frequencies_Hz.append([math.sqrt(last2*last1), last1, math.sqrt(last1*entry)])
+                    assert last2 is not None
+                    frequencies_Hz.append((math.sqrt(last2*last1), last1, math.sqrt(last1*entry)))
                 else:
                     frequencies_Hz.append(last1)
             last2 = last1
             last1 = entry
-    return frequencies_Hz
+    raise Exception('Internal programming error')
 
 if __name__ == '__main__':
     print(eseries(series='E6', minimal=1, maximal=10, borders=True))
