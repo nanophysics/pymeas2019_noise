@@ -4,6 +4,7 @@ import time
 import scipy.signal
 import numpy as np
 import pickle
+import pathlib
 import threading
 import matplotlib.pyplot as plt
 import program
@@ -214,6 +215,8 @@ class DensityPlot:
     print(f'DensityPlot {self.stage} {self.dt_s} {filenameFull}')
 
   def plot(self, directory):
+    if not os.path.exists(directory):
+      os.mkdir(directory)
     filenameFull = f'{directory}/densitystep_{self.stepname}_{self.stage:02d}_{self.dt_s:016.12f}.png'
     if self.Pxx_sum is None:
       print(f'No Pxx: skipped {filenameFull}')
