@@ -258,8 +258,7 @@ class DensitySummary:
     self.summary_d = np.zeros(len(self.summary_f), dtype=float)
     self.summary_n = np.zeros(len(self.summary_f), dtype=int)
     for density in list_density:
-      # TODO: Remove 'Density'
-      assert isinstance(density, (Density, DensityPlot))
+      assert isinstance(density, DensityPlot)
       # TODO: Do not access directly Pxx_sum.
       if density.Pxx_sum is None:
         continue
@@ -410,17 +409,11 @@ class SampleProcess:
     self.config = config
     self.directory_raw = directory_raw
     self.directory_condensed = directory_condensed
-    self.list_density = []
     o = OutTrash()
 
     for i in range(config.fir_count):
       o = Density(o, config=config, directory=self.directory_raw)
-      self.list_density.append(o)
       o = FIR(o)
 
     o = Density(o, config=config, directory=self.directory_raw)
     self.output = o
-  
-  def plot(self):
-    ds = DensitySummary(self.list_density, stepname=self.config.stepname, directory=self.directory_condensed)
-    ds.plot()

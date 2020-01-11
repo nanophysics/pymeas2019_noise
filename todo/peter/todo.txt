@@ -31,6 +31,9 @@ alle samplefrequenzen zusammen
 gemäss vorgaben user mit frequenzgrenzen je samplefrequenz
 die einzelnen messwerte den E12 bändern zuordnen
 
+band für grenze zuordnung: von sqrt(E12vorher * E12) bis sqrt(E12 * E12nachher)
+unterste und oberste frequenz aus E12 wird nicht bestimmt.
+
 
 Idee Live update:
 https://pythonprogramming.net/python-matplotlib-live-updating-graphs/

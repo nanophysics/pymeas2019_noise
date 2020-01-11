@@ -242,7 +242,8 @@ class ConfigSetup:
       sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), DIRECTORY_0_RAW, DIRECTORY_1_CONDENSED)
       picoscope.acquire(configStep, sample_process.output)
       picoscope.close()
-      sample_process.plot()
+    
+    run_condense_0to1()
 
 
 def get_configSetup_by_filename(config_setup_filename):
