@@ -49,6 +49,25 @@ simple measure and documentation with python
 
 ## Workflow
 
+TODO, Workflow aktualisieren
+WORKFLOW
+
+Messen
+  Messen ab KO
+  Resultate abspeichern
+    DONE summary.txt
+    TODO daten für jeden dezimierungsschritt
+
+Condense&Concat
+  Daten zusammenfassen
+
+Live preview
+  Condense&Concat
+  Plot with animation
+
+Plot
+  Plot mit einer oder mehreren Messungen
+  
 ### Step 0: measure
 
 Output directory: `0_raw`
