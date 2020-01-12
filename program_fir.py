@@ -266,53 +266,46 @@ class DensitySummary:
     self.directory = directory
     self.list_density_points = []
 
-    summary_f = program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8)
+    eseries_borders = program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8, borders=True)
+    eseries_f = [f for l,f,r in eseries_borders]
     for density in list_density:
       assert isinstance(density, DensityPlot)
       if density.Pxx_sum is None:
         continue
 
-      self.summary_f = np.array(summary_f)
-      self.summary_d = np.zeros(len(self.summary_f), dtype=float)
-      self.summary_n = np.zeros(len(self.summary_f), dtype=int)
       # TODO: Do not access directly Pxx_sum.
       Pxx = density.Pxx_sum / density.Pxx_n
-      for idx in range(len(density.frequencies)):
-        f = density.frequencies[idx]
-        d = Pxx[idx]
-        # if f == 0:
-        #   # frequency not required in summary
-        #   continue
-        # if f > 1.0/density.dt_s/2.0 * useful_part:
-        #   # frequency not required in summary
-        #   continue
-        nearest_idx = self.__find_nearest(self.summary_f, f)
-        self.summary_n[nearest_idx] += 1
-        self.summary_d[nearest_idx] += d
-  
-      # Calculate average
-      for idx in range(len(self.summary_f)):
-        n = self.summary_n[idx]
-        if n == 0:
-          continue
-        f = self.summary_f[idx]
-        d = math.sqrt(self.summary_d[idx] / n)
-        dp = DensityPoint(f=f, d=d, densityPlot=density, selected=True)
-        self.list_density_points.append(dp)
-      pass
+      class Global:
+        pass
+      g = Global()
+      g.idx_fft = 0
+      g.sum_d = 0.0
+      g.sum_n = 0
+      for f_eserie_left, f_eserie, f_eserie_right in eseries_borders:
+        def fill_bin():
+          while True:
+            if g.idx_fft >= len(density.frequencies):
+              return True # Done!
+            f_fft = density.frequencies[g.idx_fft]
 
-  def __find_nearest(self, frequencies, frequency):
-    best_idx = 0
-    best_diff = 1e24
-    for idx, f in enumerate(frequencies):
-      diff = abs(frequency-f)
-      if diff < best_diff:
-        best_diff = diff
-        best_idx = idx
-      if idx > best_idx:
-        # Save time and bail out
-        break
-    return best_idx
+            if f_fft < f_eserie_left:
+              g.idx_fft += 1
+              continue
+
+            if f_fft > f_eserie_right:
+              if g.sum_n > 0:
+                avg_d = math.sqrt(g.sum_d / g.sum_n)
+                dp = DensityPoint(f=f_eserie, d=avg_d, densityPlot=density, selected=True)
+                self.list_density_points.append(dp)
+              return False # Continue in next eserie.
+
+            d = Pxx[g.idx_fft]
+            g.sum_n += 1
+            g.sum_d += d
+            g.idx_fft += 1
+
+        if fill_bin():
+          break
 
   def plot(self):
     filename_summary = f'{self.directory}/summary_{self.stepname}.txt'
