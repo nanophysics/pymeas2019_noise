@@ -23,9 +23,9 @@ dict_config_setup = dict(
       # Processing
       fir_count = 8,
       # Picoscope
-      input_channel = 'A',
+      input_channel = 'A', # channel A is connected without filter to the amplifier out
       input_Vp = PS5000ARange.R_100MV,
-      bandwitdth = 'BW_20MHZ',
+      bandwitdth = 'BW_FULL',  # spaeter BW_FULL
       offset = 0.0,
       resolution = '15bit',
       duration_s = 2.0,
@@ -38,7 +38,7 @@ dict_config_setup = dict(
       # Processing
       fir_count = 8,
       # Picoscope
-      input_channel = 'A',
+      input_channel = 'A', # channel A is connected without filter to the amplifier out
       input_Vp = PS5000ARange.R_100MV,
       bandwitdth = 'BW_20MHZ',
       offset = 0.0,
@@ -53,7 +53,7 @@ dict_config_setup = dict(
       # Processing
       fir_count = 13,
       # Picoscope
-      input_channel = 'A',
+      input_channel = 'B', # channel B is connected with filter low pass 100 kHz ??? to the amplifier out
       input_Vp = PS5000ARange.R_100MV,
       bandwitdth = 'BW_20MHZ',
       offset = 0.0,
