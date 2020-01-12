@@ -304,10 +304,17 @@ class Average:
     self.__sum_d += d
     
 class Selector:
-  def __init__(self, series='E12', first=False, last=True):
+  def __init__(self, series='E12'):
     self.__eseries_borders = program_config_frequencies.eseries(series=series, minimal=1e-6, maximal=1e8, borders=True)
+    # def sort_key(key):
+    #   '''
+    #   order by frequency
+    #   '''
+    #   l,f,r = key
+    #   return f
+    # self.__eseries_borders = sorted(eseries_borders, key=sort_key)
 
-  def fill_bins(self, density):
+  def fill_bins(self, density, firstDensityPoint, lastDensity):
     # contribute, fill_bins
     assert isinstance(density, DensityPlot)
     avg = Average()
@@ -315,7 +322,23 @@ class Selector:
     Pxx = density.Pxx
     list_density_points = []
 
+    fmax_Hz = 1.0 / (density.dt_s * 2.0) # highest frequency in spectogram
+    useful_part = 0.75 # depending on the downsampling, useful part is the non influenced part by the low pass filtering of the FIR stage
+    f_high_limit_Hz = useful_part * fmax_Hz
+    f_low_limit_Hz = f_high_limit_Hz / DECIMATE_FACTOR   # every FIR stage reduces sampling frequency by factor DECIMATE_FACTOR
+
     for f_eserie_left, f_eserie, f_eserie_right in self.__eseries_borders:
+      if f_eserie < f_low_limit_Hz:
+        if not firstDensityPoint:
+          continue
+        # Special case for the first point: select low frequencies too
+
+      if f_eserie > f_high_limit_Hz:
+        if not lastDensity:
+          # We are finished with this loop
+          return list_density_points
+        # Special case for the last point: select high frequencies too
+
       while True:
         if idx_fft >= len(density.frequencies):
           # We are finished with this loop
@@ -347,21 +370,24 @@ class DensitySummary:
     self.directory = directory
     self.list_density_points = []
 
-    for density in self.__sort(list_density):
+    list_density = self.__sort(list_density)
+    for density in list_density:
       assert isinstance(density, DensityPlot)
       Pxx = density.Pxx
       if Pxx is None:
         continue
 
-      selector = Selector('E12', first=False, last=True)
-      list_density_points = selector.fill_bins(density)
+      selector = Selector('E12')
+      firstDensityPoint = len(self.list_density_points) == 0
+      lastDensity = density == list_density[-1]
+      list_density_points = selector.fill_bins(density, firstDensityPoint=firstDensityPoint, lastDensity=lastDensity)
       self.list_density_points.extend(list_density_points)
 
   def __sort(self, list_density):
     def sort_key(density):
       return density.stepname, density.dt_s
 
-    list_density_ordered = sorted(list_density, key=sort_key)
+    list_density_ordered = sorted(list_density, key=sort_key, reverse=True)
     if True:
       for density in list_density_ordered:
         print(f'  {density.stepname} / {density.dt_s}')
@@ -391,22 +417,9 @@ class DensitySummary:
         color = COLORS[_stage % len(COLORS)]
         f = [dp.f for dp in list_density_points]
         d = [dp.d for dp in list_density_points]
-        linestyle = 'none'
-        linestyle = '-'
-        # markersize = [4 if dp.skip else 12 for dp in list_density_points]
-        # markersize = 4 if dp.skip else 12
-        # if dp.skip:
-        #   print('skip')
-        # else:
-        #   print('muh')
         dp = list_density_points[0]
         markersize = 4 if dp.skip else 12
-        ax.loglog(f, d, linestyle=linestyle, linewidth=0.1, marker=marker, markersize=markersize, color=color)
-
-        # list_density_points_not_skip = [dp for dp in list_density_points if not dp.skip]
-        # f = [dp.f for dp in list_density_points_not_skip]
-        # d = [dp.d for dp in list_density_points_not_skip]
-        # ax.loglog(f, d, linestyle=linestyle, linewidth=0.1, marker=marker, markersize=12, color=color)
+        ax.loglog(f, d, linestyle='-', linewidth=0.1, marker=marker, markersize=markersize, color=color)
 
 
     plt.ylabel(f'Density [V/Hz^0.5]')
