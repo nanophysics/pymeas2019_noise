@@ -16,9 +16,9 @@ import program_config_frequencies
 #  |<-- LEFT -->|<--====- SELECT -====-->|<- RIGHT ->|
 #                   |<- DECIMATE ->|
 DECIMATE_FACTOR = 2
-SAMPLES_LEFT = 100 # 36
-SAMPLES_RIGHT = 100 # 36
-SAMPLES_SELECT = 5000000 # 284
+SAMPLES_LEFT = 100  # 36
+SAMPLES_RIGHT = 100  # 36
+SAMPLES_SELECT = 5000000  # 284
 SAMPLES_INPUT = SAMPLES_LEFT + SAMPLES_SELECT + SAMPLES_RIGHT
 
 assert SAMPLES_LEFT % DECIMATE_FACTOR == 0
@@ -27,13 +27,17 @@ assert SAMPLES_SELECT % DECIMATE_FACTOR == 0
 
 FIR_COUNT = 18
 
-useful_part = 0.75 # depending on the downsampling, useful part is the non influenced part by the low pass filtering
+# depending on the downsampling, useful part is the non influenced part by the low pass filtering
+useful_part = 0.75
+
+FILENAME_TAG_SKIP = '_SKIP'
 
 class FIR:
   '''
   Stream-Sink: Implements a Stream-Interface
   Stream-Source: Drives a output of Stream-Interface
   '''
+
   def __init__(self, out):
     self.out = out
     self.array = np.empty(0, dtype=np.float)
@@ -56,7 +60,8 @@ class FIR:
     self.out.push(array_decimate)
 
     # Save the remainting part to 'self.array'
-    self.array = np.concatenate((self.array[SAMPLES_SELECT:], array_in[samples_missing:]))
+    self.array = np.concatenate(
+        (self.array[SAMPLES_SELECT:], array_in[samples_missing:]))
 
   def flush(self):
     if len(self.array) > SAMPLES_LEFT + SAMPLES_RIGHT:
@@ -73,7 +78,8 @@ class FIR:
     assert len(self.array) > SAMPLES_LEFT + SAMPLES_RIGHT
     assert len(self.array) % DECIMATE_FACTOR == 0
 
-    array_decimated = scipy.signal.decimate(self.array, DECIMATE_FACTOR, ftype='iir', zero_phase=True)
+    array_decimated = scipy.signal.decimate(
+        self.array, DECIMATE_FACTOR, ftype='iir', zero_phase=True)
 
     assert len(array_decimated) == len(self.array)//DECIMATE_FACTOR
     index_from = SAMPLES_LEFT//DECIMATE_FACTOR
@@ -89,7 +95,9 @@ class SampleProcessConfig:
     self.stepname = configStep.stepname
     self.interval_s = interval_s
 
+
 SAMPLES_DENSITY = 2**12
+
 
 class Density:
   '''
@@ -99,6 +107,7 @@ class Density:
   This class processes the data-stream and every `self.config.interval_s` does some density calculation...
   The class DensitySummary will the access self.Pxx_sum/self.Pxx_n to create a density plot.
   '''
+
   def __init__(self, out, config, directory):
     # TODO: Make all members private!
 
@@ -135,10 +144,12 @@ class Density:
     print(f'Stage {self.stage:02d}: Density: {self.dt_s:016.12f}, len(self.array)={len(array_in)} -> {len(array_density)}')
     print("Average: %0.9f V" % np.mean(array_density))
 
-    self.frequencies, Pxx = scipy.signal.periodogram(array_density, 1/self.dt_s, window='hamming',) #Hz, V^2/Hz
+    self.frequencies, Pxx = scipy.signal.periodogram(
+        array_density, 1/self.dt_s, window='hamming',)  # Hz, V^2/Hz
     self.__density_averaging(array_density, Pxx)
 
-    filenameFull = DensityPlot.save(self.config, self.directory, self.stage, self.dt_s, self.frequencies, self.Pxx_n, self.Pxx_sum)
+    filenameFull = DensityPlot.save(
+        self.config, self.directory, self.stage, self.dt_s, self.frequencies, self.Pxx_n, self.Pxx_sum)
     if False:
       densityPeriodogram = DensityPlot(filenameFull)
       densityPeriodogram.plot(program.DIRECTORY_1_CONDENSED)
@@ -155,11 +166,12 @@ class Density:
       assert len(self.Pxx_sum) == len(Pxx)
       self.Pxx_sum += Pxx
 
+
 class DensityPlot:
   @classmethod
   def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum):
     skip = stage < config.fir_count_skipped
-    skiptext = '_SKIP' if skip else ''
+    skiptext = FILENAME_TAG_SKIP if skip else ''
     filename = f'densitystep_{config.stepname}_{stage:02d}{skiptext}.pickle'
     data = {
       'stepname': config.stepname,
@@ -177,12 +189,14 @@ class DensityPlot:
     return filenameFull
 
   @classmethod
-  def plots_from_directory(cls, directory_in):
+  def plots_from_directory(cls, directory_in, skip):
     '''
       Return all plot (.pickle-files) from directory.
     '''
     for filename in os.listdir(directory_in):
       if filename.startswith('densitystep_') and filename.endswith('.pickle'):
+        if skip and (FILENAME_TAG_SKIP in filename):
+          continue
         filenameFull = os.path.join(directory_in, filename)
         yield DensityPlot(filenameFull)
 
@@ -191,7 +205,7 @@ class DensityPlot:
     '''
       Loop for all densitystage-files in directory and plot.
     '''
-    for densityPeriodogram in cls.plots_from_directory(directory_in):
+    for densityPeriodogram in cls.plots_from_directory(directory_in, skip=False):
         densityPeriodogram.plot(directory_out)
 
   @classmethod
@@ -256,9 +270,9 @@ class DensityPlot:
     color = 'fuchsia' if self.Pxx_n == 1 else 'blue'
     ax.loglog(self.frequencies, self.Dxx, linewidth=0.1, color=color)
     plt.ylabel(f'Density stage dt_s {self.dt_s:.3e}s ')
-    #plt.ylim( 1e-8,1e-6)
+    # plt.ylim( 1e-8,1e-6)
 
-    #plt.xlim(1e2, 1e5)
+    # plt.xlim(1e2, 1e5)
     f_limit_low = 1.0/self.dt_s/2.0 * useful_part
     f_limit_high = 1.0/self.dt_s/2.0
     plt.axvspan(f_limit_low, f_limit_high, color='red', alpha=0.2)
@@ -267,6 +281,7 @@ class DensityPlot:
     fig.clf()
     plt.close(fig)
     plt.clf()
+    plt.close()
 
 class DensityPoint:
   def __init__(self, f, d, densityPlot):
@@ -278,8 +293,9 @@ class DensityPoint:
   def skip(self):
     return self.densityPlot.skip
 
+  @property
   def line(self):
-    return f'{self.f} {self.d} {self.densityPlot.stepname} {self.densityPlot.stage} {self.skip}'
+    return f'{self.densityPlot.stepname} {self.densityPlot.stage} {self.skip} {self.f} {self.d}'
 
 class Average:
   def __init__(self):
@@ -306,15 +322,8 @@ class Average:
 class Selector:
   def __init__(self, series='E12'):
     self.__eseries_borders = program_config_frequencies.eseries(series=series, minimal=1e-6, maximal=1e8, borders=True)
-    # def sort_key(key):
-    #   '''
-    #   order by frequency
-    #   '''
-    #   l,f,r = key
-    #   return f
-    # self.__eseries_borders = sorted(eseries_borders, key=sort_key)
 
-  def fill_bins(self, density, firstDensityPoint, lastDensity):
+  def fill_bins(self, density, firstDensityPoint, lastDensity, trace=False):
     # contribute, fill_bins
     assert isinstance(density, DensityPlot)
     avg = Average()
@@ -328,16 +337,17 @@ class Selector:
     f_low_limit_Hz = f_high_limit_Hz / DECIMATE_FACTOR   # every FIR stage reduces sampling frequency by factor DECIMATE_FACTOR
 
     for f_eserie_left, f_eserie, f_eserie_right in self.__eseries_borders:
-      if f_eserie < f_low_limit_Hz:
-        if not firstDensityPoint:
-          continue
-        # Special case for the first point: select low frequencies too
+      if not trace:
+        if f_eserie < f_low_limit_Hz:
+          if not firstDensityPoint:
+            continue
+          # Special case for the first point: select low frequencies too
 
-      if f_eserie > f_high_limit_Hz:
-        if not lastDensity:
-          # We are finished with this loop
-          return list_density_points
-        # Special case for the last point: select high frequencies too
+        if f_eserie > f_high_limit_Hz:
+          if not lastDensity:
+            # We are finished with this loop
+            return list_density_points
+          # Special case for the last point: select high frequencies too
 
       while True:
         if idx_fft >= len(density.frequencies):
@@ -364,10 +374,32 @@ class Selector:
 
     raise Exception('Internal Programming Error')
 
+class ColorRotator:
+  # https://stackoverflow.com/questions/22408237/named-colors-in-matplotlibpy
+  COLORS = 'bgrcmykw' # Attention: White at the end!
+  COLORS = 'bgrcmyk'
+  COLORS = (
+    'blue',
+    'orange',
+    'black',
+    'green',
+    'red',
+    'cyan',
+    'magenta',
+    # 'yellow',
+  )
+
+  def __init__(self):
+    self.iter = itertools.cycle(ColorRotator.COLORS)
+
+  @property
+  def color(self):
+    return next(self.iter)
 class DensitySummary:
-  def __init__(self, list_density, file_tag, directory):
+  def __init__(self, list_density, file_tag, directory, trace=False):
     self.file_tag = file_tag
     self.directory = directory
+    self.trace = trace
     self.list_density_points = []
 
     list_density = self.__sort(list_density)
@@ -380,7 +412,7 @@ class DensitySummary:
       selector = Selector('E12')
       firstDensityPoint = len(self.list_density_points) == 0
       lastDensity = density == list_density[-1]
-      list_density_points = selector.fill_bins(density, firstDensityPoint=firstDensityPoint, lastDensity=lastDensity)
+      list_density_points = selector.fill_bins(density, firstDensityPoint=firstDensityPoint, lastDensity=lastDensity, trace=self.trace)
       self.list_density_points.extend(list_density_points)
 
   def __sort(self, list_density):
@@ -388,51 +420,61 @@ class DensitySummary:
       return density.stepname, density.dt_s
 
     list_density_ordered = sorted(list_density, key=sort_key, reverse=True)
-    if True:
+    if False:
       for density in list_density_ordered:
         print(f'  {density.stepname} / {density.dt_s}')
 
     return list_density_ordered
 
-  def plot(self):
-    filename_summary = f'{self.directory}/summary_{self.file_tag}.txt'
+  def write_summary_file(self):
+    filename_summary = f'{self.directory}/summary{self.file_tag}.txt'
     with open(filename_summary, 'w') as f:
       for dp in self.list_density_points:
-        f.write(dp.line())
+        f.write(dp.line)
         f.write('\n')
 
+  def plot(self, color_given=None):
     fig, ax = plt.subplots()
 
-    # https://stackoverflow.com/questions/22408237/named-colors-in-matplotlibpy
-    COLORS = 'bgrcmykw'
     # https://matplotlib.org/3.1.1/api/markers_api.html
     MARKERS = '.+x*'
+    colorRotator = ColorRotator()
 
     stepnames = [(stepname, list(g)) for stepname, g in itertools.groupby(self.list_density_points, lambda density: density.densityPlot.stepname)]
-    for stepnumber, (stepname, list_step_density) in enumerate(stepnames):
-      marker = MARKERS[stepnumber % len(MARKERS)]
+    for stepnumber, (_stepname, list_step_density) in enumerate(stepnames):
 
       stages = [(stage, list(g)) for stage, g in itertools.groupby(list_step_density, lambda dp: dp.densityPlot.stage)]
       for _stage, list_density_points in stages:
-        color = COLORS[_stage % len(COLORS)]
         f = [dp.f for dp in list_density_points]
         d = [dp.d for dp in list_density_points]
-        dp = list_density_points[0]
-        markersize = 4 if dp.skip else 12
-        ax.loglog(f, d, linestyle='-', linewidth=0.1, marker=marker, markersize=markersize, color=color)
 
+        color = color_fancy = colorRotator.color
+        if color_given is not None:
+          color = color_given
+        linestyle = 'none'
+        marker = '.'
+        markersize = 3
+        if self.trace:
+          linestyle = '-'
+          color = color_fancy
+          dp = list_density_points[0]
+          marker = MARKERS[stepnumber % len(MARKERS)]
+          markersize = 4 if dp.skip else 12
+
+        ax.loglog(f, d, linestyle=linestyle, linewidth=0.1, marker=marker, markersize=markersize, color=color)
 
     plt.ylabel(f'Density [V/Hz^0.5]')
     # plt.ylim( 1e-11,1e-6)
     # plt.xlim(1e-2, 1e5) # temp Peter
     plt.grid(True)
     print(f'DensitySummary{self.file_tag}')
-    fig.savefig(f'{self.directory}/densitysummary{self.file_tag}.png')
+    fig.savefig(f'{self.directory}/densitysummary{self.file_tag}.png', dpi=300)
     fig.savefig(f'{self.directory}/densitysummary{self.file_tag}.svg')
-    plt.show()
+    # plt.show()
     fig.clf()
     plt.close(fig)
     plt.clf()
+    plt.close()
 
 class OutTrash:
   '''
@@ -496,10 +538,10 @@ class InSin:
 
   def process(self):
     t = np.arange(0, self.time_total_s, self.dt_s)
-    #nse = np.random.randn(len(t))
+    # nse = np.random.randn(len(t))
     r = np.exp(-t / 0.05)
-    #cnse = np.convolve(nse, r) * dt_s
-    #cnse = cnse[:len(t)]
+    # cnse = np.convolve(nse, r) * dt_s
+    # cnse = cnse[:len(t)]
     s = 1.0 * np.sin(2 * np.pi * t / 2.0) #+ 0 * cnse
 
     if False:

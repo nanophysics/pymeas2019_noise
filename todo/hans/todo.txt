@@ -1,5 +1,5 @@
-matplotlib animate
-directory structure
-run with simulator
+TODO: matplotlib animate
+TODO: directory structure
+TODO: run with simulator
 
 
