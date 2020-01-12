@@ -17,11 +17,12 @@ dict_config_setup = dict(
   # input_Vp = PS5000ARange.R_50V, 
   steps = (
     dict(
-      stepname = 'fast',
+      stepname = '0_fast',
       # External
       skalierungsfaktor = 1.0E-3,   # Amplifier Gain 1000   todoPeter spaeter korrrekt einbauen
       # Processing
       fir_count = 8,
+      fir_count_skipped = 4,
       # Picoscope
       input_channel = 'A', # channel A is connected without filter to the amplifier out
       input_Vp = PS5000ARange.R_100MV,
@@ -32,11 +33,12 @@ dict_config_setup = dict(
       dt_s = 1.0 / 125E6,
     ),
     dict(
-      stepname = 'medium',
+      stepname = '1_medium',
       # External
       skalierungsfaktor = 1.0E-3,   # Amplifier Gain 1000   todoPeter spaeter korrrekt einbauen
       # Processing
       fir_count = 8,
+      fir_count_skipped = 4,
       # Picoscope
       input_channel = 'A', # channel A is connected without filter to the amplifier out
       input_Vp = PS5000ARange.R_100MV,
@@ -47,11 +49,12 @@ dict_config_setup = dict(
       dt_s = 1.0 / 62.5E6,
     ),
     dict(
-      stepname = 'slow',
+      stepname = '2_slow',
       # External
       skalierungsfaktor = 1.0E-3,   # Amplifier Gain 1000   todoPeter spaeter korrrekt einbauen
       # Processing
       fir_count = 13,
+      fir_count_skipped = 4,
       # Picoscope
       input_channel = 'B', # channel B is connected with filter low pass 100 kHz ??? to the amplifier out
       input_Vp = PS5000ARange.R_100MV,
