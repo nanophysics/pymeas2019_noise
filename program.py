@@ -167,6 +167,7 @@ class ConfigStep:
   def __init__(self, dict_values={}):
     self.stepname = DEFINED_BY_SETUP
     self.fir_count = DEFINED_BY_SETUP
+    self.fir_count_skipped = DEFINED_BY_SETUP
     self.input_Vp = DEFINED_BY_SETUP
     self.skalierungsfaktor = DEFINED_BY_SETUP
     self.input_channel = DEFINED_BY_SETUP

@@ -85,6 +85,7 @@ class FIR:
 class SampleProcessConfig:
   def __init__(self, configStep, interval_s=0.9):
     self.fir_count = configStep.fir_count
+    self.fir_count_skipped = configStep.fir_count_skipped
     self.stepname = configStep.stepname
     self.interval_s = interval_s
 
@@ -157,7 +158,9 @@ class Density:
 class DensityPlot:
   @classmethod
   def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum):
-    filename = f'densitystep_{config.stepname}_{stage:02d}.pickle'
+    skip = stage < config.fir_count_skipped
+    skiptext = '_SKIP' if skip else ''
+    filename = f'densitystep_{config.stepname}_{stage:02d}{skiptext}.pickle'
     data = {
       'stepname': config.stepname,
       'stage': stage,
@@ -165,6 +168,7 @@ class DensityPlot:
       'frequencies': frequencies,
       'Pxx_n': Pxx_n,
       'Pxx_sum': Pxx_sum,
+      'skip': skip,
     }
     filenameFull = os.path.join(directory, filename)
     with open(filenameFull, 'wb') as f:
@@ -217,6 +221,7 @@ class DensityPlot:
     self.stepname = data['stepname']
     self.stage = data['stage']
     self.dt_s = data['dt_s']
+    self.skip = data['skip']
     self.frequencies = data['frequencies']
     self.__Pxx_n = data['Pxx_n']
     self.__Pxx_sum = data['Pxx_sum']
@@ -264,14 +269,17 @@ class DensityPlot:
     plt.clf()
 
 class DensityPoint:
-  def __init__(self, f, d, densityPlot, selected):
+  def __init__(self, f, d, densityPlot):
     self.f = f
     self.d = d
     self.densityPlot = densityPlot
-    self.selected = selected
+
+  @property
+  def skip(self):
+    return self.densityPlot.skip
 
   def line(self):
-    return f'{self.f} {self.d} {self.densityPlot.stepname} {self.selected}'
+    return f'{self.f} {self.d} {self.densityPlot.stepname} {self.densityPlot.stage} {self.skip}'
 
 class Average:
   def __init__(self):
@@ -296,7 +304,7 @@ class Average:
     self.__sum_d += d
     
 class Selector:
-  def __init__(self, series='E12', first=False, last=True, selected_only=False):
+  def __init__(self, series='E12', first=False, last=True):
     self.__eseries_borders = program_config_frequencies.eseries(series=series, minimal=1e-6, maximal=1e8, borders=True)
 
   def fill_bins(self, density):
@@ -323,7 +331,7 @@ class Selector:
           P = avg.avg()
           if P is not None:
             d = math.sqrt(P)
-            dp = DensityPoint(f=f_eserie, d=d, densityPlot=density, selected=True)
+            dp = DensityPoint(f=f_eserie, d=d, densityPlot=density)
             list_density_points.append(dp)
           break # Continue in next eserie.
 
@@ -335,20 +343,30 @@ class Selector:
 
 class DensitySummary:
   def __init__(self, list_density, file_tag, directory):
-    self.list_density = list_density
     self.file_tag = file_tag
     self.directory = directory
     self.list_density_points = []
 
-    for density in list_density:
+    for density in self.__sort(list_density):
       assert isinstance(density, DensityPlot)
       Pxx = density.Pxx
       if Pxx is None:
         continue
 
-      selector = Selector('E12', first=False, last=True, selected_only=False)
+      selector = Selector('E12', first=False, last=True)
       list_density_points = selector.fill_bins(density)
       self.list_density_points.extend(list_density_points)
+
+  def __sort(self, list_density):
+    def sort_key(density):
+      return density.stepname, density.dt_s
+
+    list_density_ordered = sorted(list_density, key=sort_key)
+    if True:
+      for density in list_density_ordered:
+        print(f'  {density.stepname} / {density.dt_s}')
+
+    return list_density_ordered
 
   def plot(self):
     filename_summary = f'{self.directory}/summary_{self.file_tag}.txt'
@@ -375,7 +393,21 @@ class DensitySummary:
         d = [dp.d for dp in list_density_points]
         linestyle = 'none'
         linestyle = '-'
-        ax.loglog(f, d, linestyle=linestyle, linewidth=0.1, marker=marker, markersize=4, color=color)
+        # markersize = [4 if dp.skip else 12 for dp in list_density_points]
+        # markersize = 4 if dp.skip else 12
+        # if dp.skip:
+        #   print('skip')
+        # else:
+        #   print('muh')
+        dp = list_density_points[0]
+        markersize = 4 if dp.skip else 12
+        ax.loglog(f, d, linestyle=linestyle, linewidth=0.1, marker=marker, markersize=markersize, color=color)
+
+        # list_density_points_not_skip = [dp for dp in list_density_points if not dp.skip]
+        # f = [dp.f for dp in list_density_points_not_skip]
+        # d = [dp.d for dp in list_density_points_not_skip]
+        # ax.loglog(f, d, linestyle=linestyle, linewidth=0.1, marker=marker, markersize=12, color=color)
+
 
     plt.ylabel(f'Density [V/Hz^0.5]')
     # plt.ylim( 1e-11,1e-6)
