@@ -265,11 +265,14 @@ def get_configSetups():
 def run_condense_0to1():
   list_density = list(program_fir.DensityPlot.plots_from_directory(directory_in=DIRECTORY_0_RAW))
 
-  stepnames = [(stepname, list(g)) for stepname, g in itertools.groupby(list_density, lambda density: density.stepname)]
-  for stepname, list_step_density in stepnames:
-      print(f'DensitySummary {stepname}')
-      ds = program_fir.DensitySummary(list_step_density, stepname=stepname, directory=DIRECTORY_1_CONDENSED)
-      ds.plot()
+  # stepnames = [(stepname, list(g)) for stepname, g in itertools.groupby(list_density, lambda density: density.stepname)]
+  # for stepname, list_step_density in stepnames:
+  #     print(f'DensitySummary {stepname}')
+  #     ds = program_fir.DensitySummary(list_step_density, stepname=stepname, directory=DIRECTORY_1_CONDENSED)
+  #     ds.plot()
+
+  ds = program_fir.DensitySummary(list_density, file_tag='', directory=DIRECTORY_1_CONDENSED)
+  ds.plot()
 
 class ResultCommon:
   def __init__(self):

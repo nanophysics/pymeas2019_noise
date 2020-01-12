@@ -218,24 +218,38 @@ class DensityPlot:
     self.stage = data['stage']
     self.dt_s = data['dt_s']
     self.frequencies = data['frequencies']
-    self.Pxx_n = data['Pxx_n']
-    self.Pxx_sum = data['Pxx_sum']
+    self.__Pxx_n = data['Pxx_n']
+    self.__Pxx_sum = data['Pxx_sum']
     print(f'DensityPlot {self.stage} {self.dt_s} {filenameFull}')
+
+  @property
+  def Pxx_n(self):
+    return self.__Pxx_n
+
+  @property
+  def Pxx(self):
+    if self.__Pxx_n == 0:
+      return None
+    return self.__Pxx_sum/self.__Pxx_n
+
+  @property
+  def Dxx(self):
+    if self.__Pxx_n == 0:
+      return None
+    return np.sqrt(self.Pxx)  # V/Hz^0.5
 
   def plot(self, directory):
     if not os.path.exists(directory):
       os.mkdir(directory)
     filenameFull = f'{directory}/densitystep_{self.stepname}_{self.stage:02d}_{self.dt_s:016.12f}.png'
-    if self.Pxx_sum is None:
+    if self.Pxx_n is None:
       print(f'No Pxx: skipped {filenameFull}')
       return
 
     # If we have averaged values, use it
     fig, ax = plt.subplots()
-    Pxx = self.Pxx_sum/self.Pxx_n
-    Dxx = np.sqrt(Pxx) # V/Hz^0.5
     color = 'fuchsia' if self.Pxx_n == 1 else 'blue'
-    ax.loglog(self.frequencies, Dxx, linewidth=0.1, color=color)
+    ax.loglog(self.frequencies, self.Dxx, linewidth=0.1, color=color)
     plt.ylabel(f'Density stage dt_s {self.dt_s:.3e}s ')
     #plt.ylim( 1e-8,1e-6)
 
@@ -259,56 +273,85 @@ class DensityPoint:
   def line(self):
     return f'{self.f} {self.d} {self.densityPlot.stepname} {self.selected}'
 
+class Average:
+  def __init__(self):
+    self.reset()
+
+  def reset(self):
+    self.__sum_d = 0.0
+    self.__sum_n = 0
+
+  def avg(self):
+    '''
+    return None if no samples
+    '''
+    if self.__sum_n == 0:
+      return None
+    avg = self.__sum_d / self.__sum_n
+    self.reset()
+    return avg
+
+  def sum(self, d):
+    self.__sum_n += 1
+    self.__sum_d += d
+    
+class Selector:
+  def __init__(self, series='E12', first=False, last=True, selected_only=False):
+    self.__eseries_borders = program_config_frequencies.eseries(series=series, minimal=1e-6, maximal=1e8, borders=True)
+
+  def fill_bins(self, density):
+    # contribute, fill_bins
+    assert isinstance(density, DensityPlot)
+    avg = Average()
+    idx_fft = 0
+    Pxx = density.Pxx
+    list_density_points = []
+
+    for f_eserie_left, f_eserie, f_eserie_right in self.__eseries_borders:
+      while True:
+        if idx_fft >= len(density.frequencies):
+          # We are finished with this loop
+          return list_density_points
+
+        f_fft = density.frequencies[idx_fft]
+
+        if f_fft < f_eserie_left:
+          idx_fft += 1
+          continue
+
+        if f_fft > f_eserie_right:
+          P = avg.avg()
+          if P is not None:
+            d = math.sqrt(P)
+            dp = DensityPoint(f=f_eserie, d=d, densityPlot=density, selected=True)
+            list_density_points.append(dp)
+          break # Continue in next eserie.
+
+        d = Pxx[idx_fft]
+        avg.sum(d)
+        idx_fft += 1
+
+    raise Exception('Internal Programming Error')
+
 class DensitySummary:
-  def __init__(self, list_density, stepname, directory):
+  def __init__(self, list_density, file_tag, directory):
     self.list_density = list_density
-    self.stepname = stepname
+    self.file_tag = file_tag
     self.directory = directory
     self.list_density_points = []
 
-    eseries_borders = program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8, borders=True)
-    eseries_f = [f for l,f,r in eseries_borders]
     for density in list_density:
       assert isinstance(density, DensityPlot)
-      if density.Pxx_sum is None:
+      Pxx = density.Pxx
+      if Pxx is None:
         continue
 
-      # TODO: Do not access directly Pxx_sum.
-      Pxx = density.Pxx_sum / density.Pxx_n
-      class Global:
-        pass
-      g = Global()
-      g.idx_fft = 0
-      g.sum_d = 0.0
-      g.sum_n = 0
-      for f_eserie_left, f_eserie, f_eserie_right in eseries_borders:
-        def fill_bin():
-          while True:
-            if g.idx_fft >= len(density.frequencies):
-              return True # Done!
-            f_fft = density.frequencies[g.idx_fft]
-
-            if f_fft < f_eserie_left:
-              g.idx_fft += 1
-              continue
-
-            if f_fft > f_eserie_right:
-              if g.sum_n > 0:
-                avg_d = math.sqrt(g.sum_d / g.sum_n)
-                dp = DensityPoint(f=f_eserie, d=avg_d, densityPlot=density, selected=True)
-                self.list_density_points.append(dp)
-              return False # Continue in next eserie.
-
-            d = Pxx[g.idx_fft]
-            g.sum_n += 1
-            g.sum_d += d
-            g.idx_fft += 1
-
-        if fill_bin():
-          break
+      selector = Selector('E12', first=False, last=True, selected_only=False)
+      list_density_points = selector.fill_bins(density)
+      self.list_density_points.extend(list_density_points)
 
   def plot(self):
-    filename_summary = f'{self.directory}/summary_{self.stepname}.txt'
+    filename_summary = f'{self.directory}/summary_{self.file_tag}.txt'
     with open(filename_summary, 'w') as f:
       for dp in self.list_density_points:
         f.write(dp.line())
@@ -316,17 +359,32 @@ class DensitySummary:
 
     fig, ax = plt.subplots()
 
-    stages = [(stage, list(g)) for stage, g in itertools.groupby(self.list_density_points, lambda dp: dp.densityPlot.stage)]
-    for stage, list_density_points in stages:
-      f = [dp.f for dp in list_density_points]
-      d = [dp.d for dp in list_density_points]
-      ax.loglog(f, d, linestyle='-', marker='o', markersize=2, color='blue')
+    # https://stackoverflow.com/questions/22408237/named-colors-in-matplotlibpy
+    COLORS = 'bgrcmykw'
+    # https://matplotlib.org/3.1.1/api/markers_api.html
+    MARKERS = '.+x*'
+
+    stepnames = [(stepname, list(g)) for stepname, g in itertools.groupby(self.list_density_points, lambda density: density.densityPlot.stepname)]
+    for stepnumber, (stepname, list_step_density) in enumerate(stepnames):
+      marker = MARKERS[stepnumber % len(MARKERS)]
+
+      stages = [(stage, list(g)) for stage, g in itertools.groupby(list_step_density, lambda dp: dp.densityPlot.stage)]
+      for _stage, list_density_points in stages:
+        color = COLORS[_stage % len(COLORS)]
+        f = [dp.f for dp in list_density_points]
+        d = [dp.d for dp in list_density_points]
+        linestyle = 'none'
+        linestyle = '-'
+        ax.loglog(f, d, linestyle=linestyle, linewidth=0.1, marker=marker, markersize=4, color=color)
 
     plt.ylabel(f'Density [V/Hz^0.5]')
     # plt.ylim( 1e-11,1e-6)
     # plt.xlim(1e-2, 1e5) # temp Peter
     plt.grid(True)
-    fig.savefig(f'{self.directory}/densitysummary_{self.stepname}.png')
+    print(f'DensitySummary{self.file_tag}')
+    fig.savefig(f'{self.directory}/densitysummary{self.file_tag}.png')
+    fig.savefig(f'{self.directory}/densitysummary{self.file_tag}.svg')
+    plt.show()
     fig.clf()
     plt.close(fig)
     plt.clf()
