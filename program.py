@@ -244,7 +244,7 @@ class ConfigSetup:
       sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), DIRECTORY_0_RAW, DIRECTORY_1_CONDENSED)
       picoscope.acquire(configStep, sample_process.output)
       picoscope.close()
-    
+
     run_condense_0to1()
 
 
@@ -263,17 +263,18 @@ def get_configSetups():
       list_configs.append(os.path.join(DIRECTORY_TOP, filename))
   return list_configs
 
-def run_condense_0to1():
-  list_density = list(program_fir.DensityPlot.plots_from_directory(directory_in=DIRECTORY_0_RAW))
+def run_condense_0to1(trace=False):
+  list_density = list(program_fir.DensityPlot.plots_from_directory(directory_in=DIRECTORY_0_RAW, skip=not trace))
 
-  # stepnames = [(stepname, list(g)) for stepname, g in itertools.groupby(list_density, lambda density: density.stepname)]
-  # for stepname, list_step_density in stepnames:
-  #     print(f'DensitySummary {stepname}')
-  #     ds = program_fir.DensitySummary(list_step_density, stepname=stepname, directory=DIRECTORY_1_CONDENSED)
-  #     ds.plot()
+  file_tag = '_trace' if trace else ''
+  ds = program_fir.DensitySummary(list_density, file_tag=file_tag, directory=DIRECTORY_1_CONDENSED, trace=trace)
+  ds.write_summary_file()
+  ds.plot(color_given='blue')
 
-  ds = program_fir.DensitySummary(list_density, file_tag='', directory=DIRECTORY_1_CONDENSED)
-  ds.plot()
+  if not trace:
+    file_tag = '_colors'
+    ds = program_fir.DensitySummary(list_density, file_tag=file_tag, directory=DIRECTORY_1_CONDENSED, trace=trace)
+    ds.plot()
 
 class ResultCommon:
   def __init__(self):

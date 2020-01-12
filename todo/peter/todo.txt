@@ -18,10 +18,11 @@ fft density, ganz am schluss in bändern E12
 step_size sprunghoehen, in bändern E12
 time_series
 
-fmax_Hz = 1.0 / (dt_s * 2) # highest frequency in spectogram
-useful_part = 0.75 # depending on the downsampling, useful part is the non influenced part by the low pass filtering of the FIR stage
-f_high_limit_Hz = useful_part * fmax_Hz
-f_low_limit_Hz = f_high_limit_Hz / DECIMATE_FACTOR   # every FIR stage reduces sampling frequency by factor DECIMATE_FACTOR
+DONE:
+  fmax_Hz = 1.0 / (dt_s * 2) # highest frequency in spectogram
+  useful_part = 0.75 # depending on the downsampling, useful part is the non influenced part by the low pass filtering of the FIR stage
+  f_high_limit_Hz = useful_part * fmax_Hz
+  f_low_limit_Hz = f_high_limit_Hz / DECIMATE_FACTOR   # every FIR stage reduces sampling frequency by factor DECIMATE_FACTOR
 
 
 Spektren zusammenfügen für eine samplefrequenz:
