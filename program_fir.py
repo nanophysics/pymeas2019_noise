@@ -396,8 +396,7 @@ class ColorRotator:
   def color(self):
     return next(self.iter)
 class DensitySummary:
-  def __init__(self, list_density, file_tag, directory, trace=False):
-    self.file_tag = file_tag
+  def __init__(self, list_density, directory, trace=False):
     self.directory = directory
     self.trace = trace
     self.list_density_points = []
@@ -426,14 +425,14 @@ class DensitySummary:
 
     return list_density_ordered
 
-  def write_summary_file(self):
-    filename_summary = f'{self.directory}/summary{self.file_tag}.txt'
+  def write_summary_file(self, file_tag):
+    filename_summary = f'{self.directory}/summary{file_tag}.txt'
     with open(filename_summary, 'w') as f:
       for dp in self.list_density_points:
         f.write(dp.line)
         f.write('\n')
 
-  def plot(self, color_given=None):
+  def plot(self, file_tag='', color_given=None):
     fig, ax = plt.subplots()
 
     # https://matplotlib.org/3.1.1/api/markers_api.html
@@ -467,9 +466,9 @@ class DensitySummary:
     # plt.ylim( 1e-11,1e-6)
     # plt.xlim(1e-2, 1e5) # temp Peter
     plt.grid(True)
-    print(f'DensitySummary{self.file_tag}')
-    fig.savefig(f'{self.directory}/densitysummary{self.file_tag}.png', dpi=300)
-    fig.savefig(f'{self.directory}/densitysummary{self.file_tag}.svg')
+    print(f'DensitySummary{file_tag}')
+    fig.savefig(f'{self.directory}/densitysummary{file_tag}.png', dpi=300)
+    fig.savefig(f'{self.directory}/densitysummary{file_tag}.svg')
     # plt.show()
     fig.clf()
     plt.close(fig)

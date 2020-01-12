@@ -267,14 +267,13 @@ def run_condense_0to1(trace=False):
   list_density = list(program_fir.DensityPlot.plots_from_directory(directory_in=DIRECTORY_0_RAW, skip=not trace))
 
   file_tag = '_trace' if trace else ''
-  ds = program_fir.DensitySummary(list_density, file_tag=file_tag, directory=DIRECTORY_1_CONDENSED, trace=trace)
-  ds.write_summary_file()
-  ds.plot(color_given='blue')
+  ds = program_fir.DensitySummary(list_density, directory=DIRECTORY_1_CONDENSED, trace=trace)
+  ds.write_summary_file(file_tag=file_tag)
+  ds.plot(file_tag=file_tag, color_given='blue')
 
   if not trace:
     file_tag = '_colors'
-    ds = program_fir.DensitySummary(list_density, file_tag=file_tag, directory=DIRECTORY_1_CONDENSED, trace=trace)
-    ds.plot()
+    ds.plot(file_tag=file_tag)
 
 class ResultCommon:
   def __init__(self):
