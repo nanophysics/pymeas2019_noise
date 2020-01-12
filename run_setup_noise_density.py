@@ -53,7 +53,7 @@ dict_config_setup = dict(
       # External
       skalierungsfaktor = 1.0E-3,   # Amplifier Gain 1000   todoPeter spaeter korrrekt einbauen
       # Processing
-      fir_count = 13,
+      fir_count = 15,
       fir_count_skipped = 4,
       # Picoscope
       input_channel = 'B', # channel B is connected with filter low pass 100 kHz ??? to the amplifier out
