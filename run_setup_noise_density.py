@@ -79,7 +79,7 @@ if __name__ == '__main__':
   # thread.stop()
 
   import program_fir
-  program_fir.DensityPlot.directory_plot(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
+  # program_fir.DensityPlot.directory_plot(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
   pass
   # configSetup.condense_0to1()
   # program.run_condense_1to2_result()
