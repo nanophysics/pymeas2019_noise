@@ -8,6 +8,7 @@ import pathlib
 import itertools
 import threading
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import program
 import program_config_frequencies
 
@@ -26,9 +27,6 @@ assert SAMPLES_RIGHT % DECIMATE_FACTOR == 0
 assert SAMPLES_SELECT % DECIMATE_FACTOR == 0
 
 FIR_COUNT = 18
-
-# depending on the downsampling, useful part is the non influenced part by the low pass filtering
-useful_part = 0.75
 
 FILENAME_TAG_SKIP = '_SKIP'
 
@@ -268,7 +266,7 @@ class DensityPlot:
     # If we have averaged values, use it
     fig, ax = plt.subplots()
     color = 'fuchsia' if self.Pxx_n == 1 else 'blue'
-    ax.loglog(self.frequencies, self.Dxx, linewidth=0.1, color=color)
+    ax.loglog(self.frequencies, self.Dxx , linewidth=0.1, color=color)
     plt.ylabel(f'Density stage dt_s {self.dt_s:.3e}s ')
     # plt.ylim( 1e-8,1e-6)
 
@@ -363,7 +361,7 @@ class Selector:
         if f_fft > f_eserie_right:
           P = avg.avg()
           if P is not None:
-            d = math.sqrt(P)
+            d = math.sqrt(P) * 1E-3 # todoHans: 1E-3 soll "skalierungsfaktor" an einem guten ort sein
             dp = DensityPoint(f=f_eserie, d=d, densityPlot=density)
             list_density_points.append(dp)
           break # Continue in next eserie.
@@ -404,7 +402,7 @@ class DensitySummary:
     list_density = self.__sort(list_density)
     for density in list_density:
       assert isinstance(density, DensityPlot)
-      Pxx = density.Pxx
+      Pxx = density.Pxx 
       if Pxx is None:
         continue
 
@@ -446,7 +444,6 @@ class DensitySummary:
       for _stage, list_density_points in stages:
         f = [dp.f for dp in list_density_points]
         d = [dp.d for dp in list_density_points]
-
         color = color_fancy = colorRotator.color
         if color_given is not None:
           color = color_given
@@ -458,14 +455,17 @@ class DensitySummary:
           color = color_fancy
           dp = list_density_points[0]
           marker = MARKERS[stepnumber % len(MARKERS)]
-          markersize = 4 if dp.skip else 12
-
+          markersize = 2 if dp.skip else 4
         ax.loglog(f, d, linestyle=linestyle, linewidth=0.1, marker=marker, markersize=markersize, color=color)
 
     plt.ylabel(f'Density [V/Hz^0.5]')
+    plt.xlabel(f'Frequency [Hz]')
     # plt.ylim( 1e-11,1e-6)
     # plt.xlim(1e-2, 1e5) # temp Peter
-    plt.grid(True)
+    # plt.grid(True)
+    plt.grid(True, which="major", axis="both", linestyle="-", color='gray', linewidth=0.5)
+    plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
+    ax.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=20))
     print(f'DensitySummary{file_tag}')
     fig.savefig(f'{self.directory}/densitysummary{file_tag}.png', dpi=300)
     fig.savefig(f'{self.directory}/densitysummary{file_tag}.svg')

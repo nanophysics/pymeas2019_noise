@@ -23,7 +23,7 @@ assert(f_sample_1_medium_hz / 2**reserve_fir_count_1_medium < 20E6 *0.5)
 
 # 2_slow
 reserve_fir_count_2_slow = 7 # high enough to skip filter at input with low pass frequency of ???
-fir_count_2_slow = reserve_fir_count_2_slow + 23 # free to choose
+fir_count_2_slow = reserve_fir_count_2_slow + 27 # free to choose
 assert(fir_count_2_slow > reserve_fir_count_2_slow)
 
 dict_config_setup = dict(
@@ -89,12 +89,13 @@ dict_config_setup = dict(
       bandwitdth = 'BW_20MHZ',
       offset = 0.0,
       resolution = '16bit',
-      duration_s = 300.0,
+      #duration_s = 3.0,
+      duration_s = 5*3600.0,
       dt_s = 1 / f_sample_2_slow_hz,
     ),
   )
 )
-print ( dict_config_setup)
+#print ( dict_config_setup)
 
 if __name__ == '__main__':
   # import program_fir
