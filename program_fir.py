@@ -19,14 +19,14 @@ import program_config_frequencies
 DECIMATE_FACTOR = 2
 SAMPLES_LEFT = 100  # 36
 SAMPLES_RIGHT = 100  # 36
-SAMPLES_SELECT = 5000000  # 284
+SAMPLES_SELECT = 910000  # 5000000
 SAMPLES_INPUT = SAMPLES_LEFT + SAMPLES_SELECT + SAMPLES_RIGHT
 
 assert SAMPLES_LEFT % DECIMATE_FACTOR == 0
 assert SAMPLES_RIGHT % DECIMATE_FACTOR == 0
 assert SAMPLES_SELECT % DECIMATE_FACTOR == 0
 
-FIR_COUNT = 18
+#FIR_COUNT = 18
 
 FILENAME_TAG_SKIP = '_SKIP'
 
@@ -73,6 +73,7 @@ class FIR:
     self.out.flush()
 
   def decimate(self):
+    print('d', end='')
     assert len(self.array) > SAMPLES_LEFT + SAMPLES_RIGHT
     assert len(self.array) % DECIMATE_FACTOR == 0
 
@@ -139,8 +140,9 @@ class Density:
     if len(array_in) > SAMPLES_DENSITY:
       array_density = array_in[:SAMPLES_DENSITY]
 
-    print(f'Stage {self.stage:02d}: Density: {self.dt_s:016.12f}, len(self.array)={len(array_in)} -> {len(array_density)}')
-    print("Average: %0.9f V" % np.mean(array_density))
+    print('')
+    print(f'Stage {self.stage:02d} dt_s {self.dt_s:016.12f}, len(array)={len(array_in)} -> {len(array_density)}, mean V:{np.mean(array_density):0.6f}', end='')
+    #print("Average: %0.9f V" % np.mean(array_density))
 
     self.frequencies, Pxx = scipy.signal.periodogram(
         array_density, 1/self.dt_s, window='hamming',)  # Hz, V^2/Hz
@@ -490,7 +492,7 @@ class OutTrash:
     # self.array = np.append(self.array, array_in)
 
     # print(f'array={len(array)}')
-    print('.', end='')
+    print('.')
 
   def flush(self):
     pass

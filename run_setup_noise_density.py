@@ -7,7 +7,8 @@ from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 f_sample_0_fast_hz = 125E6 # do not change this values as this is the fastest rate with 15 bit
 f_sample_1_medium_hz = f_sample_0_fast_hz / float(2**1)  # do not change this values as this is the fastest rate with 16 bit
 assert(( f_sample_1_medium_hz - 62.5E6) < 0.01 )
-f_sample_2_slow_hz = f_sample_0_fast_hz/ float(2**7)
+exponent_slow = 5 # free to change. Peter has choosen 9 on his laptop
+f_sample_2_slow_hz = f_sample_0_fast_hz/ float(2**exponent_slow)
 # todo: assert falls f_sample_2_slow_hz nicht in reihe der möglichen frequenzen passt
 
 # 0_fast
@@ -22,7 +23,7 @@ fir_count_1_medium = int( math.log(f_sample_1_medium_hz / f_sample_2_slow_hz,2) 
 assert(f_sample_1_medium_hz / 2**reserve_fir_count_1_medium < 20E6 *0.5)
 
 # 2_slow
-reserve_fir_count_2_slow = 7 # high enough to skip filter at input with low pass frequency of ???
+reserve_fir_count_2_slow = 5 # high enough to skip filter at input with low pass frequency of ???
 fir_count_2_slow = reserve_fir_count_2_slow + 27 # free to choose
 assert(fir_count_2_slow > reserve_fir_count_2_slow)
 
@@ -43,7 +44,7 @@ dict_config_setup = dict(
 
   
 
-  steps = (
+  steps = ( 
     dict(
       stepname = '0_fast',
       # External
@@ -76,7 +77,7 @@ dict_config_setup = dict(
       duration_s = 2.0,
       dt_s = 1.0 / f_sample_1_medium_hz,
     ),
-    dict(
+      dict(
       stepname = '2_slow',
       # External
       skalierungsfaktor = 1.0E-3,   # Amplifier Gain 1000   todoPeter spaeter korrrekt einbauen
@@ -89,8 +90,8 @@ dict_config_setup = dict(
       bandwitdth = 'BW_20MHZ',
       offset = 0.0,
       resolution = '16bit',
-      #duration_s = 3.0,
-      duration_s = 5*3600.0,
+      duration_s = 60.0,
+      #duration_s = 7*3600.0,
       dt_s = 1 / f_sample_2_slow_hz,
     ),
   )
