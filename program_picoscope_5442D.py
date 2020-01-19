@@ -150,6 +150,8 @@ class PicoScope:
           print(r'\nSTOP(time over)', end='')
 
     if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
+      channel_gain = configStep.skalierungsfaktor * channel._volts_per_adu
+
       @callbacks.ps5000aStreamingReady
       def my_streaming_ready(handle, num_samples, start_index, overflow, trigger_at, triggered, auto_stop, p_parameter):
         if False:
@@ -160,7 +162,7 @@ class PicoScope:
         # self.stream.put(channel_raw[start_index:start_index+num_samples])
         # See: def volts(self):
         adu_values = channel.raw[start_index:start_index+num_samples]
-        volts = adu_values * channel._volts_per_adu - channel._voltage_offset
+        volts = channel_gain * adu_values
         queueFull = stream.put(volts)
         if queueFull:
           self.streaming_done = True

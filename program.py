@@ -39,9 +39,6 @@ logger.setLevel(logging.DEBUG)
 DIRECTORY_TOP = os.path.dirname(os.path.abspath(__file__))
 DIRECTORY_RESULT = 'result'
 
-# run_setup_calibrate_picoscope.py
-RE_CONFIG_SETUP = re.compile('run_setup_(?P<setup>.*?).py')
-
 DEFINED_BY_SETUP='DEFINED_BY_SETUP'
 
 pp = pprint.PrettyPrinter(indent=2)
@@ -190,6 +187,7 @@ class ConfigStep:
       self._update_element(key, value)
 
 class ResultAttributes:
+  RESULT_DIR_DEFAULT='raw-red-actual'
   RESULT_DIR_PATTERN='raw-*'
   REG_DIR=re.compile(r'^raw-(?P<color>.+?)-(?P<topic>.+)$')
 
@@ -234,38 +232,29 @@ class ConfigSetup:
     for key, value in dict_config_setup.items():
       self._update_element(key, value)
 
-  def update_by_channel_file(self, filename_channel):
-    self.create_directories()
-    dict_globals = {}
-    with open(filename_channel) as f:
-      exec(f.read(), dict_globals)
-    dict_config_setup = dict_globals['dict_config_setup']
+  def update_by_channel_file(self, dict_config_setup):
     self.update_by_dict(dict_config_setup)
 
-    match = RE_CONFIG_SETUP.match(os.path.basename(filename_channel))
-    assert match is not None
-    setup_name = match.group('setup')
-    self._update_element('setup_name', setup_name)
-
-  def measure_for_all_steps(self):
-    self.delete_directory_contents(DIRECTORY_0_RAW)
-    self.delete_directory_contents(DIRECTORY_1_CONDENSED)
+  def measure_for_all_steps(self, dir_measurement):
+    dir_results = dir_measurement.joinpath(ResultAttributes.RESULT_DIR_DEFAULT)
+    if dir_results.exists():
+      self.delete_directory_contents(str(dir_results))
+    else:
+      dir_results.mkdir()
 
     for configStep in self.steps:
       picoscope = program_picoscope.PicoScope(configStep)
       picoscope.connect()
-      sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), DIRECTORY_0_RAW, DIRECTORY_1_CONDENSED)
+      sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), str(dir_results))
       picoscope.acquire(configStep, sample_process.output)
       picoscope.close()
 
-    run_condense_0to1()
 
-
-def get_configSetup_by_filename(config_setup_filename):
+def get_configSetup_by_filename(dict_config_setup):
   import config_common
   config = ConfigSetup()
   config.update_by_dict(config_common.dict_config_setup_defaults)
-  config.update_by_channel_file(config_setup_filename)
+  config.update_by_channel_file(dict_config_setup)
   return config
 
 def get_configSetups():

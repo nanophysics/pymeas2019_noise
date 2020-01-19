@@ -1,4 +1,17 @@
 import math
+
+def bootstrap():
+  import sys
+  import pathlib
+  dir_measurement = pathlib.Path(__file__).parent.absolute()
+  for parent in dir_measurement.parents:
+    if parent.joinpath('TOPDIR.TXT').exists():
+      sys.path.insert(0, str(parent))
+      return dir_measurement
+  raise Exception('No file "TOPDIR.TXT" not found in parent directories!')
+
+dir_measurement = bootstrap()
+
 import program
 from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 
@@ -28,6 +41,7 @@ fir_count_2_slow = reserve_fir_count_2_slow + 27 # free to choose
 assert(fir_count_2_slow > reserve_fir_count_2_slow)
 
 dict_config_setup = dict(
+  setup_name = 'Measure Noise Density',
   diagram_legend = 'Measure Noise Density',
   # input_Vp = PS5000ARange.R_10MV,
   # input_Vp = PS5000ARange.R_20MV,
@@ -48,7 +62,7 @@ dict_config_setup = dict(
     dict(
       stepname = '0_fast',
       # External
-      skalierungsfaktor = 1.0E-3,   # Amplifier Gain 1000   todoPeter spaeter korrrekt einbauen
+      skalierungsfaktor = 1.0E-3,
       # Processing
       fir_count = fir_count_0_fast,
       fir_count_skipped = reserve_fir_count_0_fast, # highest frequencies get skipped
@@ -64,7 +78,7 @@ dict_config_setup = dict(
     dict(
       stepname = '1_medium',
       # External
-      skalierungsfaktor = 1.0E-3,   # Amplifier Gain 1000   todoPeter spaeter korrrekt einbauen
+      skalierungsfaktor = 1.0E-3,
       # Processing
       fir_count = fir_count_1_medium,
       fir_count_skipped = reserve_fir_count_1_medium,
@@ -80,7 +94,7 @@ dict_config_setup = dict(
       dict(
       stepname = '2_slow',
       # External
-      skalierungsfaktor = 1.0E-3,   # Amplifier Gain 1000   todoPeter spaeter korrrekt einbauen
+      skalierungsfaktor = 1.0E-3,
       # Processing
       fir_count = fir_count_2_slow,
       fir_count_skipped = reserve_fir_count_2_slow,
@@ -98,19 +112,18 @@ dict_config_setup = dict(
 )
 #print ( dict_config_setup)
 
-if __name__ == '__main__':
-  # import program_fir
-  # thread = program_fir.DensityPlot.directory_plot_thread(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
-  configSetup = program.get_configSetup_by_filename(__file__)
+# import program_fir
+# thread = program_fir.DensityPlot.directory_plot_thread(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
+configSetup = program.get_configSetup_by_filename(dict_config_setup)
 
-  configSetup.measure_for_all_steps()
-  # import time
-  # time.sleep(10.0)
-  # thread.stop()
+configSetup.measure_for_all_steps(dir_measurement)
+# import time
+# time.sleep(10.0)
+# thread.stop()
 
-  import program_fir
-  # program_fir.DensityPlot.directory_plot(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
-  pass
-  # configSetup.condense_0to1()
-  # program.run_condense_1to2_result()
+# import program_fir
+# program_fir.DensityPlot.directory_plot(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
+pass
+# configSetup.condense_0to1()
+# program.run_condense_1to2_result()
   

@@ -363,7 +363,7 @@ class Selector:
         if f_fft > f_eserie_right:
           P = avg.avg()
           if P is not None:
-            d = math.sqrt(P) * 1E-3 # todoHans: 1E-3 soll "skalierungsfaktor" an einem guten ort sein
+            d = math.sqrt(P)
             dp = DensityPoint(f=f_eserie, d=d, densityPlot=density)
             list_density_points.append(dp)
           break # Continue in next eserie.
@@ -559,10 +559,9 @@ class InSin:
       offset += SAMPLES_SELECT
 
 class SampleProcess:
-  def __init__(self, config, directory_raw, directory_condensed):
+  def __init__(self, config, directory_raw):
     self.config = config
     self.directory_raw = directory_raw
-    self.directory_condensed = directory_condensed
     o = OutTrash()
 
     for i in range(config.fir_count):
