@@ -1,6 +1,7 @@
 #
 # Make sure that the subrepos are included in the python path
 #
+import re
 import sys
 import pathlib
 import itertools
@@ -36,10 +37,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 DIRECTORY_TOP = os.path.dirname(os.path.abspath(__file__))
-
-DIRECTORY_0_RAW = os.path.join(DIRECTORY_TOP, '0_raw')
-DIRECTORY_1_CONDENSED = os.path.join(DIRECTORY_TOP, '1_condensed')
-DIRECTORY_2_RESULT = os.path.join(DIRECTORY_TOP, '2_result')
+DIRECTORY_RESULT = 'result'
 
 # run_setup_calibrate_picoscope.py
 RE_CONFIG_SETUP = re.compile('run_setup_(?P<setup>.*?).py')
@@ -191,20 +189,35 @@ class ConfigStep:
     for key, value in dict_config_setup.items():
       self._update_element(key, value)
 
+class ResultAttributes:
+  RESULT_DIR_PATTERN='raw-*'
+  REG_DIR=re.compile(r'^raw-(?P<color>.+?)-(?P<topic>.+)$')
+
+  def __init__(self, dir_raw, dir_result):
+    self.dir_raw = dir_raw
+    self.dir_result = dir_result
+    match = ResultAttributes.REG_DIR.match(dir_raw.name)
+    if match is None:
+      raise Exception(f'Expected directory {dir_raw.name} to match the pattern "result-color-topic"!')
+    d = match.groupdict()
+    self.color = d['color']
+    self.topic = d['topic']
+    pass
+
 class ConfigSetup:
   def __init__(self):
     self.diagram_legend = DEFINED_BY_SETUP
     self.setup_name = DEFINED_BY_SETUP
     self.steps = DEFINED_BY_SETUP
 
-  def get_filename_data(self, extension, directory=DIRECTORY_0_RAW):
-    filename = f'data_{self.setup_name}'
-    return os.path.join(directory, f'{filename}.{extension}')
+  # def get_filename_data(self, extension, directory=DIRECTORY_0_RAW):
+  #   filename = f'data_{self.setup_name}'
+  #   return os.path.join(directory, f'{filename}.{extension}')
 
-  def create_directories(self):
-    for directory in (DIRECTORY_0_RAW, DIRECTORY_1_CONDENSED, DIRECTORY_2_RESULT):
-        if not os.path.exists(directory):
-          os.makedirs(directory)
+  # def create_directories(self):
+  #   for directory in (DIRECTORY_0_RAW, DIRECTORY_1_CONDENSED, DIRECTORY_2_RESULT):
+  #       if not os.path.exists(directory):
+  #         os.makedirs(directory)
 
   def delete_directory_contents(self, directory):
     for filename in os.listdir(directory):
@@ -263,17 +276,38 @@ def get_configSetups():
       list_configs.append(os.path.join(DIRECTORY_TOP, filename))
   return list_configs
 
-def run_condense_0to1(trace=False):
-  list_density = list(program_fir.DensityPlot.plots_from_directory(directory_in=DIRECTORY_0_RAW, skip=not trace))
+def run_plot(dir_measurement):
+  # if False:
+  #   import cProfile
+  #   cProfile.run('program.run_condense_0to1()', sort='tottime')
+  #   import sys
+  #   sys.exit(0)
+  dir_result = dir_measurement.joinpath(DIRECTORY_RESULT)
+  if not dir_result.exists():
+    dir_result.mkdir()
+
+  for dir_raw in dir_measurement.glob(ResultAttributes.RESULT_DIR_PATTERN):
+    if not dir_raw.is_dir():
+      continue
+    resultAttributes = ResultAttributes(dir_raw=dir_raw, dir_result=dir_result)
+    run_condense_0to1(resultAttributes=resultAttributes, trace=False)
+    run_condense_0to1(resultAttributes=resultAttributes, trace=True)
+    pass
+    # import program_fir
+    # program_fir.DensityPlot.directory_plot(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
+    pass
+
+def run_condense_0to1(resultAttributes, trace=False):
+  list_density = list(program_fir.DensityPlot.plots_from_directory(dir_input=resultAttributes.dir_raw, skip=not trace))
 
   file_tag = '_trace' if trace else ''
-  ds = program_fir.DensitySummary(list_density, directory=DIRECTORY_1_CONDENSED, trace=trace)
-  ds.write_summary_file(file_tag=file_tag)
-  ds.plot(file_tag=file_tag, color_given='blue')
+  ds = program_fir.DensitySummary(list_density, directory=resultAttributes.dir_result, trace=trace)
+  ds.write_summary_file(topic=resultAttributes.topic, file_tag=file_tag)
+  ds.plot(topic=resultAttributes.topic, file_tag=file_tag, color_given='blue')
 
   if not trace:
     file_tag = '_colors'
-    ds.plot(file_tag=file_tag)
+    ds.plot(topic=resultAttributes.topic, file_tag=file_tag)
 
 class ResultCommon:
   def __init__(self):

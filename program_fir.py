@@ -189,27 +189,27 @@ class DensityPlot:
     return filenameFull
 
   @classmethod
-  def plots_from_directory(cls, directory_in, skip):
+  def plots_from_directory(cls, dir_input, skip):
     '''
       Return all plot (.pickle-files) from directory.
     '''
-    for filename in os.listdir(directory_in):
+    for filename in os.listdir(dir_input):
       if filename.startswith('densitystep_') and filename.endswith('.pickle'):
         if skip and (FILENAME_TAG_SKIP in filename):
           continue
-        filenameFull = os.path.join(directory_in, filename)
+        filenameFull = os.path.join(dir_input, filename)
         yield DensityPlot(filenameFull)
 
   @classmethod
-  def directory_plot(cls, directory_in, directory_out):
+  def directory_plot(cls, directory_in, dir_plot):
     '''
       Loop for all densitystage-files in directory and plot.
     '''
     for densityPeriodogram in cls.plots_from_directory(directory_in, skip=False):
-        densityPeriodogram.plot(directory_out)
+        densityPeriodogram.plot(dir_plot)
 
   @classmethod
-  def directory_plot_thread(cls, directory_in, directory_out):
+  def directory_plot_thread(cls, dir_input, dir_plot):
     class WorkerThread(threading.Thread):
       def __init__(self, *args, **keywords): 
         threading.Thread.__init__(self, *args, **keywords) 
@@ -219,7 +219,7 @@ class DensityPlot:
       def run(self):
         while True:
           time.sleep(2.0)
-          cls.directory_plot(directory_in, directory_out)
+          cls.directory_plot(dir_input, dir_plot)
           if self.__stop:
             return
 
@@ -425,14 +425,14 @@ class DensitySummary:
 
     return list_density_ordered
 
-  def write_summary_file(self, file_tag):
-    filename_summary = f'{self.directory}/summary{file_tag}.txt'
+  def write_summary_file(self, topic, file_tag):
+    filename_summary = f'{self.directory}/result_summary{file_tag}-{topic}.txt'
     with open(filename_summary, 'w') as f:
       for dp in self.list_density_points:
         f.write(dp.line)
         f.write('\n')
 
-  def plot(self, file_tag='', color_given=None):
+  def plot(self, topic='', file_tag='', color_given=None):
     fig, ax = plt.subplots()
 
     # https://matplotlib.org/3.1.1/api/markers_api.html
@@ -469,8 +469,9 @@ class DensitySummary:
     plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
     ax.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=20))
     print(f'DensitySummary{file_tag}')
-    fig.savefig(f'{self.directory}/densitysummary{file_tag}.png', dpi=300)
-    fig.savefig(f'{self.directory}/densitysummary{file_tag}.svg')
+    filebase = f'{self.directory}/result_densitysummary{file_tag}-{topic}'
+    fig.savefig(filebase+'.png', dpi=300)
+    fig.savefig(filebase+'.svg')
     # plt.show()
     fig.clf()
     plt.close(fig)

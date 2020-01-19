@@ -4,8 +4,9 @@
 **/data_*.a_bin
 **/data_*.d_bin
 **/__pycache__
-/0_raw/
-/1_condensed/
-/2_result/
+**/densitystep_*.pickle
+**/result_*.png
+**/result_*.svg
+**/result_*.txt
 /obsolete/
 .ipynb_checkpoints
