@@ -39,3 +39,30 @@ unterste und oberste frequenz aus E12 wird nicht bestimmt.
 Idee Live update:
 https://pythonprogramming.net/python-matplotlib-live-updating-graphs/
 https://towardsdatascience.com/animations-with-matplotlib-d96375c5442c
+
+
+ideen average fuer kleineren noise:
+  PS5000A_RATIO_MODE_AVERAGE
+
+  downsampling ratio
+
+  int16_t overflow[MAX_WAVEFORMS];
+  ps5000aGetValuesBulk
+  (
+  handle,
+  &noOfSamples, // set to MAX_SAMPLES on entering the function
+  10, // fromSegmentIndex
+  19, // toSegmentIndex
+  1, // downsampling ratio
+  PS5000A_RATIO_MODE_NONE, // downsampling ratio mode
+  overflow // indices 10 to 19 will be populated
+  )
+
+  * maxDownSampleRatio
+
+
+  max ratio 256
+
+
+
+  , ratio_mode='AVERAGE', downSampleRatio = 256
