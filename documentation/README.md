@@ -1,30 +1,4 @@
-## Proposal for directory structure
-
-- `<TOPDIR>/config_x`
-  - Every directory includes these scripts:
-    - `run_setup_noise_density.py`
-      Do a measurement.
-    - `run_plot_updater.py`
-      Have a live-preview of the running measurment.
-    - `run_plot.py`
-      Create a plot of all results.
-
-- Now, the `result`-folder may be renamed. Many such results folders may exist aside.
-- Somehow, every `result`-folder defines it visible attributes.
-- Variant A:
-  - Coded in directoryname `result-color-topic`
-  - File `attributes.txt` in directory.
-  - Attributes programmed in `run_plot.py`
-
-## Vorgehen
-
-- Run using simulator
-- implement directories
-- Try with picoscope
-
 # pymeas2019
-
-simple measure and documentation with python
 
 ## Installation
 
@@ -35,84 +9,41 @@ simple measure and documentation with python
 - Pymeas2019_noise
   - `git clone --recurse-submodules https://github.com/nanopysics/pymeas2019_noise.git`
 - Start measurement
-  - `cd pymeas2019_noise`
-  - `run_setup_noise_density.bat`
+  - `cd pymeas2019_noise\measurement-actual`
+  - `run_0_measure.bat`
 
-## Terms
+## Directory structure
 
-- Config_Setup
-  - How and what is connected to the instrument
-  - Input ranges
-  - Output amplitude
-  - A title of the setup. For example
-    - Calibration measurement for Picoscope
-    - DUT Gain 1
-    - DUT Gain 2
-- Config_Frequency
-  - Frequency
-  - Measurement duration
-  - Sampling frequency
-- Config_Common (Config_Measurement): Definitions for all Setups.
-  - frequency list
-    - Defaults for Config_Setup
-- Config: The combination of
-  - frequency (from Config_Common)
-  - Config_Setup
-- Measurement: A measurement from
-  - frequency (from Config_Common)
-  - Config_Setup
-- Measurement_Condensed: The condensed results from a Measurement
-  - frequency
-  - Config_Setup
-  - A+B: Complex
-  - A+B: min/max
-  - A+B: overload
-- Result_Setup: All Measurement_Condensed for one Setup
-  - Complex for every frequency
-- Result_Common:
+- `<TOPDIR>` The directory containing the file `TOPDIR.TXT`
+  - `<TOPDIR>\measurement-actual` \
+    The results of the actual measurement. \
+    If the measurements are done, the directory may be moved away.
+
+    - `run_0_measure.py` \
+      This will run a measurement according the configuration within the file. \
+      The results will be placed in a subfolder `raw-blue-2020-01-18_20-30-22`. \
+      You may copy and rename this folder but you have to preserve `raw-<color>-<topic>`.
+
+    - `run_1_plot.py` \
+      This will loop over all `raw-xxx` directories and create `result_xxx` files.
+
+    - `run_2_plot_composite.py` \
+      You may still run this script when the folder is moved away. \
+      This will loop over all `raw-xxx` directories and read `raw-xxx\result_summary.pickle`.
+      Then the diagram `result_density.png` will be created.
 
 ## Workflow
 
-TODO, Workflow aktualisieren
-WORKFLOW
+### 0-Measure
 
-Messen
-  Messen ab KO
-  Resultate abspeichern
-    DONE summary.txt
-    TODO daten für jeden dezimierungsschritt
+Configure the measurement in `run_0_measure.py` and run it.
+For every measurement, a new `raw-xx` folder will be created.
 
-Condense&Concat
-  Daten zusammenfassen
+### 1-Condense
 
-Live preview
-  Condense&Concat
-  Plot with animation
+Condense the measured data in the `raw-xx` folders. This may be run without repeating the measurement.
 
-Plot
-  Plot mit einer oder mehreren Messungen
-  
-### Step 0: measure
+### 2-Plot
 
-Output directory: `0_raw`
+This step will create a plot including all measurements available in the `raw-xx` folders.
 
-run: `pymeas2019\run_config_ch1.py`
-
-This will measure `ch1` using the picoscope.
-
-Note: Don't forget to remove obsolete results from 0_raw.
-For example if you removed a frequency from the frequency-list, you must manually delete the obsolete data from directory `0_raw`.
-
-### Step 1: condense data
-
-Input directory: `0_raw`
-
-Output directory: `1_condensed`
-
-run: `pymeas2019\run_condense_0to1.py`
-
-### Step 2: write result
-
-Input directory: `1_condensed`
-
-Output directory: `2_result`
