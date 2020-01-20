@@ -1,4 +1,4 @@
-def bootstrap():
+def find_append_path():
   import sys
   import pathlib
   dir_measurement = pathlib.Path(__file__).parent.absolute()
@@ -7,8 +7,3 @@ def bootstrap():
       sys.path.insert(0, str(parent))
       return dir_measurement
   raise Exception('No file "TOPDIR.TXT" not found in parent directories!')
-
-dir_measurement = bootstrap()
-
-import program
-program.run_plot(dir_measurement)

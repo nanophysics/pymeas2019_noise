@@ -9,6 +9,7 @@ import itertools
 import threading
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import library_plot
 import program
 import program_config_frequencies
 
@@ -291,27 +292,39 @@ class DensityPoint:
     self.densityPlot = densityPlot
 
   @property
+  def stage(self):
+    return self.densityPlot.stage
+
+  @property
+  def step(self):
+    return self.densityPlot.step
+
+  @property
+  def stepname(self):
+    return self.densityPlot.stepname
+
+  @property
   def skip(self):
     return self.densityPlot.skip
 
   @property
   def line(self):
-    l = (self.densityPlot.stepname, str(self.densityPlot.stage), bool(self.skip), self.f, self.d)
+    l = (self.stepname, str(self.stage), bool(self.skip), self.f, self.d)
     l = [str(e) for e in l]
     return DensityPoint.DELIMITER.join(l)
 
-  @classmethod
-  def factory(cls, line):
-    class DensityPointRead:
-      def __init__(self, line):
-        l = line.split(cls.DELIMITER)
-        self.stepname = l[0]
-        self.stage = int(l[1])
-        self.skip = bool(l[2])
-        self.f = float(l[3])
-        self.d = float(l[4])
+  # @classmethod
+  # def factory(cls, line):
+  #   class DensityPointRead:
+  #     def __init__(self, line):
+  #       l = line.split(cls.DELIMITER)
+  #       self.stepname = l[0]
+  #       self.stage = int(l[1])
+  #       self.skip = bool(l[2])
+  #       self.f = float(l[3])
+  #       self.d = float(l[4])
 
-    return DensityPointRead(line)
+  #   return DensityPointRead(line)
 
 class Average:
   def __init__(self):
@@ -442,28 +455,18 @@ class DensitySummary:
 
     return list_density_ordered
 
-  def write_summary_file(self, topic, trace):
-    filename_summary = DensitySummary.filename(self.directory, trace)
+  def write_summary_file(self, trace):
+    file_tag = '_trace' if trace else ''
+    filename_summary = f'{self.directory}/result_summary{file_tag}.txt'
     with open(filename_summary, 'w') as f:
       for dp in self.list_density_points:
         f.write(dp.line)
         f.write('\n')
-  
-  @classmethod
-  def filename(cls, directory, trace):
-    file_tag = '_trace' if trace else ''
-    return f'{directory}/result_summary{file_tag}.txt'
 
-class DensitySummaryPlot:
-  def __init__(self, directory, trace=False):
-    self.directory = directory
-    self.trace = trace
-    self.list_density_points = []
-    filename_summary = DensitySummary.filename(self.directory, trace=trace)
-    with open(filename_summary, 'r') as f:
-      for line in f.readlines():
-        line = line.strip()
-        self.list_density_points.append(DensityPoint.factory(line))
+  def write_summary_pickle(self):
+    f = [dp.f for dp in self.list_density_points if not dp.skip]
+    d = [dp.d for dp in self.list_density_points if not dp.skip]
+    library_plot.PickleResultSummary.save(self.directory, f, d)
 
   def plot(self, file_tag='', color_given=None):
     fig, ax = plt.subplots()

@@ -1,8 +1,15 @@
 #
 # Make sure that the subrepos are included in the python path
 #
+import gc
 import re
+import os
 import sys
+import math
+import time
+import cmath
+import pprint
+import logging
 import pathlib
 import itertools
 
@@ -19,15 +26,7 @@ except ImportError as ex:
   print(f'ERROR: Failed to import ({ex}). Try: pip install -r requirements.txt')
   sys.exit(0)
 
-import gc
-import re
-import os
-import math
-import time
-import cmath
-import pprint
-import logging
-
+import library_plot
 import program_fir
 
 import program_picoscope_5442D as program_picoscope
@@ -186,22 +185,6 @@ class ConfigStep:
     for key, value in dict_config_setup.items():
       self._update_element(key, value)
 
-class ResultAttributes:
-  RESULT_DIR_DEFAULT='raw-red-actual'
-  RESULT_DIR_PATTERN='raw-*'
-  REG_DIR=re.compile(r'^raw-(?P<color>.+?)-(?P<topic>.+)$')
-
-  def __init__(self, dir_raw, dir_result):
-    self.dir_raw = dir_raw
-    self.dir_result = dir_result
-    match = ResultAttributes.REG_DIR.match(dir_raw.name)
-    if match is None:
-      raise Exception(f'Expected directory {dir_raw.name} to match the pattern "result-color-topic"!')
-    d = match.groupdict()
-    self.color = d['color']
-    self.topic = d['topic']
-    pass
-
 class ConfigSetup:
   def __init__(self):
     self.diagram_legend = DEFINED_BY_SETUP
@@ -236,7 +219,7 @@ class ConfigSetup:
     self.update_by_dict(dict_config_setup)
 
   def measure_for_all_steps(self, dir_measurement):
-    dir_results = dir_measurement.joinpath(ResultAttributes.RESULT_DIR_DEFAULT)
+    dir_results = dir_measurement.joinpath(ResultAttributes.result_dir_actual())
     if dir_results.exists():
       self.delete_directory_contents(str(dir_results))
     else:
@@ -275,10 +258,10 @@ def run_plot(dir_measurement):
   if not dir_result.exists():
     dir_result.mkdir()
 
-  for dir_raw in dir_measurement.glob(ResultAttributes.RESULT_DIR_PATTERN):
+  for dir_raw in dir_measurement.glob(library_plot.ResultAttributes.RESULT_DIR_PATTERN):
     if not dir_raw.is_dir():
       continue
-    resultAttributes = ResultAttributes(dir_raw=dir_raw, dir_result=dir_result)
+    resultAttributes = library_plot.ResultAttributes(dir_raw=dir_raw)
     run_condense_0to1(resultAttributes=resultAttributes, trace=False)
     run_condense_0to1(resultAttributes=resultAttributes, trace=True)
     pass
@@ -290,15 +273,16 @@ def run_condense_0to1(resultAttributes, trace=False):
   list_density = list(program_fir.DensityPlot.plots_from_directory(dir_input=resultAttributes.dir_raw, skip=not trace))
 
   ds = program_fir.DensitySummary(list_density, directory=resultAttributes.dir_raw, trace=trace)
-  ds.write_summary_file(topic=resultAttributes.topic, trace=trace)
+  ds.write_summary_file(trace=trace)
+  if not trace:
+    ds.write_summary_pickle()
 
-  dsp = program_fir.DensitySummaryPlot(directory=resultAttributes.dir_raw, trace=trace)
   file_tag = '_trace' if trace else ''
-  dsp.plot(file_tag=file_tag, color_given='blue')
+  ds.plot(file_tag=file_tag, color_given='blue')
 
   if not trace:
     file_tag = '_colors'
-    dsp.plot(file_tag=file_tag)
+    ds.plot(file_tag=file_tag)
 
 class ResultCommon:
   def __init__(self):

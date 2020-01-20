@@ -1,20 +1,15 @@
 import math
 
-def bootstrap():
-  import sys
-  import pathlib
-  dir_measurement = pathlib.Path(__file__).parent.absolute()
-  for parent in dir_measurement.parents:
-    if parent.joinpath('TOPDIR.TXT').exists():
-      sys.path.insert(0, str(parent))
-      return dir_measurement
-  raise Exception('No file "TOPDIR.TXT" not found in parent directories!')
-
-dir_measurement = bootstrap()
+import library_path
+dir_measurement = library_path.find_append_path()
 
 import program
-from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
-
+try:
+  from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
+except ImportError:
+  import enum
+  class PS5000ARange(enum.IntEnum):
+    R_100MV = 3
 
 # Peter frequencies and fir_counts
 f_sample_0_fast_hz = 125E6 # do not change this values as this is the fastest rate with 15 bit
@@ -42,7 +37,6 @@ assert(fir_count_2_slow > reserve_fir_count_2_slow)
 
 dict_config_setup = dict(
   setup_name = 'Measure Noise Density',
-  diagram_legend = 'Measure Noise Density',
   # input_Vp = PS5000ARange.R_10MV,
   # input_Vp = PS5000ARange.R_20MV,
   # input_Vp = PS5000ARange.R_50MV,
@@ -55,8 +49,6 @@ dict_config_setup = dict(
   # input_Vp = PS5000ARange.R_10V,
   # input_Vp = PS5000ARange.R_20V,
   # input_Vp = PS5000ARange.R_50V, 
-
-  
 
   steps = ( 
     dict(

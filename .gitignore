@@ -8,5 +8,6 @@
 **/result_*.png
 **/result_*.svg
 **/result_*.txt
+**/result_*.pickle
 /obsolete/
 .ipynb_checkpoints
