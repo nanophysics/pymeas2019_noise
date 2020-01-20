@@ -3,3 +3,7 @@ TODO: directory structure
 TODO: run with simulator
 
 
+Anleitung
+Cash von result_density_summary.txt
+Farbige Graphen
+Warum Unterschied ‘result_summary_trace-topic1.txt’ / ‘result_summary-topic1.txt’? Was bedeutet skip?

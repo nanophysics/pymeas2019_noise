@@ -284,6 +284,7 @@ class DensityPlot:
     plt.close()
 
 class DensityPoint:
+  DELIMITER = '\t'
   def __init__(self, f, d, densityPlot):
     self.f = f
     self.d = d
@@ -295,7 +296,22 @@ class DensityPoint:
 
   @property
   def line(self):
-    return f'{self.densityPlot.stepname} {self.densityPlot.stage} {self.skip} {self.f} {self.d}'
+    l = (self.densityPlot.stepname, str(self.densityPlot.stage), bool(self.skip), self.f, self.d)
+    l = [str(e) for e in l]
+    return DensityPoint.DELIMITER.join(l)
+
+  @classmethod
+  def factory(cls, line):
+    class DensityPointRead:
+      def __init__(self, line):
+        l = line.split(cls.DELIMITER)
+        self.stepname = l[0]
+        self.stage = int(l[1])
+        self.skip = bool(l[2])
+        self.f = float(l[3])
+        self.d = float(l[4])
+
+    return DensityPointRead(line)
 
 class Average:
   def __init__(self):
@@ -395,6 +411,7 @@ class ColorRotator:
   @property
   def color(self):
     return next(self.iter)
+
 class DensitySummary:
   def __init__(self, list_density, directory, trace=False):
     self.directory = directory
@@ -425,24 +442,40 @@ class DensitySummary:
 
     return list_density_ordered
 
-  def write_summary_file(self, topic, file_tag):
-    filename_summary = f'{self.directory}/result_summary{file_tag}-{topic}.txt'
+  def write_summary_file(self, topic, trace):
+    filename_summary = DensitySummary.filename(self.directory, trace)
     with open(filename_summary, 'w') as f:
       for dp in self.list_density_points:
         f.write(dp.line)
         f.write('\n')
+  
+  @classmethod
+  def filename(cls, directory, trace):
+    file_tag = '_trace' if trace else ''
+    return f'{directory}/result_summary{file_tag}.txt'
 
-  def plot(self, topic='', file_tag='', color_given=None):
+class DensitySummaryPlot:
+  def __init__(self, directory, trace=False):
+    self.directory = directory
+    self.trace = trace
+    self.list_density_points = []
+    filename_summary = DensitySummary.filename(self.directory, trace=trace)
+    with open(filename_summary, 'r') as f:
+      for line in f.readlines():
+        line = line.strip()
+        self.list_density_points.append(DensityPoint.factory(line))
+
+  def plot(self, file_tag='', color_given=None):
     fig, ax = plt.subplots()
 
     # https://matplotlib.org/3.1.1/api/markers_api.html
     MARKERS = '.+x*'
     colorRotator = ColorRotator()
 
-    stepnames = [(stepname, list(g)) for stepname, g in itertools.groupby(self.list_density_points, lambda density: density.densityPlot.stepname)]
+    stepnames = [(stepname, list(g)) for stepname, g in itertools.groupby(self.list_density_points, lambda density: density.stepname)]
     for stepnumber, (_stepname, list_step_density) in enumerate(stepnames):
 
-      stages = [(stage, list(g)) for stage, g in itertools.groupby(list_step_density, lambda dp: dp.densityPlot.stage)]
+      stages = [(stage, list(g)) for stage, g in itertools.groupby(list_step_density, lambda dp: dp.stage)]
       for _stage, list_density_points in stages:
         f = [dp.f for dp in list_density_points]
         d = [dp.d for dp in list_density_points]
@@ -469,9 +502,9 @@ class DensitySummary:
     plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
     ax.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=20))
     print(f'DensitySummary{file_tag}')
-    filebase = f'{self.directory}/result_densitysummary{file_tag}-{topic}'
+    filebase = f'{self.directory}/result_densitysummary{file_tag}'
     fig.savefig(filebase+'.png', dpi=300)
-    fig.savefig(filebase+'.svg')
+    # fig.savefig(filebase+'.svg')
     # plt.show()
     fig.clf()
     plt.close(fig)
