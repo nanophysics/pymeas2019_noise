@@ -16,6 +16,7 @@ import msl.equipment
 
 from msl.equipment.resources.picotech.picoscope import callbacks
 from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
+from msl.equipment.resources.picotech.picoscope.enums import PS5000ARatioMode
 
 PICSCOPE_MODEL_5442D='5442D'
 PICSCOPE_MODEL_2204A='2204A'
@@ -130,6 +131,7 @@ class PicoScope:
     # # timebaseA_=4, time_interval_nanosecondsA_=1.6e-09
 
     if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
+      # self.scope.set_data_buffer(configStep.input_channel, mode=PS5000ARatioMode.AVERAGE)
       self.scope.set_data_buffer(configStep.input_channel)
     channel = self.scope.channel[configStep.input_channel]
 

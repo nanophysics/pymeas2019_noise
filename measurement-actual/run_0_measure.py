@@ -104,18 +104,26 @@ dict_config_setup = dict(
 )
 #print ( dict_config_setup)
 
-# import program_fir
-# thread = program_fir.DensityPlot.directory_plot_thread(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
-configSetup = program.get_configSetup_by_filename(dict_config_setup)
+def run():
+  # import program_fir
+  # thread = program_fir.DensityPlot.directory_plot_thread(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
+  configSetup = program.get_configSetup_by_filename(dict_config_setup)
 
-configSetup.measure_for_all_steps(dir_measurement)
-# import time
-# time.sleep(10.0)
-# thread.stop()
+  configSetup.measure_for_all_steps(dir_measurement)
+  program.run_plot(dir_measurement)
 
-# import program_fir
-# program_fir.DensityPlot.directory_plot(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
-pass
-# configSetup.condense_0to1()
-# program.run_condense_1to2_result()
-  
+  # import time
+  # time.sleep(10.0)
+  # thread.stop()
+
+  # import program_fir
+  # program_fir.DensityPlot.directory_plot(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
+  pass
+  # configSetup.condense_0to1()
+  # program.run_condense_1to2_result()
+
+  import run_1_condense
+  run_1_condense.run()
+
+if __name__ == '__main__':
+  run()

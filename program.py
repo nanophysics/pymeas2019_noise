@@ -219,7 +219,7 @@ class ConfigSetup:
     self.update_by_dict(dict_config_setup)
 
   def measure_for_all_steps(self, dir_measurement):
-    dir_results = dir_measurement.joinpath(ResultAttributes.result_dir_actual())
+    dir_results = dir_measurement.joinpath(library_plot.ResultAttributes.result_dir_actual())
     if dir_results.exists():
       self.delete_directory_contents(str(dir_results))
     else:
