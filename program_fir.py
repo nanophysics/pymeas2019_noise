@@ -612,7 +612,7 @@ class SampleProcess:
     self.directory_raw = directory_raw
     o = OutTrash()
 
-    for i in range(config.fir_count):
+    for i in range(config.fir_count-1):
       o = Density(o, config=config, directory=self.directory_raw)
       o = FIR(o)
 

@@ -32,9 +32,9 @@ f2_slow_useful_hz = fg_filter_input_B / 3.0
 #print(f'f2_slow_useful_hz wanted  : {f2_slow_useful_hz:.0f} Hz')
 f1_medium_fir_count = int( round(math.log(f1_medium_fs_hz / f2_slow_useful_hz,2)))
 f2_slow_useful_hz = f1_medium_fs_hz / 2**f1_medium_fir_count
-f1_medium_fir_count_skipped = int(round(math.log(f1_medium_fs_hz / f1_medium_useful_hz,2))) + 1
+f1_medium_fir_count_skipped = int(round(math.log(f1_medium_fs_hz / f1_medium_useful_hz,2)))
 #print(f'f2_slow_useful_hz selected  : {f2_slow_useful_hz:.0f} Hz')
-f2_slow_fir_count_skipped = int(round(math.log(f2_slow_fs_hz / f2_slow_useful_hz,2))) + 1
+f2_slow_fir_count_skipped = int(round(math.log(f2_slow_fs_hz / f2_slow_useful_hz,2)))
 fir_count_2_slow = f2_slow_fir_count_skipped + 27 # free to choose
 
 dict_config_setup = dict(

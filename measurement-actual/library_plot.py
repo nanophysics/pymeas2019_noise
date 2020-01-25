@@ -1,9 +1,21 @@
 import re
 import time
+import random
 import pickle
 import pathlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+
+colors=(
+    'blue',
+    'orange',
+    'black',
+    'green',
+    'red',
+    'cyan',
+    'magenta',
+    # 'yellow',
+)
 
 class ResultAttributes:
   RESULT_DIR_PATTERN='raw-*'
@@ -20,7 +32,8 @@ class ResultAttributes:
 
   @classmethod
   def result_dir_actual(cls):
-    return time.strftime('raw-red-%Y-%m-%d_%H-%M-%S', time.localtime())
+    color = random.choice(colors)
+    return time.strftime('raw-' + color + '-%Y-%m-%d_%H-%M-%S', time.localtime())
 
 class PickleResultSummary:
   def __init__(self, f, d):
