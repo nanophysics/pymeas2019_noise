@@ -47,24 +47,25 @@ class FIR:
     self.out.init(stage=stage+1, dt_s=dt_s*DECIMATE_FACTOR)
 
   def push(self, array_in):
-    if array_in is not None:
-      # assert len(array_in) <= SAMPLES_INPUT
-      # Not enough data. Add it to 'self.array'
-      self.array = np.append(self.array, array_in)
-      return
+    if array_in is None:
+      # array_in is None: We may decimate
+      if len(self.array) < SAMPLES_INPUT:
+        # We do not need to decimate.
+        # Give the next stage a chance to decimate!
+        self.out.push(None)
+        return
 
-    # array_in is None: We may decimate
-    if len(self.array) < SAMPLES_INPUT:
-      # We do not need to decimate.
-      # Give the next stage a chance to decimate!
-      self.out.push(None)
-      return
+      # Decimate a part of the array
+      array_decimate = self.decimate(self.array[:SAMPLES_INPUT])
+      self.out.push(array_decimate)
+      # Save the remainting part to 'self.array'
+      self.array = self.array[SAMPLES_SELECT:]
+      return 
 
-    # Decimate a part of the array
-    array_decimate = self.decimate(self.array[:SAMPLES_INPUT])
-    self.out.push(array_decimate)
-    # Save the remainting part to 'self.array'
-    self.array = self.array[SAMPLES_SELECT:]
+    # assert len(array_in) <= SAMPLES_INPUT
+    # Not enough data. Add it to 'self.array'
+    self.array = np.append(self.array, array_in)
+
 
   def flush(self):
     length = len(self.array)
@@ -77,7 +78,7 @@ class FIR:
     self.out.flush()
 
   def decimate(self, array_decimate):
-    print(f'{self.stage},', end='')
+    # print(f'{self.stage},', end='')
     assert len(array_decimate) > SAMPLES_LEFT + SAMPLES_RIGHT
     assert len(array_decimate) % DECIMATE_FACTOR == 0
 
@@ -110,7 +111,6 @@ class Density:
   This class processes the data-stream and every `self.config.interval_s` does some density calculation...
   The class DensitySummary will the access self.Pxx_sum/self.Pxx_n to create a density plot.
   '''
-
   def __init__(self, out, config, directory):
     # TODO: Make all members private!
 
@@ -121,6 +121,7 @@ class Density:
     self.Pxx_n = 0
     self.config = config
     self.directory = directory
+    self.__density_calculation_count = 0
 
   def init(self, stage, dt_s):
     self.stage = stage
@@ -129,6 +130,7 @@ class Density:
 
   def flush(self):
     self.out.flush()
+    print(f'Density Stage {self.stage:02d} dt_s {self.dt_s:016.12f}: Density calculation count {self.__density_calculation_count}')
 
   def push(self, array_in):
     if array_in is None:
@@ -144,12 +146,14 @@ class Density:
     self.out.push(array_in)
 
   def density(self, array_in):
+    self.__density_calculation_count += 1
+
     array_density = array_in
     if len(array_in) > SAMPLES_DENSITY:
       array_density = array_in[:SAMPLES_DENSITY]
 
-    print('')
-    print(f'Stage {self.stage:02d} dt_s {self.dt_s:016.12f}, len(array)={len(array_in)} -> {len(array_density)}, mean V:{np.mean(array_density):0.6f}', end='')
+    # print('')
+    # print(f'Stage {self.stage:02d} dt_s {self.dt_s:016.12f}, len(array)={len(array_in)} -> {len(array_density)}, mean V:{np.mean(array_density):0.6f}', end='')
     #print("Average: %0.9f V" % np.mean(array_density))
 
     self.frequencies, Pxx = scipy.signal.periodogram(

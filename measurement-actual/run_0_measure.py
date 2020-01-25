@@ -83,7 +83,7 @@ dict_config_setup = dict(
       duration_s = 2.0,
       dt_s = 1.0 / f_sample_1_medium_hz,
     ),
-      dict(
+    dict(
       stepname = '2_slow',
       # External
       skalierungsfaktor = 1.0E-3,
