@@ -7,8 +7,8 @@ if is64bit:
   SIZE_MAX_BYTES = 1e9
 else:
   SIZE_MAX_BYTES = 1e8
-BYTES_FLOAT = 8
-SIZE_MAX_FLOATS = SIZE_MAX_BYTES//BYTES_FLOAT
+BYTES_INT16 = 2
+SIZE_MAX_INT16 = SIZE_MAX_BYTES//BYTES_INT16
 
 
 class InThread:
@@ -23,9 +23,10 @@ class InThread:
 
   The worker thread of the stream
   '''
-  def __init__(self, out, dt_s):
+  def __init__(self, out, dt_s, func_convert):
     self.out = out
     self.dt_s = dt_s
+    self.__func_convert = func_convert
     self.list_overflow = []
     self.queue = queue.Queue()
     self.queue_size = 0
@@ -33,13 +34,14 @@ class InThread:
 
   def worker(self):
     while True:
-      array_in = self.queue.get()
-      if array_in is None:
+      raw_data_in = self.queue.get()
+      if raw_data_in is None:
         self.out.flush()
         break
-      self.queue_size -= len(array_in)
+      self.queue_size -= len(raw_data_in)
       assert self.queue_size >= 0
       # print('push: ', end='')
+      array_in = self.__func_convert(raw_data_in)
       self.out.push(array_in)
       self.out.push(None)
       # print('')
@@ -51,12 +53,12 @@ class InThread:
   def put_EOF(self):
     self.queue.put(None)
 
-  def put(self, volts):
-    self.queue.put(volts)
+  def put(self, raw_data):
+    self.queue.put(raw_data)
     assert self.queue_size >= 0
-    self.queue_size += len(volts)
+    self.queue_size += len(raw_data)
     # Return True if queue is full
-    return self.queue_size > SIZE_MAX_FLOATS
+    return self.queue_size > SIZE_MAX_INT16
 
   def join(self):
     self.thread.join()
