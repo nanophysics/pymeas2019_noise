@@ -47,46 +47,49 @@ class FIR:
     self.out.init(stage=stage+1, dt_s=dt_s*DECIMATE_FACTOR)
 
   def push(self, array_in):
-    # assert len(array_in) <= SAMPLES_INPUT
-    samples_missing = SAMPLES_INPUT-len(self.array)
-    if samples_missing > len(array_in):
+    if array_in is not None:
+      # assert len(array_in) <= SAMPLES_INPUT
       # Not enough data. Add it to 'self.array'
       self.array = np.append(self.array, array_in)
       return
-    # Will up 'self.array' and push
-    self.array = np.append(self.array, array_in[:samples_missing])
-    array_decimate = self.decimate()
-    self.out.push(array_decimate)
 
+    # array_in is None: We may decimate
+    if len(self.array) < SAMPLES_INPUT:
+      # We do not need to decimate.
+      # Give the next stage a chance to decimate!
+      self.out.push(None)
+      return
+
+    # Decimate a part of the array
+    array_decimate = self.decimate(self.array[:SAMPLES_INPUT])
+    self.out.push(array_decimate)
     # Save the remainting part to 'self.array'
-    self.array = np.concatenate(
-        (self.array[SAMPLES_SELECT:], array_in[samples_missing:]))
+    self.array = self.array[SAMPLES_SELECT:]
 
   def flush(self):
-    if len(self.array) > SAMPLES_LEFT + SAMPLES_RIGHT:
-      mod_decimate = len(self.array) % DECIMATE_FACTOR
-      if mod_decimate != 0:
-        # Limit the last array size to fit DECIMATE_FACTOR
-        self.array = self.array[0:len(self.array)-mod_decimate]
-        assert len(self.array) % DECIMATE_FACTOR == 0
-      array_decimate = self.decimate()
+    length = len(self.array)
+    if length > SAMPLES_LEFT + SAMPLES_RIGHT:
+      if length % DECIMATE_FACTOR:
+        # if length is odd, subtract 1 to make it even
+        length -= 1
+      array_decimate = self.decimate(self.array[:length])
       self.out.push(array_decimate)
     self.out.flush()
 
-  def decimate(self):
-    print('d', end='')
-    assert len(self.array) > SAMPLES_LEFT + SAMPLES_RIGHT
-    assert len(self.array) % DECIMATE_FACTOR == 0
+  def decimate(self, array_decimate):
+    print(f'{self.stage},', end='')
+    assert len(array_decimate) > SAMPLES_LEFT + SAMPLES_RIGHT
+    assert len(array_decimate) % DECIMATE_FACTOR == 0
 
     array_decimated = scipy.signal.decimate(
-        self.array, DECIMATE_FACTOR, ftype='iir', zero_phase=True)
+        array_decimate, DECIMATE_FACTOR, ftype='iir', zero_phase=True
+    )
 
-    assert len(array_decimated) == len(self.array)//DECIMATE_FACTOR
+    assert len(array_decimated) == len(array_decimate)//DECIMATE_FACTOR
     index_from = SAMPLES_LEFT//DECIMATE_FACTOR
     index_to = len(array_decimated) + SAMPLES_RIGHT//DECIMATE_FACTOR
     array_decimated = array_decimated[index_from:index_to]
     return array_decimated
-
 
 class SampleProcessConfig:
   def __init__(self, configStep, interval_s=0.9):
@@ -128,6 +131,10 @@ class Density:
     self.out.flush()
 
   def push(self, array_in):
+    if array_in is None:
+      self.out.push(None)
+      return
+
     self.time_s += self.dt_s * len(array_in)
     if self.time_s > self.next_s:
       self.next_s += self.config.interval_s
@@ -529,7 +536,8 @@ class OutTrash:
     # self.array = np.append(self.array, array_in)
 
     # print(f'array={len(array)}')
-    print('.')
+    # print('OutTrash.push()')
+    pass
 
   def flush(self):
     pass

@@ -39,7 +39,10 @@ class InThread:
         break
       self.queue_size -= len(array_in)
       assert self.queue_size >= 0
+      # print('push: ', end='')
       self.out.push(array_in)
+      self.out.push(None)
+      # print('')
 
   def start(self):
     self.thread = threading.Thread(target=self.worker)
