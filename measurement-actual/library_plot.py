@@ -20,7 +20,7 @@ class ResultAttributes:
 
   @classmethod
   def result_dir_actual(cls):
-    return time.strftime('raw-red-%Y-%m-%d_%H-%M-%S', time.gmtime())
+    return time.strftime('raw-red-%Y-%m-%d_%H-%M-%S', time.localtime())
 
 class PickleResultSummary:
   def __init__(self, f, d):
