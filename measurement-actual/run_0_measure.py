@@ -11,29 +11,31 @@ except ImportError:
   class PS5000ARange(enum.IntEnum):
     R_100MV = 3
 
-# Peter frequencies and fir_counts
-f_sample_0_fast_hz = 125E6 # do not change this values as this is the fastest rate with 15 bit
-f_sample_1_medium_hz = f_sample_0_fast_hz / float(2**1)  # do not change this values as this is the fastest rate with 16 bit
-assert(( f_sample_1_medium_hz - 62.5E6) < 0.01 )
+# sample frequencies and fir_counts
+f0_fast_fs_hz = 125E6 # do not change this values as this is the fastest rate with 15 bit
+f1_medium_fs_hz = f0_fast_fs_hz / float(2**1)  # do not change this values as this is the fastest rate with 16 bit
 exponent_slow = 5 # free to change. Peter has choosen 9 on his laptop
-f_sample_2_slow_hz = f_sample_0_fast_hz/ float(2**exponent_slow)
-# todo: assert falls f_sample_2_slow_hz nicht in reihe der möglichen frequenzen passt
-
-# 0_fast
-reserve_fir_count_0_fast = 0 # fixed: we do not want to sip any
-additional_fir_count_0_fast = 5 # we need to go to well below 20 MHz as bandwith of 1_medium is limited at 20 MHz
-fir_count_0_fast = int( math.log(f_sample_0_fast_hz / f_sample_1_medium_hz,2) +  reserve_fir_count_0_fast + additional_fir_count_0_fast)
-assert((f_sample_0_fast_hz / 2**fir_count_0_fast) < 20E6 *0.5 ) # well below 20 Mhz
-
-# 1_medium
-reserve_fir_count_1_medium = 6 # high enough to start below 20 Mhz
-fir_count_1_medium = int( math.log(f_sample_1_medium_hz / f_sample_2_slow_hz,2) +  reserve_fir_count_1_medium)
-assert(f_sample_1_medium_hz / 2**reserve_fir_count_1_medium < 20E6 *0.5)
-
-# 2_slow
-reserve_fir_count_2_slow = 5 # high enough to skip filter at input with low pass frequency of ???
-fir_count_2_slow = reserve_fir_count_2_slow + 27 # free to choose
-assert(fir_count_2_slow > reserve_fir_count_2_slow)
+f2_slow_fs_hz = f0_fast_fs_hz/ float(2**exponent_slow)
+f1_medium_useful_hz = 20E6 / 3.0 # 3 dB frequency is 20 Mhz
+#print(f'f1_medium_useful_hz wanted  : {f1_medium_useful_hz:.0f} Hz')
+temp = int(round( math.log(f0_fast_fs_hz / f1_medium_useful_hz,2)))
+f1_medium_useful_hz = f0_fast_fs_hz / 2**temp
+#print(f'f1_medium_useful_hz selected: {f1_medium_useful_hz:.0f} Hz')
+f0_fast_fir_count_skipped = 0 # fixed: we do not want to skip any. Due to nyquist criterion we could see some spurious signals for frequencies above. 
+f0_fast_fir_count = int(round( math.log(f0_fast_fs_hz / f1_medium_useful_hz,2)))
+# input B filter
+R_filter_input_B_ohm = 1000
+C_filter_input_B_farad = 1e-9
+fg_filter_input_B = 1.0 / ( 2.0 * math.pi * R_filter_input_B_ohm * C_filter_input_B_farad)
+#print(f'fg_filter_input_B: {fg_filter_input_B:.0f} Hz')
+f2_slow_useful_hz = fg_filter_input_B / 3.0
+#print(f'f2_slow_useful_hz wanted  : {f2_slow_useful_hz:.0f} Hz')
+f1_medium_fir_count = int( round(math.log(f1_medium_fs_hz / f2_slow_useful_hz,2)))
+f2_slow_useful_hz = f1_medium_fs_hz / 2**f1_medium_fir_count
+f1_medium_fir_count_skipped = int(round(math.log(f1_medium_fs_hz / f1_medium_useful_hz,2))) + 1
+#print(f'f2_slow_useful_hz selected  : {f2_slow_useful_hz:.0f} Hz')
+f2_slow_fir_count_skipped = int(round(math.log(f2_slow_fs_hz / f2_slow_useful_hz,2))) + 1
+fir_count_2_slow = f2_slow_fir_count_skipped + 27 # free to choose
 
 dict_config_setup = dict(
   setup_name = 'Measure Noise Density',
@@ -56,8 +58,8 @@ dict_config_setup = dict(
       # External
       skalierungsfaktor = 1.0E-3,
       # Processing
-      fir_count = fir_count_0_fast,
-      fir_count_skipped = reserve_fir_count_0_fast, # highest frequencies get skipped
+      fir_count = f0_fast_fir_count,
+      fir_count_skipped = f0_fast_fir_count_skipped, # highest frequencies get skipped
       # Picoscope
       input_channel = 'A', # channel A is connected without filter to the amplifier out
       input_Vp = PS5000ARange.R_100MV,
@@ -65,15 +67,15 @@ dict_config_setup = dict(
       offset = 0.0,
       resolution = '15bit',
       duration_s = 2.0,
-      dt_s = 1.0 /f_sample_0_fast_hz,
+      dt_s = 1.0 / f0_fast_fs_hz,
     ),
     dict(
       stepname = '1_medium',
       # External
       skalierungsfaktor = 1.0E-3,
       # Processing
-      fir_count = fir_count_1_medium,
-      fir_count_skipped = reserve_fir_count_1_medium,
+      fir_count = f1_medium_fir_count,
+      fir_count_skipped = f1_medium_fir_count_skipped,
       # Picoscope
       input_channel = 'A', # channel A is connected without filter to the amplifier out
       input_Vp = PS5000ARange.R_100MV,
@@ -81,7 +83,7 @@ dict_config_setup = dict(
       offset = 0.0,
       resolution = '16bit',
       duration_s = 2.0,
-      dt_s = 1.0 / f_sample_1_medium_hz,
+      dt_s = 1.0 / f1_medium_fs_hz,
     ),
     dict(
       stepname = '2_slow',
@@ -89,7 +91,7 @@ dict_config_setup = dict(
       skalierungsfaktor = 1.0E-3,
       # Processing
       fir_count = fir_count_2_slow,
-      fir_count_skipped = reserve_fir_count_2_slow,
+      fir_count_skipped = f2_slow_fir_count_skipped,
       # Picoscope
       input_channel = 'B', # channel B is connected with filter low pass 100 kHz ??? to the amplifier out
       input_Vp = PS5000ARange.R_100MV,
@@ -98,11 +100,11 @@ dict_config_setup = dict(
       resolution = '16bit',
       duration_s = 60.0,
       #duration_s = 7*3600.0,
-      dt_s = 1 / f_sample_2_slow_hz,
+      dt_s = 1 / f2_slow_fs_hz,
     ),
   )
 )
-#print ( dict_config_setup)
+#print (dict_config_setup)
 
 def run():
   # import program_fir
