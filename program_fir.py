@@ -201,16 +201,43 @@ class DensityPlot:
     return filenameFull
 
   @classmethod
+  def file_changed(cls, dir_input):
+    filename_summary = library_plot.PickleResultSummary.filename(dir_input)
+    timestamp_summary = 0.0
+    if filename_summary.exists():
+      timestamp_summary = filename_summary.stat().st_mtime
+    for pickle_file in cls.pickle_files_from_directory(dir_input=dir_input, skip=True):
+      if pickle_file.stat().st_mtime > timestamp_summary:
+        # At least one file is newer
+        return True
+    # No file has changed
+    return False
+
+  @classmethod
+  def pickle_files_from_directory(cls, dir_input, skip):
+    '''
+      Return all plot (.pickle-files) from directory.
+    '''
+    for filename in pathlib.Path(dir_input).glob('densitystep_*.pickle'):
+      if skip and (FILENAME_TAG_SKIP in filename.name):
+        continue
+      yield filename
+
+  @classmethod
   def plots_from_directory(cls, dir_input, skip):
     '''
       Return all plot (.pickle-files) from directory.
     '''
-    for filename in os.listdir(dir_input):
-      if filename.startswith('densitystep_') and filename.endswith('.pickle'):
-        if skip and (FILENAME_TAG_SKIP in filename):
-          continue
-        filenameFull = os.path.join(dir_input, filename)
-        yield DensityPlot(filenameFull)
+    # return [DensityPlot(filename) for filename in cls.pickle_files_from_directory(dir_input, skip)]
+    l = []
+    for filename in cls.pickle_files_from_directory(dir_input, skip):
+      try:
+        dp = DensityPlot(filename)
+        l.append(dp)
+      except pickle.UnpicklingError as e:
+        print(f'ERROR Unpicking f{filename.name}: {e}')
+    return l
+
 
   @classmethod
   def directory_plot(cls, directory_in, dir_plot):
@@ -241,8 +268,8 @@ class DensityPlot:
 
     return WorkerThread()
 
-  def __init__(self, filenameFull):
-    with open(filenameFull, 'rb') as f:
+  def __init__(self, filename):
+    with open(filename, 'rb') as f:
       data = pickle.load(f)
     self.stepname = data['stepname']
     self.stage = data['stage']
@@ -251,7 +278,7 @@ class DensityPlot:
     self.frequencies = data['frequencies']
     self.__Pxx_n = data['Pxx_n']
     self.__Pxx_sum = data['Pxx_sum']
-    print(f'DensityPlot {self.stage} {self.dt_s} {filenameFull}')
+    # print(f'DensityPlot {self.stage} {self.dt_s} {filename}')
 
   @property
   def Pxx_n(self):

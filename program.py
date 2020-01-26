@@ -218,12 +218,18 @@ class ConfigSetup:
   def update_by_channel_file(self, dict_config_setup):
     self.update_by_dict(dict_config_setup)
 
-  def measure_for_all_steps(self, dir_measurement):
+  def measure_for_all_steps(self, dir_measurement, start_animation=False):
     dir_results = dir_measurement.joinpath(library_plot.ResultAttributes.result_dir_actual())
     if dir_results.exists():
       self.delete_directory_contents(str(dir_results))
     else:
       dir_results.mkdir()
+
+    if start_animation:
+      import subprocess
+      import run_0_measure_animate
+
+      subprocess.Popen(['cmd.exe', '/K', 'start', sys.executable, run_0_measure_animate.__file__])
 
     for configStep in self.steps:
       picoscope = program_picoscope.PicoScope(configStep)
@@ -231,7 +237,6 @@ class ConfigSetup:
       sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), str(dir_results))
       picoscope.acquire(configStep, sample_process.output)
       picoscope.close()
-
 
 def get_configSetup_by_filename(dict_config_setup):
   import config_common
@@ -248,7 +253,21 @@ def get_configSetups():
       list_configs.append(os.path.join(DIRECTORY_TOP, filename))
   return list_configs
 
-def run_plot(dir_measurement):
+def reload_if_changed(dir_raw):
+  if program_fir.DensityPlot.file_changed(dir_input=dir_raw):
+    list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=True)
+    ds = program_fir.DensitySummary(list_density, directory=dir_raw, trace=False)
+    ds.write_summary_pickle()
+    return True
+  return False
+
+def iter_dir_raw(dir_measurement):
+  for dir_raw in dir_measurement.glob(library_plot.ResultAttributes.RESULT_DIR_PATTERN):
+    if not dir_raw.is_dir():
+      continue
+    yield dir_raw
+
+def run_condense(dir_measurement):
   # if False:
   #   import cProfile
   #   cProfile.run('program.run_condense_0to1()', sort='tottime')
@@ -258,24 +277,25 @@ def run_plot(dir_measurement):
   if not dir_result.exists():
     dir_result.mkdir()
 
-  for dir_raw in dir_measurement.glob(library_plot.ResultAttributes.RESULT_DIR_PATTERN):
-    if not dir_raw.is_dir():
-      continue
-    resultAttributes = library_plot.ResultAttributes(dir_raw=dir_raw)
-    run_condense_0to1(resultAttributes=resultAttributes, trace=False)
-    run_condense_0to1(resultAttributes=resultAttributes, trace=True)
+  for dir_raw in iter_dir_raw(dir_measurement):
+    run_condense_0to1(dir_raw=dir_raw, trace=False)
+    run_condense_0to1(dir_raw=dir_raw, trace=True)
     pass
     # import program_fir
     # program_fir.DensityPlot.directory_plot(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
     pass
 
-def run_condense_0to1(resultAttributes, trace=False):
-  list_density = list(program_fir.DensityPlot.plots_from_directory(dir_input=resultAttributes.dir_raw, skip=not trace))
+def run_condense_0to1(dir_raw, trace=False, create_plot=True):
+  list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
 
-  ds = program_fir.DensitySummary(list_density, directory=resultAttributes.dir_raw, trace=trace)
-  ds.write_summary_file(trace=trace)
+  ds = program_fir.DensitySummary(list_density, directory=dir_raw, trace=trace)
   if not trace:
     ds.write_summary_pickle()
+
+  if not create_plot:
+    return
+
+  ds.write_summary_file(trace=trace)
 
   file_tag = '_trace' if trace else ''
   ds.plot(file_tag=file_tag, color_given='blue')
