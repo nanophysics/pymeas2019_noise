@@ -130,7 +130,7 @@ class Density:
 
   def flush(self):
     self.out.flush()
-    print(f'Density Stage {self.stage:02d} dt_s {self.dt_s:016.12f}: Density calculation count {self.__density_calculation_count}')
+    #print(f'Density Stage {self.stage:02d} dt_s {self.dt_s:016.12f}: Density calculation count {self.__density_calculation_count}')
 
   def push(self, array_in):
     if array_in is None:
