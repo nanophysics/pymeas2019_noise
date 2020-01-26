@@ -1,8 +1,39 @@
-Peter Maerki 2019-12-02_12_21_02
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+step_size sprunghoehen, in bändern E12
+time_series
+
+Idee Live update:
+https://pythonprogramming.net/python-matplotlib-live-updating-graphs/
+https://towardsdatascience.com/animations-with-matplotlib-d96375c5442c
+
+
+zusammenfassung: spannung je dekade?
+
+ordner farben rotieren?
+
+
+---------------------------------------------------------
+old
 
 Damit weniger Flickernoise:
 Optimaler Range, Offset automatisch abgleichen und einrechnen.
@@ -15,8 +46,7 @@ je Fir Stufe:
 
 namen:
 fft density, ganz am schluss in bändern E12
-step_size sprunghoehen, in bändern E12
-time_series
+
 
 DONE:
   fmax_Hz = 1.0 / (dt_s * 2) # highest frequency in spectogram
@@ -36,9 +66,6 @@ band für grenze zuordnung: von sqrt(E12vorher * E12) bis sqrt(E12 * E12nachher)
 unterste und oberste frequenz aus E12 wird nicht bestimmt.
 
 
-Idee Live update:
-https://pythonprogramming.net/python-matplotlib-live-updating-graphs/
-https://towardsdatascience.com/animations-with-matplotlib-d96375c5442c
 
 
 ideen average fuer kleineren noise:
