@@ -285,17 +285,13 @@ def run_condense(dir_measurement):
     # program_fir.DensityPlot.directory_plot(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
     pass
 
-def run_condense_0to1(dir_raw, trace=False, create_plot=True):
+def run_condense_0to1(dir_raw, trace=False):
   list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
 
   ds = program_fir.DensitySummary(list_density, directory=dir_raw, trace=trace)
+  ds.write_summary_file(trace=trace)
   if not trace:
     ds.write_summary_pickle()
-
-  if not create_plot:
-    return
-
-  ds.write_summary_file(trace=trace)
 
   file_tag = '_trace' if trace else ''
   ds.plot(file_tag=file_tag, color_given='blue')

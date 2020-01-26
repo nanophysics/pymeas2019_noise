@@ -111,8 +111,8 @@ def run():
   # thread = program_fir.DensityPlot.directory_plot_thread(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
   configSetup = program.get_configSetup_by_filename(dict_config_setup)
 
-  configSetup.measure_for_all_steps(dir_measurement)
-  program.run_plot(dir_measurement)
+  configSetup.measure_for_all_steps(dir_measurement, start_animation=True)
+  program.run_condense(dir_measurement)
 
   # import time
   # time.sleep(10.0)
