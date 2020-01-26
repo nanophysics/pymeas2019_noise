@@ -61,7 +61,7 @@ class InThread:
     self.queue_size += len(raw_data)
     if self.queue_size > self.queue_size_max:
       self.queue_size_max = min(int(1.5*self.queue_size), SIZE_MAX_INT16)
-      print(f'Max queue size {100.0*self.queue_size/SIZE_MAX_INT16:.0f}%')
+      print(f'Max queue size: used {100.0*self.queue_size/SIZE_MAX_INT16:.0f}%')
     # Return True if queue is full
     return self.queue_size > SIZE_MAX_INT16
 

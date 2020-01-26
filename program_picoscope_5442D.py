@@ -109,7 +109,7 @@ class PicoScope:
 
     dt_s = self.calculate_dt_s(configStep, max_samples_bytes)
     total_samples = int(configStep.duration_s/dt_s)
-    print(f'Choosen dt_s {dt_s:.3e}s and filesize {total_samples*2}Bytes')
+    print(f'Choosen dt_s {dt_s:.3e}s')
 
     # PicoScope 6
     # 8ns

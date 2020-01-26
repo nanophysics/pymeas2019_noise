@@ -24,7 +24,7 @@ f1_medium_useful_hz = f0_fast_fs_hz / 2**temp
 f0_fast_fir_count_skipped = 0 # fixed: we do not want to skip any. Due to nyquist criterion we could see some spurious signals for frequencies above. 
 f0_fast_fir_count = int(round( math.log(f0_fast_fs_hz / f1_medium_useful_hz,2)))
 # input B filter
-R_filter_input_B_ohm = 1000
+R_filter_input_B_ohm = 10000.0
 C_filter_input_B_farad = 1e-9
 fg_filter_input_B = 1.0 / ( 2.0 * math.pi * R_filter_input_B_ohm * C_filter_input_B_farad)
 #print(f'fg_filter_input_B: {fg_filter_input_B:.0f} Hz')
