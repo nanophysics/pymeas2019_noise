@@ -99,12 +99,12 @@ dict_config_setup = dict(
       offset = 0.0,
       resolution = '16bit',
       duration_s = 60.0,
-      #duration_s = 7*3600.0,
+      #duration_s = 3*3600.0,
       dt_s = 1 / f2_slow_fs_hz,
     ),
   )
 )
-#print (dict_config_setup)
+print (dict_config_setup)
 
 def run():
   # import program_fir

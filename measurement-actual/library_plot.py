@@ -32,7 +32,7 @@ class ResultAttributes:
 
   @classmethod
   def result_dir_actual(cls):
-    color = random.choice(colors)
+    color = 'red' #  random.choice(colors)
     return time.strftime('raw-' + color + '-%Y-%m-%d_%H-%M-%S', time.localtime())
 
 class PickleResultSummary:

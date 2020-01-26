@@ -30,6 +30,7 @@ class InThread:
     self.list_overflow = []
     self.queue = queue.Queue()
     self.queue_size = 0
+    self.queue_size_max = SIZE_MAX_INT16/50 # 2%
     self.out.init(stage=0, dt_s=dt_s)
 
   def worker(self):
@@ -44,6 +45,7 @@ class InThread:
       array_in = self.__func_convert(raw_data_in)
       self.out.push(array_in)
       self.out.push(None)
+      self.out.push(None)
       # print('')
 
   def start(self):
@@ -57,6 +59,9 @@ class InThread:
     self.queue.put(raw_data)
     assert self.queue_size >= 0
     self.queue_size += len(raw_data)
+    if self.queue_size > self.queue_size_max:
+      self.queue_size_max = min(int(1.5*self.queue_size), SIZE_MAX_INT16)
+      print(f'Max queue size {100.0*self.queue_size/SIZE_MAX_INT16:.0f}%')
     # Return True if queue is full
     return self.queue_size > SIZE_MAX_INT16
 
