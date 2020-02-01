@@ -1,59 +1,93 @@
 import re
 import time
-import random
 import pickle
 import pathlib
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+import matplotlib.ticker
 import matplotlib.animation
+import matplotlib.backend_tools
 
-plt.rcParams['toolbar'] = 'toolmanager'
-from matplotlib.backend_tools import ToolBase
+def x():
+  import tkinter
+  import tkinter.ttk
 
-class ListTools(ToolBase):
-    '''List all the tools controlled by the `ToolManager`'''
-    # keyboard shortcut
-    default_keymap = 'm'
-    description = 'List Tools'
+  window = tkinter.Tk()
 
-    def trigger(self, *args, **kwargs):
-        print('_' * 80)
-        print("{0:12} {1:45} {2}".format(
-            'Name (id)', 'Tool description', 'Keymap'))
-        print('-' * 80)
-        tools = self.toolmanager.tools
-        for name in sorted(tools):
-            if not tools[name].description:
-                continue
-            keys = ', '.join(sorted(self.toolmanager.get_tool_keymap(name)))
-            print("{0:12} {1:45} {2}".format(
-                name, tools[name].description, keys))
-        print('_' * 80)
-        print("Active Toggle tools")
-        print("{0:12} {1:45}".format("Group", "Active"))
-        print('-' * 80)
-        for group, active in self.toolmanager.active_toggle.items():
-            print("{0:12} {1:45}".format(str(group), str(active)))
+  window.title("Python Tkinter Text Box")
+  window.minsize(600,400)
 
-class UserAutozoom(ToolBase):
-    '''Peter Autozoom'''
-    # keyboard shortcut
-    default_keymap = 'z'
-    description = 'Auto Zoom'
-    def trigger(self, *args, **kwargs):
-        for ax in self.figure.get_axes():
-            ax.autoscale()
-        self.figure.canvas.draw()
+  def clickStart():
+    label.configure(text= 'Hello ' + name.get())
+
+  label = tkinter.ttk.Label(window, text = "Enter Your Name")
+  label.grid(column = 0, row = 0)
+
+  name = tkinter.StringVar()
+  nameEntered = tkinter.ttk.Entry(window, width = 15, textvariable = name)
+  nameEntered.grid(column = 0, row = 1)
+
+  button = tkinter.ttk.Button(window, text = "Start Measurement", command = clickStart)
+  button.grid(column= 0, row = 2)
+
+  window.mainloop()
+
+  pass
+
+x()
+
+class ListTools(matplotlib.backend_tools.ToolBase):
+  '''List all the tools controlled by the `ToolManager`'''
+  # keyboard shortcut
+  default_keymap = 'm'
+  description = 'List Tools'
+
+  def trigger(self, *args, **kwargs):
+    print('_' * 80)
+    print(f"{'Name (id)':12} {'Tool description':45} {'Keymap'}")
+    print('-' * 80)
+    tools = self.toolmanager.tools
+    for name in sorted(tools):
+      if not tools[name].description:
+          continue
+      keys = ', '.join(sorted(self.toolmanager.get_tool_keymap(name)))
+      print("{0:12} {1:45} {2}".format(
+          name, tools[name].description, keys))
+    print('_' * 80)
+    print("Active Toggle tools")
+    print("{0:12} {1:45}".format("Group", "Active"))
+    print('-' * 80)
+    for group, active in self.toolmanager.active_toggle.items():
+      print("{0:12} {1:45}".format(str(group), str(active)))
+
+class UserAutozoom(matplotlib.backend_tools.ToolBase):
+  default_keymap = 'z'
+  description = 'Auto Zoom'
+  def trigger(self, *args, **kwargs):
+    for ax in self.figure.get_axes():
+      ax.autoscale()
+    self.figure.canvas.draw()
+
+class UserMeasurementStart(matplotlib.backend_tools.ToolToggleBase):
+  # keyboard shortcut
+  default_keymap = 'p'
+  description = 'Measurement Start/Stop'
+  def trigger(self, *args, **kwargs):
+    matplotlib.backend_tools.ToolToggleBase.trigger(self, *args, **kwargs)
+    if self.toggled:
+      print('Start')
+      x()
+    else:
+      print('Stop')
 
 colors=(
-    'blue',
-    'orange',
-    'black',
-    'green',
-    'red',
-    'cyan',
-    'magenta',
-    # 'yellow',
+  'blue',
+  'orange',
+  'black',
+  'green',
+  'red',
+  'cyan',
+  'magenta',
+  # 'yellow',
 )
 
 class ResultAttributes:
@@ -177,63 +211,68 @@ class PlotData:
       self.listTopics.append(Topic.load(dir_raw))
 
 def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=False):
-    fig, ax = plt.subplots()
-    plt.title(title)
-    fig.canvas.manager.toolmanager.add_tool('List', ListTools)
-    fig.canvas.manager.toolmanager.add_tool('Autozoom', UserAutozoom)
-    fig.canvas.manager.toolbar.add_tool('Autozoom', 'navigation', 1)
+  plt.rcParams['toolbar'] = 'toolmanager'
 
-    for topic in plotData.listTopics:
-      plot_line, = ax.loglog(
-        topic.f,
-        topic.d,
-        linestyle='none',
-        linewidth=0.1,
-        marker='.',
-        markersize=3, 
-        color=topic.color,
-        label=topic.topic
-      )
-      topic.set_plot_line(plot_line)
+  fig, ax = plt.subplots()
+  plt.title(title)
+  fig.canvas.manager.toolmanager.add_tool('List', ListTools)
+  fig.canvas.manager.toolmanager.add_tool('Autozoom', UserAutozoom)
+  fig.canvas.manager.toolbar.add_tool('Autozoom', 'navigation', 1)
 
-    plt.ylabel(f'Density [V/Hz^0.5]')
-    plt.xlabel(f'Frequency [Hz]')
-    # plt.ylim( 1e-11,1e-6)
-    # plt.xlim(1e-2, 1e5) # temp Peter
-    # plt.grid(True)
-    plt.grid(True, which="major", axis="both", linestyle="-", color='gray', linewidth=0.5)
-    plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
-    ax.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=20))
-    ax.legend(loc='lower left', shadow=True, fancybox=False)
+  fig.canvas.manager.toolmanager.add_tool('Start/Stop', UserMeasurementStart)
+  fig.canvas.manager.toolbar.add_tool('Start/Stop', 'navigation', 1)
 
-    if do_write_files:
-      for ext in ('png', 'svg'):
-        filename = pathlib.Path(__file__).parent.joinpath(f'result_density.{ext}')
-        print(filename)
-        fig.savefig(filename, dpi=300)
+  for topic in plotData.listTopics:
+    plot_line, = ax.loglog(
+      topic.f,
+      topic.d,
+      linestyle='none',
+      linewidth=0.1,
+      marker='.',
+      markersize=3, 
+      color=topic.color,
+      label=topic.topic
+    )
+    topic.set_plot_line(plot_line)
 
-    if do_show:
-      plt.show()
-      fig.clf()
-      plt.close(fig)
-      plt.clf()
-      plt.close()
-      return
+  plt.ylabel(f'Density [V/Hz^0.5]')
+  plt.xlabel(f'Frequency [Hz]')
+  # plt.ylim( 1e-11,1e-6)
+  # plt.xlim(1e-2, 1e5) # temp Peter
+  # plt.grid(True)
+  plt.grid(True, which="major", axis="both", linestyle="-", color='gray', linewidth=0.5)
+  plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
+  ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
+  ax.legend(loc='lower left', shadow=True, fancybox=False)
 
-    if do_animate:
-      def animate(i):
-        for topic in plotData.listTopics:
-          topic.reload_if_changed()
+  if do_write_files:
+    for ext in ('png', 'svg'):
+      filename = pathlib.Path(__file__).parent.joinpath(f'result_density.{ext}')
+      print(filename)
+      fig.savefig(filename, dpi=300)
 
-      def endless_iter():
-        while True:
-          yield 42
+  if do_show:
+    plt.show()
+    fig.clf()
+    plt.close(fig)
+    plt.clf()
+    plt.close()
+    return
 
-      ani = matplotlib.animation.FuncAnimation(fig,
-                      func=animate, 
-                      frames=endless_iter(),
-                      interval=2000, # Delay between frames in milliseconds
-                      init_func=None, # A function used to draw a clear frame. If not given, the results of drawing from the first item in the frames sequence will be used.
-                      repeat=False) 
+  if do_animate:
+    def animate(i):
+      for topic in plotData.listTopics:
+        topic.reload_if_changed()
 
-      plt.show()
+    def endless_iter():
+      while True:
+        yield 42
+
+    ani = matplotlib.animation.FuncAnimation(fig,
+                    func=animate, 
+                    frames=endless_iter(),
+                    interval=2000, # Delay between frames in milliseconds
+                    init_func=None, # A function used to draw a clear frame. If not given, the results of drawing from the first item in the frames sequence will be used.
+                    repeat=False) 
+
+    plt.show()
