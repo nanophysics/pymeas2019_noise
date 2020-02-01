@@ -13,6 +13,8 @@ import library_plot
 import program
 import program_config_frequencies
 
+SAMPLES_DENSITY = 2**12
+
 #   <---------------- INPUT ---------========------->
 #
 #  |<-- LEFT -->|<--====- SELECT -====-->|<- RIGHT ->|
@@ -20,12 +22,16 @@ import program_config_frequencies
 DECIMATE_FACTOR = 2
 SAMPLES_LEFT = 100  # 36
 SAMPLES_RIGHT = 100  # 36
-SAMPLES_SELECT = 910000  # 5000000
-SAMPLES_INPUT = SAMPLES_LEFT + SAMPLES_SELECT + SAMPLES_RIGHT
-
+SAMPLES_SELECT_BIG = 910000  # 5000000
+SAMPLES_SELECT_SMALL = SAMPLES_DENSITY  # 5000000
+def samples_select_to_input(samples_select):
+  return samples_select + SAMPLES_LEFT + SAMPLES_RIGHT
+def samples_input_to_select(samples_input):
+  return samples_input - SAMPLES_LEFT - SAMPLES_RIGHT
 assert SAMPLES_LEFT % DECIMATE_FACTOR == 0
 assert SAMPLES_RIGHT % DECIMATE_FACTOR == 0
-assert SAMPLES_SELECT % DECIMATE_FACTOR == 0
+assert SAMPLES_SELECT_BIG % DECIMATE_FACTOR == 0
+assert SAMPLES_SELECT_SMALL % DECIMATE_FACTOR == 0
 
 #FIR_COUNT = 18
 
@@ -36,10 +42,13 @@ class FIR:
   Stream-Sink: Implements a Stream-Interface
   Stream-Source: Drives a output of Stream-Interface
   '''
+  TIME_INTERVAL_S = 0.9
 
   def __init__(self, out):
     self.out = out
     self.array = np.empty(0, dtype=np.float)
+    self.time_s = 0.0
+    self.next_s = FIR.TIME_INTERVAL_S
 
   def init(self, stage, dt_s):
     self.stage = stage
@@ -47,22 +56,37 @@ class FIR:
     self.out.init(stage=stage+1, dt_s=dt_s*DECIMATE_FACTOR)
 
   def push(self, array_in):
+    samples_select = SAMPLES_SELECT_BIG
+    
     if array_in is None:
       # array_in is None: We may decimate
-      if len(self.array) < SAMPLES_INPUT:
+      if len(self.array) < samples_select_to_input(samples_select):
         # We do not need to decimate.
-        # Give the next stage a chance to decimate!
-        self.out.push(None)
-        return
+        samples_input = len(self.array)
+        if samples_input % DECIMATE_FACTOR == 1:
+          # Odd. Make even
+          samples_input -= 1
+        not_sufficient_data = samples_input < samples_select_to_input(SAMPLES_SELECT_SMALL)
+        time_not_over = self.time_s < self.next_s
+        if not_sufficient_data or time_not_over:
+          # Give the next stage a chance to decimate!
+          self.out.push(None)
+          return
+        # Time over, decimate
+        samples_select = samples_input_to_select(samples_input)
+        self.next_s += FIR.TIME_INTERVAL_S
+        # print(f'decimate {self.time_s:0.1f} {self.stage} {samples_select}')
 
       # Decimate a part of the array
-      array_decimate = self.decimate(self.array[:SAMPLES_INPUT])
+      array_decimate = self.decimate(self.array[:samples_select_to_input(samples_select)])
       self.out.push(array_decimate)
       # Save the remainting part to 'self.array'
-      self.array = self.array[SAMPLES_SELECT:]
+      self.array = self.array[samples_select:]
       return 
 
-    # assert len(array_in) <= SAMPLES_INPUT
+    self.time_s += self.dt_s * len(array_in)
+
+    # assert len(array_in) <= SAMPLES_INPUT_BIG
     # Not enough data. Add it to 'self.array'
     self.array = np.append(self.array, array_in)
 
@@ -98,10 +122,6 @@ class SampleProcessConfig:
     self.fir_count_skipped = configStep.fir_count_skipped
     self.stepname = configStep.stepname
     self.interval_s = interval_s
-
-
-SAMPLES_DENSITY = 2**12
-
 
 class Density:
   '''
@@ -140,7 +160,6 @@ class Density:
     self.time_s += self.dt_s * len(array_in)
     if self.time_s > self.next_s:
       self.next_s += self.config.interval_s
-      # self.next_s = self.time_s + self.interval_s
       self.density(array_in)
 
     self.out.push(array_in)
@@ -160,8 +179,15 @@ class Density:
         array_density, 1/self.dt_s, window='hamming',)  # Hz, V^2/Hz
     self.__density_averaging(array_density, Pxx)
 
+    if self.Pxx_n == 0:
+      print(f'WARNING self.Pxx_n: {self.Pxx_n}')
+      return
+
     filenameFull = DensityPlot.save(
         self.config, self.directory, self.stage, self.dt_s, self.frequencies, self.Pxx_n, self.Pxx_sum)
+    if self.stage > 8:
+      print(f'{self.stage} {len(self.Pxx_sum)} {filenameFull}')
+
     if False:
       densityPeriodogram = DensityPlot(filenameFull)
       densityPeriodogram.plot(program.DIRECTORY_1_CONDENSED)
@@ -591,7 +617,7 @@ class InFile:
         # np.empty((0, 0), dtype=np.int16)
         bytes_per_sample = 2
 
-        num_samples_chunk = SAMPLES_INPUT
+        num_samples_chunk = SAMPLES_INPUT_BIG
 
         data_bytes = fA.read(bytes_per_sample*num_samples_chunk)
         if len(data_bytes) == 0:

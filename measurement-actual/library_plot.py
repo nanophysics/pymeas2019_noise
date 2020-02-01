@@ -140,6 +140,7 @@ class Topic:
   def reload_if_changed(self):
     assert self.__plot_line is not None
     changed = self.__prs.reload_if_changed()
+    # print(f'changed {self.__ra.topic} {changed}')
     if changed:
       self.__plot_line.set_data(self.__prs.f, self.__prs.d)
     return changed
