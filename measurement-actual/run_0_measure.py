@@ -14,7 +14,7 @@ except ImportError:
 # sample frequencies and fir_counts
 f0_fast_fs_hz = 125E6 # do not change this values as this is the fastest rate with 15 bit
 f1_medium_fs_hz = f0_fast_fs_hz / float(2**1)  # do not change this values as this is the fastest rate with 16 bit
-exponent_slow = 5 # free to change. Peter has choosen 9 on his laptop
+exponent_slow = 5 # free to change. Peter has choosen 5 on his laptop
 f2_slow_fs_hz = f0_fast_fs_hz/ float(2**exponent_slow)
 f1_medium_useful_hz = 20E6 / 3.0 # 3 dB frequency is 20 Mhz
 #print(f'f1_medium_useful_hz wanted  : {f1_medium_useful_hz:.0f} Hz')
@@ -98,8 +98,8 @@ dict_config_setup = dict(
       bandwitdth = 'BW_20MHZ',
       offset = 0.0,
       resolution = '16bit',
-      duration_s = 60.0,
-      #duration_s = 3*3600.0,
+      duration_s = 10.0,
+      #duration_s = 7*3600.0,
       dt_s = 1 / f2_slow_fs_hz,
     ),
   )

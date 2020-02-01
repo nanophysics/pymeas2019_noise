@@ -7,6 +7,44 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import matplotlib.animation
 
+plt.rcParams['toolbar'] = 'toolmanager'
+from matplotlib.backend_tools import ToolBase
+
+class ListTools(ToolBase):
+    '''List all the tools controlled by the `ToolManager`'''
+    # keyboard shortcut
+    default_keymap = 'm'
+    description = 'List Tools'
+
+    def trigger(self, *args, **kwargs):
+        print('_' * 80)
+        print("{0:12} {1:45} {2}".format(
+            'Name (id)', 'Tool description', 'Keymap'))
+        print('-' * 80)
+        tools = self.toolmanager.tools
+        for name in sorted(tools):
+            if not tools[name].description:
+                continue
+            keys = ', '.join(sorted(self.toolmanager.get_tool_keymap(name)))
+            print("{0:12} {1:45} {2}".format(
+                name, tools[name].description, keys))
+        print('_' * 80)
+        print("Active Toggle tools")
+        print("{0:12} {1:45}".format("Group", "Active"))
+        print('-' * 80)
+        for group, active in self.toolmanager.active_toggle.items():
+            print("{0:12} {1:45}".format(str(group), str(active)))
+
+class UserAutozoom(ToolBase):
+    '''Peter Autozoom'''
+    # keyboard shortcut
+    default_keymap = 'z'
+    description = 'Auto Zoom'
+    def trigger(self, *args, **kwargs):
+        for ax in self.figure.get_axes():
+            ax.autoscale()
+        self.figure.canvas.draw()
+
 colors=(
     'blue',
     'orange',
@@ -140,6 +178,9 @@ class PlotData:
 def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=False):
     fig, ax = plt.subplots()
     plt.title(title)
+    fig.canvas.manager.toolmanager.add_tool('List', ListTools)
+    fig.canvas.manager.toolmanager.add_tool('Autozoom', UserAutozoom)
+    fig.canvas.manager.toolbar.add_tool('Autozoom', 'navigation', 1)
 
     for topic in plotData.listTopics:
       plot_line, = ax.loglog(
