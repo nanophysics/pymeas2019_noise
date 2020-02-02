@@ -190,7 +190,8 @@ class Density:
     self.frequencies, Pxx = scipy.signal.periodogram(
       array,
       1/self.dt_s,
-      window='hamming'
+      window='hamming',
+      detrend='linear'
     ) # Hz, V^2/Hz
 
     # Averaging
