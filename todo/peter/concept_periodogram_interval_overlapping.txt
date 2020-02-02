@@ -1,0 +1,13 @@
+high sample rates: we cannot calculate for all samples. therefore we calculate every 0.9 s a little time slice. bei ganz hohen frequenzen allenfalls kürzer? 0.1s
+low sample rates: wa calculate every 0.9 s to have updates again and again. too much averages but doesn't matter.
+
+SAMPLES_DENSITY = 2**12
+TIME_INTERVAL_MIN_S = 0.9 # we have a periodogram for every stage maximal every...
+
+zwei sample raten:
+dt_s = 1e-6
+dt_s = 1.0
+
+overlap = 2**4 # this value is very high and means a lot of computational effort but more often visible updates -> GH_FFT_paper.pdf
+t_interval_s = SAMPLES_DENSITY / overlap * dt_s # for low data rates use a lot of overlap to get visible updates often
+if t_interval_s = min(t_interval_s, TIME_INTERVAL_MIN_S) # limit the computational effort
