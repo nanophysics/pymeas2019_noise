@@ -33,7 +33,7 @@ def x():
 
   pass
 
-x()
+# x()
 
 class ListTools(matplotlib.backend_tools.ToolBase):
   '''List all the tools controlled by the `ToolManager`'''
@@ -167,16 +167,23 @@ class Topic:
     self.__ra = ra
     self.__prs = prs
     self.__plot_line = None
+    self.toggle = True
   
   def set_plot_line(self, plot_line):
     self.__plot_line = plot_line
 
   def reload_if_changed(self):
     assert self.__plot_line is not None
+    import time
+    start = time.time()
     changed = self.__prs.reload_if_changed()
-    # print(f'changed {self.__ra.topic} {changed}')
     if changed:
+      # self.toggle = not self.toggle
+      # factor = 1.1 if self.toggle else 1.0
+      # d = [factor*v for v in self.__prs.d]
+      # self.__plot_line.set_data(self.__prs.f, d)
       self.__plot_line.set_data(self.__prs.f, self.__prs.d)
+      print(f'changed {self.__ra.topic} {changed} {time.time()-start:0.2f}s')
     return changed
 
   @classmethod
@@ -271,7 +278,7 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
     ani = matplotlib.animation.FuncAnimation(fig,
                     func=animate, 
                     frames=endless_iter(),
-                    interval=2000, # Delay between frames in milliseconds
+                    interval=1000, # Delay between frames in milliseconds
                     init_func=None, # A function used to draw a clear frame. If not given, the results of drawing from the first item in the frames sequence will be used.
                     repeat=False) 
 

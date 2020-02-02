@@ -37,13 +37,16 @@ class InThread:
     while True:
       raw_data_in = self.queue.get()
       if raw_data_in is None:
-        self.out.flush()
         break
       self.queue_size -= len(raw_data_in)
       assert self.queue_size >= 0
       # print('push: ', end='')
       array_in = self.__func_convert(raw_data_in)
       self.out.push(array_in)
+
+      # TODO: Better logic based on len(self.array)...
+      self.out.push(None)
+      self.out.push(None)
       self.out.push(None)
       self.out.push(None)
       # print('')

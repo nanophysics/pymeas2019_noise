@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 logger.setLevel(logging.DEBUG)
 
-import msl.equipment.resources.picotech.picoscope
 import msl.equipment
+import msl.equipment.resources.picotech.picoscope
 
 from msl.equipment.resources.picotech.picoscope import callbacks
 from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
@@ -54,7 +54,14 @@ class PicoScope:
     )
 
   def connect(self):
-    self.scope = self.record.connect()  # establish a connection to the PicoScope
+    for retry in range(1000):
+      try:
+        self.scope = self.record.connect()  # establish a connection to the PicoScope
+        break
+      except msl.equipment.exceptions.PicoTechError as ex:
+        print(f'ERROR: {ex}')
+        if retry >= 3:
+          raise
 
   def close(self):
     self.scope.disconnect()

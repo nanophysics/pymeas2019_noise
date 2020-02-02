@@ -9,11 +9,16 @@ import itertools
 import threading
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import library_plot
 import program
 import program_config_frequencies
+import library_plot
 
-SAMPLES_DENSITY = 2**12
+
+TIME_INTERVAL_S = 0.9
+SAMPLES_DENSITY = 2**12 # lenght of periodogram
+PERIODOGRAM_OVERLAP = 2**4  # number of overlaps
+assert SAMPLES_DENSITY % PERIODOGRAM_OVERLAP == 0
+SAMPLES_SELECT_MAX = 2**23
 
 #   <---------------- INPUT ---------========------->
 #
@@ -22,18 +27,31 @@ SAMPLES_DENSITY = 2**12
 DECIMATE_FACTOR = 2
 SAMPLES_LEFT = 100  # 36
 SAMPLES_RIGHT = 100  # 36
-SAMPLES_SELECT_BIG = 910000  # 5000000
-SAMPLES_SELECT_SMALL = SAMPLES_DENSITY  # 5000000
-def samples_select_to_input(samples_select):
-  return samples_select + SAMPLES_LEFT + SAMPLES_RIGHT
-def samples_input_to_select(samples_input):
-  return samples_input - SAMPLES_LEFT - SAMPLES_RIGHT
+SAMPLES_LEFT_RIGHT = SAMPLES_LEFT + SAMPLES_RIGHT
 assert SAMPLES_LEFT % DECIMATE_FACTOR == 0
 assert SAMPLES_RIGHT % DECIMATE_FACTOR == 0
-assert SAMPLES_SELECT_BIG % DECIMATE_FACTOR == 0
-assert SAMPLES_SELECT_SMALL % DECIMATE_FACTOR == 0
 
-#FIR_COUNT = 18
+class PushCalculator:
+  """
+  >>> [PushCalculator(dt_s).push_size_samples for dt_s in (1.0/125e6, 1.0/1953125.0, 1.0)]
+  [8388608, 1048576, 256]
+  """
+  def __init__(self, dt_s):
+    self.dt_s = dt_s
+    self.push_size_samples = self.__calulcate_push_size_samples()
+    self.previous_fir_samples_select = self.push_size_samples * DECIMATE_FACTOR
+    self.previous_fir_samples_input = self.previous_fir_samples_select + SAMPLES_LEFT_RIGHT
+
+  def __calulcate_push_size_samples(self):
+    samples_select = 1.0 / self.dt_s / 1953125 * 2097152 / 2.0
+    samples_select = int(samples_select + 0.5)
+    samples_select = max(samples_select, SAMPLES_DENSITY//PERIODOGRAM_OVERLAP)
+    samples_select = min(samples_select, SAMPLES_SELECT_MAX)
+    return samples_select
+
+
+
+
 
 FILENAME_TAG_SKIP = '_SKIP'
 
@@ -42,68 +60,50 @@ class FIR:
   Stream-Sink: Implements a Stream-Interface
   Stream-Source: Drives a output of Stream-Interface
   '''
-  TIME_INTERVAL_S = 0.9
-
   def __init__(self, out):
     self.out = out
-    self.array = np.empty(0, dtype=np.float)
-    self.time_s = 0.0
-    self.next_s = FIR.TIME_INTERVAL_S
+    self.array = None
 
   def init(self, stage, dt_s):
     self.stage = stage
-    self.dt_s = dt_s
-    self.out.init(stage=stage+1, dt_s=dt_s*DECIMATE_FACTOR)
+    decimated_dt_s = dt_s*DECIMATE_FACTOR
+    self.pushcalulator = PushCalculator(dt_s)
+    self.pushcalulator_next = PushCalculator(decimated_dt_s)
+    # print(f'stage {self.stage} push_size_samples {self.pushcalulator.push_size_samples} time_s {self.pushcalulator.dt_s*self.pushcalulator.push_size_samples}')
+    self.out.init(stage=stage+1, dt_s=decimated_dt_s)
 
   def push(self, array_in):
-    samples_select = SAMPLES_SELECT_BIG
-    
+    if self.array is None:
+      if array_in is None:
+        return
+      # This is the veriy first time
+      # Keep the oldest SAMPLES_LEFT_RIGHT
+      assert len(array_in) >= SAMPLES_LEFT_RIGHT
+      self.array = array_in[-SAMPLES_LEFT_RIGHT:]
+      return
+
     if array_in is None:
       # array_in is None: We may decimate
-      if len(self.array) < samples_select_to_input(samples_select):
-        # We do not need to decimate.
-        samples_input = len(self.array)
-        if samples_input % DECIMATE_FACTOR == 1:
-          # Odd. Make even
-          samples_input -= 1
-        not_sufficient_data = samples_input < samples_select_to_input(SAMPLES_SELECT_SMALL)
-        time_not_over = self.time_s < self.next_s
-        if not_sufficient_data or time_not_over:
-          # Give the next stage a chance to decimate!
-          self.out.push(None)
-          return
-        # Time over, decimate
-        samples_select = samples_input_to_select(samples_input)
-        self.next_s += FIR.TIME_INTERVAL_S
-        # print(f'decimate {self.time_s:0.1f} {self.stage} {samples_select}')
-
-      # Decimate a part of the array
-      array_decimate = self.decimate(self.array[:samples_select_to_input(samples_select)])
+      if len(self.array) < self.pushcalulator_next.previous_fir_samples_input:
+        # Not sufficient data
+        # Give the next stage a chance to decimate!
+        self.out.push(None)
+        return
+      array_decimate = self.decimate(self.array[:self.pushcalulator_next.previous_fir_samples_input])
+      assert len(array_decimate) == self.pushcalulator_next.push_size_samples
       self.out.push(array_decimate)
       # Save the remainting part to 'self.array'
-      self.array = self.array[samples_select:]
+      self.array = self.array[self.pushcalulator_next.previous_fir_samples_select:]
+      assert len(self.array) >= SAMPLES_LEFT_RIGHT
       return 
 
-    self.time_s += self.dt_s * len(array_in)
-
-    # assert len(array_in) <= SAMPLES_INPUT_BIG
-    # Not enough data. Add it to 'self.array'
+    assert len(array_in) == self.pushcalulator.push_size_samples
+    # Add to 'self.array'
     self.array = np.append(self.array, array_in)
-
-
-  def flush(self):
-    length = len(self.array)
-    if length > SAMPLES_LEFT + SAMPLES_RIGHT:
-      if length % DECIMATE_FACTOR:
-        # if length is odd, subtract 1 to make it even
-        length -= 1
-      array_decimate = self.decimate(self.array[:length])
-      self.out.push(array_decimate)
-    self.out.flush()
 
   def decimate(self, array_decimate):
     # print(f'{self.stage},', end='')
-    assert len(array_decimate) > SAMPLES_LEFT + SAMPLES_RIGHT
+    assert len(array_decimate) > SAMPLES_LEFT_RIGHT
     assert len(array_decimate) % DECIMATE_FACTOR == 0
 
     array_decimated = scipy.signal.decimate(
@@ -112,16 +112,15 @@ class FIR:
 
     assert len(array_decimated) == len(array_decimate)//DECIMATE_FACTOR
     index_from = SAMPLES_LEFT//DECIMATE_FACTOR
-    index_to = len(array_decimated) + SAMPLES_RIGHT//DECIMATE_FACTOR
+    index_to = len(array_decimated) - SAMPLES_RIGHT//DECIMATE_FACTOR
     array_decimated = array_decimated[index_from:index_to]
     return array_decimated
 
 class SampleProcessConfig:
-  def __init__(self, configStep, interval_s=0.9):
+  def __init__(self, configStep):
     self.fir_count = configStep.fir_count
     self.fir_count_skipped = configStep.fir_count_skipped
     self.stepname = configStep.stepname
-    self.interval_s = interval_s
 
 class Density:
   '''
@@ -135,74 +134,91 @@ class Density:
     # TODO: Make all members private!
 
     self.out = out
-    self.time_s = 0.0
-    self.next_s = 0.0
     self.Pxx_sum = None
     self.Pxx_n = 0
     self.config = config
     self.directory = directory
-    self.__density_calculation_count = 0
 
   def init(self, stage, dt_s):
     self.stage = stage
     self.dt_s = dt_s
-    self.out.init(stage=stage, dt_s=dt_s)
 
-  def flush(self):
-    self.out.flush()
-    #print(f'Density Stage {self.stage:02d} dt_s {self.dt_s:016.12f}: Density calculation count {self.__density_calculation_count}')
+    self.pushcalulator = PushCalculator(dt_s)
+    self.mode_fifo = self.pushcalulator.push_size_samples < SAMPLES_DENSITY
+    if self.mode_fifo:
+      self.array = np.empty(0, dtype=np.float)
+    else:
+      self.array = None
+
+    self.out.init(stage=stage, dt_s=dt_s)
 
   def push(self, array_in):
     if array_in is None:
-      self.out.push(None)
+      if (self.array is None) or (len(self.array) < SAMPLES_DENSITY):
+        # Not sufficient data
+        self.out.push(None)
+        return
+
+      # Time is over. Calculate density
+      assert len(self.array) >= SAMPLES_DENSITY
+      if len(self.array) != SAMPLES_DENSITY:
+        print('Density not calculated')
+      self.density(self.array)
+      if self.mode_fifo:
+        self.array = self.array[self.pushcalulator.push_size_samples:]
+      else:
+        self.array = None
       return
 
-    self.time_s += self.dt_s * len(array_in)
-    if self.time_s > self.next_s:
-      self.next_s += self.config.interval_s
-      self.density(array_in)
-
     self.out.push(array_in)
+    assert array_in is not None
 
-  def density(self, array_in):
-    self.__density_calculation_count += 1
+    # Add to 'self.array'
+    if self.mode_fifo:
+      assert len(array_in) == self.pushcalulator.push_size_samples
+      self.array = np.append(self.array, array_in)
+      return
+  
+    assert len(array_in) >= SAMPLES_DENSITY
+    self.array = array_in[:SAMPLES_DENSITY]
 
-    array_density = array_in
-    if len(array_in) > SAMPLES_DENSITY:
-      array_density = array_in[:SAMPLES_DENSITY]
-
+  def density(self, array):
     # print('')
     # print(f'Stage {self.stage:02d} dt_s {self.dt_s:016.12f}, len(array)={len(array_in)} -> {len(array_density)}, mean V:{np.mean(array_density):0.6f}', end='')
     #print("Average: %0.9f V" % np.mean(array_density))
 
     self.frequencies, Pxx = scipy.signal.periodogram(
-        array_density, 1/self.dt_s, window='hamming',)  # Hz, V^2/Hz
-    self.__density_averaging(array_density, Pxx)
+      array,
+      1/self.dt_s,
+      window='hamming'
+    ) # Hz, V^2/Hz
 
-    if self.Pxx_n == 0:
-      print(f'WARNING self.Pxx_n: {self.Pxx_n}')
-      return
-
-    filenameFull = DensityPlot.save(
-        self.config, self.directory, self.stage, self.dt_s, self.frequencies, self.Pxx_n, self.Pxx_sum)
-    if self.stage > 8:
-      print(f'{self.stage} {len(self.Pxx_sum)} {filenameFull}')
-
-    if False:
-      densityPeriodogram = DensityPlot(filenameFull)
-      densityPeriodogram.plot(program.DIRECTORY_1_CONDENSED)
-
-  def __density_averaging(self, array_density, Pxx):
-      if len(array_density) < SAMPLES_DENSITY:
-        return
-
-      # Averaging
+    # Averaging
+    do_averaging = True
+    if do_averaging:
       self.Pxx_n += 1
       if self.Pxx_sum is None:
         self.Pxx_sum = Pxx
-        return
-      assert len(self.Pxx_sum) == len(Pxx)
-      self.Pxx_sum += Pxx
+      else:
+        assert len(self.Pxx_sum) == len(Pxx)
+        self.Pxx_sum += Pxx
+    else:
+      self.Pxx_n = 1
+      self.Pxx_sum = Pxx
+
+
+    filenameFull = DensityPlot.save(
+      config=self.config, 
+      directory=self.directory, 
+      stage=self.stage, 
+      dt_s=self.dt_s, 
+      frequencies=self.frequencies, 
+      Pxx_n=self.Pxx_n, 
+      Pxx_sum=self.Pxx_sum
+    )
+
+    # if self.stage > 8:
+    #   print(f'{self.stage} ')
 
 
 class DensityPlot:
@@ -596,9 +612,6 @@ class OutTrash:
     # print('OutTrash.push()')
     pass
 
-  def flush(self):
-    pass
-
 class InFile:
   '''
   Stream-Source: Drives a output of Stream-Interface
@@ -621,7 +634,6 @@ class InFile:
 
         data_bytes = fA.read(bytes_per_sample*num_samples_chunk)
         if len(data_bytes) == 0:
-          self.out.flush()
           print('DONE')
           return
         raw16Bit = np.frombuffer(data_bytes, dtype=np.int16)
@@ -653,11 +665,39 @@ class InSin:
     offset = 0
     while True:
       if offset > len(s):
-        self.out.flush()
         print('DONE')
         return
       self.out.push(s[offset:offset+SAMPLES_SELECT])
       offset += SAMPLES_SELECT
+
+class UniformPieces:
+  '''
+  Stream-Sink: Implements a Stream-Interface
+  Stream-Source: Drives a output of Stream-Interface
+  Sends arrays of defined size.
+  '''
+  def __init__(self, out):
+    self.out = out
+    self.array = np.empty(0, dtype=np.float)
+
+  def init(self, stage, dt_s):
+    self.stage = stage
+    self.out.init(stage=stage, dt_s=dt_s)
+    self.pushcalulator_next = PushCalculator(dt_s)
+
+  def push(self, array_in):
+    if array_in is None:
+      # Give the next stage a chance to decimate!
+      self.out.push(None)
+      return
+
+    self.array = np.append(self.array, array_in)
+
+    push_size_samples = self.pushcalulator_next.push_size_samples
+    if len(self.array) >= push_size_samples:
+      self.out.push(self.array[:push_size_samples])
+      # Save the remainting part to 'self.array'
+      self.array = self.array[push_size_samples:]
 
 class SampleProcess:
   def __init__(self, config, directory_raw):
@@ -670,4 +710,9 @@ class SampleProcess:
       o = FIR(o)
 
     o = Density(o, config=config, directory=self.directory_raw)
+    o = UniformPieces(o)
     self.output = o
+
+if __name__ == '__main__':
+  import doctest
+  doctest.testmod()

@@ -18,6 +18,8 @@ MSL_EQUIPMENT_PATH = TOPDIR.joinpath('libraries/msl-equipment')
 assert MSL_EQUIPMENT_PATH.joinpath('README.rst').is_file(), f'Subrepo is missing (did you clone with --recursive?): {MSL_EQUIPMENT_PATH}'
 sys.path.insert(0, str(MSL_EQUIPMENT_PATH))
 
+sys.path.insert(0, str(TOPDIR.joinpath('measurement-actual')))
+
 try:
   import msl.loadlib
   import numpy as np
@@ -255,7 +257,13 @@ def get_configSetups():
 
 def reload_if_changed(dir_raw):
   if program_fir.DensityPlot.file_changed(dir_input=dir_raw):
-    list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=True)
+    try:
+      list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=True)
+    except EOFError:
+      # File "c:\Projekte\ETH-Fir\pymeas2019_noise\program_fir.py", line 321, in __init__
+      # data = pickle.load(f)
+      # EOFError: Ran out of input
+      return False
     ds = program_fir.DensitySummary(list_density, directory=dir_raw, trace=False)
     ds.write_summary_pickle()
     return True
