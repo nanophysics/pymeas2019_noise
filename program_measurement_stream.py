@@ -37,19 +37,54 @@ class InThread:
     while True:
       raw_data_in = self.queue.get()
       if raw_data_in is None:
+        self.out.done()
         break
       self.queue_size -= len(raw_data_in)
       assert self.queue_size >= 0
       # print('push: ', end='')
       array_in = self.__func_convert(raw_data_in)
-      self.out.push(array_in)
+      rc = self.out.push(array_in)
+      assert rc is None
 
-      # TODO: Better logic based on len(self.array)...
-      self.out.push(None)
-      self.out.push(None)
-      self.out.push(None)
-      self.out.push(None)
-      # print('')
+      # while True:
+      #   calculation_stage = self.out.push(None)
+      #   assert isinstance(calculation_stage, str)
+      #   done = len(calculation_stage) == 0
+      #   if done:
+      #     break
+
+  def worker_obsolete(self):
+    block = True
+    push_count = 0
+    # push_count_max = 3
+    while True:
+      try:
+        raw_data_in = self.queue.get(block=block)
+        block = False
+      except queue.Empty:
+        assert block == False
+        calculation_stage = self.out.push(None)
+        push_count += 1
+        assert isinstance(calculation_stage, str)
+        block = len(calculation_stage) == 0
+        push_count += 1
+        # if block:
+        #   if push_count_max < push_count:
+        #     push_count_max = push_count
+        #     print(f'Push count {push_count}')
+        #   push_count = 0
+        continue
+      if raw_data_in is None:
+        break
+      if (not block) and (push_count > 0):
+        print(f'Could not finish calculating after push_count {push_count}!')
+      push_count = 0
+      self.queue_size -= len(raw_data_in)
+      assert self.queue_size >= 0
+      # print('push: ', end='')
+      array_in = self.__func_convert(raw_data_in)
+      rc = self.out.push(array_in)
+      assert rc is None
 
   def start(self):
     self.thread = threading.Thread(target=self.worker)

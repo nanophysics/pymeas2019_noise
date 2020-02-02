@@ -2,6 +2,7 @@ import re
 import os
 import math
 import time
+import signal
 import logging
 import numpy as np
 import program
@@ -33,6 +34,15 @@ if PICSCOPE_MODEL==PICSCOPE_MODEL_2204A:
   # Setting up dt_s and desired_sample_time_s seems to be buggy!
   PICSCOPE_ADDRESS='SDK::ps2000'
   ALL_CHANNELS = ('A', 'B')
+
+ctrl_c_pressed = False
+
+def signal_handler(sig, frame):
+    print('You pressed Ctrl+C!')
+    global ctrl_c_pressed
+    ctrl_c_pressed = True
+
+signal.signal(signal.SIGINT, signal_handler)
 
 class PicoScope:
   def __init__(self, configStep):
@@ -184,7 +194,7 @@ class PicoScope:
           stream.list_overflow.append(self.actual_sample_count+start_index)
 
         self.actual_sample_count += num_samples
-        if self.actual_sample_count > total_samples:
+        if ctrl_c_pressed or (self.actual_sample_count > total_samples):
           self.streaming_done = True
           stream.put_EOF()
           print(r'\nSTOP(time over)', end='')
@@ -211,12 +221,13 @@ class PicoScope:
         #        is out of range or because there are no samples available
 
     print()
+    self.scope.stop()
+    self.scope.disconnect()
     print(f'Time spent in aquisition {time.time()-start:1.1f}s')
-    print('Waiting for thread ...')
+    print('Waiting for thread to terminate...')
     stream.join()
 
     print('Done')
-    self.scope.stop()
 
 # if __name__ == '__main__':
 #   pymeas = program.PyMeas2019()

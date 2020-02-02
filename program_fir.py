@@ -43,15 +43,11 @@ class PushCalculator:
     self.previous_fir_samples_input = self.previous_fir_samples_select + SAMPLES_LEFT_RIGHT
 
   def __calulcate_push_size_samples(self):
-    samples_select = 1.0 / self.dt_s / 1953125 * 2097152 / 2.0
-    samples_select = int(samples_select + 0.5)
-    samples_select = max(samples_select, SAMPLES_DENSITY//PERIODOGRAM_OVERLAP)
-    samples_select = min(samples_select, SAMPLES_SELECT_MAX)
-    return samples_select
-
-
-
-
+    push_size = 1.0 / self.dt_s / 1953125 * 2097152 / 2.0
+    push_size = int(push_size + 0.5)
+    push_size = max(push_size, SAMPLES_DENSITY//PERIODOGRAM_OVERLAP)
+    push_size = min(push_size, SAMPLES_SELECT_MAX//2)
+    return push_size
 
 FILENAME_TAG_SKIP = '_SKIP'
 
@@ -63,45 +59,75 @@ class FIR:
   def __init__(self, out):
     self.out = out
     self.array = None
+    self.fake_left_right = True
 
   def init(self, stage, dt_s):
+    self.statistics_count = 0
+    self.statistics_samples_out = 0
+    self.statistics_samples_in = 0
     self.stage = stage
+    self.__dt_s = dt_s
+    self.TAG_PUSH = f'FIR {self.stage}'
     decimated_dt_s = dt_s*DECIMATE_FACTOR
-    self.pushcalulator = PushCalculator(dt_s)
     self.pushcalulator_next = PushCalculator(decimated_dt_s)
     # print(f'stage {self.stage} push_size_samples {self.pushcalulator.push_size_samples} time_s {self.pushcalulator.dt_s*self.pushcalulator.push_size_samples}')
     self.out.init(stage=stage+1, dt_s=decimated_dt_s)
 
+  def done(self):
+    print(f'Statistics {self.stage}: count {self.statistics_count}, samples in {self.statistics_samples_in*self.__dt_s:0.3f}s, samples out {self.statistics_samples_out*self.__dt_s*DECIMATE_FACTOR:0.3f}s')
+    self.out.done()
+
   def push(self, array_in):
-    if self.array is None:
-      if array_in is None:
-        return
-      # This is the veriy first time
-      # Keep the oldest SAMPLES_LEFT_RIGHT
-      assert len(array_in) >= SAMPLES_LEFT_RIGHT
-      self.array = array_in[-SAMPLES_LEFT_RIGHT:]
-      return
+    '''
+      If calculation: Return a string explaining which stage calculated.
+      Else: Pass to the next stage.
+      The last stage will return ''.
+      if array_in is not None:
+        Return: None
+    '''
+    if not self.fake_left_right:
+      if self.array is None:
+        if array_in is None:
+          return self.out.push(None)
+        # This is the veriy first time
+        # Keep the oldest SAMPLES_LEFT_RIGHT
+        assert len(array_in) >= SAMPLES_LEFT_RIGHT
+        self.array = array_in[-SAMPLES_LEFT_RIGHT:]
+        self.statistics_samples_in += len(array_in)
+        return self.out.push(None)
 
     if array_in is None:
+      if self.array is None:
+        return self.out.push(None)
       # array_in is None: We may decimate
       if len(self.array) < self.pushcalulator_next.previous_fir_samples_input:
         # Not sufficient data
         # Give the next stage a chance to decimate!
-        self.out.push(None)
-        return
+        return self.out.push(None)
+
       array_decimate = self.decimate(self.array[:self.pushcalulator_next.previous_fir_samples_input])
       assert len(array_decimate) == self.pushcalulator_next.push_size_samples
+      self.statistics_samples_out += len(array_decimate)
       self.out.push(array_decimate)
       # Save the remainting part to 'self.array'
       self.array = self.array[self.pushcalulator_next.previous_fir_samples_select:]
       assert len(self.array) >= SAMPLES_LEFT_RIGHT
-      return 
+      return self.TAG_PUSH
 
-    assert len(array_in) == self.pushcalulator.push_size_samples
+    assert len(array_in) % self.pushcalulator_next.push_size_samples == 0
+
+    if self.fake_left_right:
+      if self.array is None:
+        # The first time. Left&Right must be faked.
+        self.array = np.flip(array_in[:SAMPLES_LEFT_RIGHT])
+
+    self.statistics_samples_in += len(array_in)
     # Add to 'self.array'
     self.array = np.append(self.array, array_in)
 
   def decimate(self, array_decimate):
+    self.statistics_count += 1
+
     # print(f'{self.stage},', end='')
     assert len(array_decimate) > SAMPLES_LEFT_RIGHT
     assert len(array_decimate) % DECIMATE_FACTOR == 0
@@ -142,6 +168,7 @@ class Density:
   def init(self, stage, dt_s):
     self.stage = stage
     self.dt_s = dt_s
+    self.TAG_PUSH = f'Density {self.stage}'
 
     self.pushcalulator = PushCalculator(dt_s)
     self.mode_fifo = self.pushcalulator.push_size_samples < SAMPLES_DENSITY
@@ -152,23 +179,34 @@ class Density:
 
     self.out.init(stage=stage, dt_s=dt_s)
 
+  def done(self):
+    self.out.done()
+  
   def push(self, array_in):
+    '''
+      If calculation: Return a string explaining which stage calculated.
+      Else: Pass to the next stage.
+      The last stage will return ''.
+      if array_in is not None:
+        Return: None
+    '''
     if array_in is None:
       if (self.array is None) or (len(self.array) < SAMPLES_DENSITY):
         # Not sufficient data
-        self.out.push(None)
-        return
+        return self.out.push(None)
 
       # Time is over. Calculate density
-      assert len(self.array) >= SAMPLES_DENSITY
-      if len(self.array) != SAMPLES_DENSITY:
-        print('Density not calculated')
+      assert len(self.array) == SAMPLES_DENSITY
+      # if len(self.array) != SAMPLES_DENSITY:
+      #   print('Density not calculated')
+      # if self.stage >= 4:
+      #   print(f'self.density {self.stage}')
       self.density(self.array)
       if self.mode_fifo:
         self.array = self.array[self.pushcalulator.push_size_samples:]
       else:
         self.array = None
-      return
+      return self.TAG_PUSH
 
     self.out.push(array_in)
     assert array_in is not None
@@ -585,8 +623,8 @@ class DensitySummary:
     plt.grid(True, which="major", axis="both", linestyle="-", color='gray', linewidth=0.5)
     plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
     ax.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=20))
-    print(f'DensitySummary{file_tag}')
     filebase = f'{self.directory}/result_densitysummary{file_tag}'
+    print(f' DensitySummary {filebase}')
     fig.savefig(filebase+'.png', dpi=300)
     # fig.savefig(filebase+'.svg')
     # plt.show()
@@ -606,12 +644,18 @@ class OutTrash:
     self.stage = stage
     self.dt_s = dt_s
 
-  def push(self, array_in):
-    # self.array = np.append(self.array, array_in)
-
-    # print(f'array={len(array)}')
-    # print('OutTrash.push()')
+  def done(self):
     pass
+  
+  def push(self, array_in):
+    '''
+      If calculation: Return a string explaining which stage calculated.
+      Else: Pass to the next stage.
+      The last stage will return ''.
+      if array_in is not None:
+        Return: None
+    '''
+    return ''
 
 class InFile:
   '''
@@ -685,13 +729,24 @@ class UniformPieces:
     self.stage = stage
     self.out.init(stage=stage, dt_s=dt_s)
     self.pushcalulator_next = PushCalculator(dt_s)
+    self.total_samples = 0
 
+  def done(self):
+    self.out.done()
+  
   def push(self, array_in):
+    '''
+      If calculation: Return a string explaining which stage calculated.
+      Else: Pass to the next stage.
+      The last stage will return ''.
+      if array_in is not None:
+        Return: None
+    '''
     if array_in is None:
       # Give the next stage a chance to decimate!
-      self.out.push(None)
-      return
+      return self.out.push(None)
 
+    self.total_samples += len(array_in)
     self.array = np.append(self.array, array_in)
 
     push_size_samples = self.pushcalulator_next.push_size_samples
@@ -699,6 +754,16 @@ class UniformPieces:
       self.out.push(self.array[:push_size_samples])
       # Save the remainting part to 'self.array'
       self.array = self.array[push_size_samples:]
+
+      MAX_CALCULATIONS = 30
+      for i in range(MAX_CALCULATIONS):
+        calculation_stage = self.out.push(None)
+        assert isinstance(calculation_stage, str)
+        done = len(calculation_stage) == 0
+        if done:
+          return None
+      print('m', end='')
+    return None
 
 class SampleProcess:
   def __init__(self, config, directory_raw):
