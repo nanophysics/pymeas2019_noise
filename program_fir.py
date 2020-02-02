@@ -176,7 +176,7 @@ class Density:
     #print("Average: %0.9f V" % np.mean(array_density))
 
     self.frequencies, Pxx = scipy.signal.periodogram(
-        array_density, 1/self.dt_s, window='hamming',)  # Hz, V^2/Hz
+        array_density, 1/self.dt_s, window='hamming', detrend='linear')  # Hz, V^2/Hz
     self.__density_averaging(array_density, Pxx)
 
     if self.Pxx_n == 0:
