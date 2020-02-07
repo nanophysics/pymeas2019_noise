@@ -66,6 +66,7 @@ class UserAutozoom(matplotlib.backend_tools.ToolBase):
     for ax in self.figure.get_axes():
       ax.autoscale()
     self.figure.canvas.draw()
+    print('Did Autozoom')
 
 class UserMeasurementStart(matplotlib.backend_tools.ToolToggleBase):
   # keyboard shortcut

@@ -98,8 +98,8 @@ dict_config_setup = dict(
       bandwitdth = 'BW_20MHZ',
       offset = 0.0,
       resolution = '16bit',
-      duration_s = 600.0,
-      #duration_s = 7*3600.0,
+      duration_s = 6.0,
+      #duration_s = 48*3600.0,
       dt_s = 1 / f2_slow_fs_hz,
     ),
   )
@@ -111,7 +111,7 @@ def run():
   # thread = program_fir.DensityPlot.directory_plot_thread(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
   configSetup = program.get_configSetup_by_filename(dict_config_setup)
 
-  configSetup.measure_for_all_steps(dir_measurement, start_animation=True)
+  configSetup.measure_for_all_steps(dir_measurement, start_animation=False)
   program.run_condense(dir_measurement)
 
   # import time

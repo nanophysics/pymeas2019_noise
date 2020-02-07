@@ -762,7 +762,7 @@ class UniformPieces:
         done = len(calculation_stage) == 0
         if done:
           return None
-      print('m', end='')
+      #print('m', end='')
     return None
 
 class SampleProcess:
