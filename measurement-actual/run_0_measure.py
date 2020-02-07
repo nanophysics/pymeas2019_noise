@@ -98,7 +98,7 @@ dict_config_setup = dict(
       bandwitdth = 'BW_20MHZ',
       offset = 0.0,
       resolution = '16bit',
-      duration_s = 6.0,
+      duration_s = 60.0,
       #duration_s = 48*3600.0,
       dt_s = 1 / f2_slow_fs_hz,
     ),

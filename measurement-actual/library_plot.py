@@ -1,11 +1,13 @@
 import re
 import time
+import numpy as np
 import pickle
 import pathlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker
 import matplotlib.animation
 import matplotlib.backend_tools
+import matplotlib.artist as artist
 
 def x():
   import tkinter
@@ -110,24 +112,25 @@ class ResultAttributes:
     return time.strftime('raw-' + color + '-%Y-%m-%d_%H-%M-%S', time.localtime())
 
 class PickleResultSummary:
-  def __init__(self, f, d):
+  def __init__(self, f, d, enbw):
     self.f = f
     self.d = d
+    self.enbw = enbw
 
     self.x_filename = None
     self.x_directory = None
 
   def __getstate__(self):
     # Only these elements will be pickled
-    return { 'f': self.f, 'd': self.d } 
+    return { 'f': self.f, 'd': self.d, 'enbw': self.enbw } 
 
   @classmethod
   def filename(cls, directory):
     return directory.joinpath('result_summary.pickle')
 
   @classmethod
-  def save(cls, directory, f, d):
-    prs = PickleResultSummary(f, d)
+  def save(cls, directory, f, d, enbw):
+    prs = PickleResultSummary(f, d, enbw)
     filename_summary_pickle = cls.filename(directory)
     with open(filename_summary_pickle, 'wb') as f:
       pickle.dump(prs, f)
@@ -145,7 +148,7 @@ class PickleResultSummary:
       assert isinstance(prs, PickleResultSummary)
     if prs is None:
       # The summary file has not been calculated yet.
-      prs = PickleResultSummary(f=[], d=[])
+      prs = PickleResultSummary(f=[], d=[], enbw=[])
     prs.x_directory = directory
     prs.x_filename = filename_summary_pickle
     return prs
@@ -158,6 +161,7 @@ class PickleResultSummary:
       prs = PickleResultSummary.load(self.x_directory)
       self.f = prs.f
       self.d = prs.d
+      self.enbw = prs.enbw
 
     return changed
 
@@ -209,6 +213,10 @@ class Topic:
   def d(self):
     return self.__prs.d
 
+  @property
+  def enbw(self):
+    return self.__prs.enbw
+
 class PlotData:
   def __init__(self, filename):
     curdir = pathlib.Path(filename).absolute().parent
@@ -230,10 +238,17 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
   fig.canvas.manager.toolmanager.add_tool('Start/Stop', UserMeasurementStart)
   fig.canvas.manager.toolbar.add_tool('Start/Stop', 'navigation', 1)
 
+  type = 'LSD' 
+
   for topic in plotData.listTopics:
     plot_line, = ax.loglog(
       topic.f,
-      topic.d,
+      { 
+        'LSD' : topic.d,
+        'PSD' : np.square(topic.d),
+        'LS'  : np.multiply(topic.d, np.sqrt(topic.enbw)),
+        'PS'  : np.multiply(np.square(topic.d), topic.enbw),
+      }[type],
       linestyle='none',
       linewidth=0.1,
       marker='.',
@@ -243,7 +258,13 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
     )
     topic.set_plot_line(plot_line)
 
-  plt.ylabel(f'Density [V/Hz^0.5]')
+  plt.ylabel({ 
+      'LSD' : f'LSD: linear spectral density [V/Hz^0.5]',
+      'PSD' : f'PSD: power spectral density [V^2/Hz]',
+      'LS'  : f'LS: linear spectrum [V]',
+      'PS'  : f'PS: power spectrum [V^2]',
+  }[type])
+  #plt.ylabel(f'Density [V/Hz^0.5]')
   plt.xlabel(f'Frequency [Hz]')
   # plt.ylim( 1e-11,1e-6)
   # plt.xlim(1e-2, 1e5) # temp Peter

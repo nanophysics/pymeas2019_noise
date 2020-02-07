@@ -179,6 +179,11 @@ class Density:
 
     self.out.init(stage=stage, dt_s=dt_s)
 
+    # TodoHans: eleganter machen, program_config_frequencies.eseries... von einem bessern ort nehmen
+    self.enbw = []
+    for f_eserie_left, f_eserie, f_eserie_right in program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8, borders=True):
+      self.enbw.append(f_eserie_right - f_eserie_left)
+
   def done(self):
     self.out.done()
   
@@ -252,6 +257,7 @@ class Density:
       stage=self.stage, 
       dt_s=self.dt_s, 
       frequencies=self.frequencies, 
+      enbw=self.enbw,
       Pxx_n=self.Pxx_n, 
       Pxx_sum=self.Pxx_sum
     )
@@ -262,7 +268,7 @@ class Density:
 
 class DensityPlot:
   @classmethod
-  def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum):
+  def save(cls, config, directory, stage, dt_s, frequencies, enbw, Pxx_n, Pxx_sum):
     skip = stage < config.fir_count_skipped
     skiptext = FILENAME_TAG_SKIP if skip else ''
     filename = f'densitystep_{config.stepname}_{stage:02d}{skiptext}.pickle'
@@ -271,6 +277,7 @@ class DensityPlot:
       'stage': stage,
       'dt_s': dt_s,
       'frequencies': frequencies,
+      'enbw': enbw,
       'Pxx_n': Pxx_n,
       'Pxx_sum': Pxx_sum,
       'skip': skip,
@@ -357,6 +364,7 @@ class DensityPlot:
     self.dt_s = data['dt_s']
     self.skip = data['skip']
     self.frequencies = data['frequencies']
+    self.enbw = data['enbw']
     self.__Pxx_n = data['Pxx_n']
     self.__Pxx_sum = data['Pxx_sum']
     # print(f'DensityPlot {self.stage} {self.dt_s} {filename}')
@@ -405,9 +413,10 @@ class DensityPlot:
 
 class DensityPoint:
   DELIMITER = '\t'
-  def __init__(self, f, d, densityPlot):
+  def __init__(self, f, d, enbw, densityPlot):
     self.f = f
     self.d = d
+    self.enbw = enbw
     self.densityPlot = densityPlot
 
   @property
@@ -512,7 +521,7 @@ class Selector:
           P = avg.avg()
           if P is not None:
             d = math.sqrt(P)
-            dp = DensityPoint(f=f_eserie, d=d, densityPlot=density)
+            dp = DensityPoint(f=f_eserie, d=d, densityPlot=density, enbw=f_eserie_right-f_eserie_left)
             list_density_points.append(dp)
           break # Continue in next eserie.
 
@@ -585,7 +594,8 @@ class DensitySummary:
   def write_summary_pickle(self):
     f = [dp.f for dp in self.list_density_points if not dp.skip]
     d = [dp.d for dp in self.list_density_points if not dp.skip]
-    library_plot.PickleResultSummary.save(self.directory, f, d)
+    enbw = [dp.enbw for dp in self.list_density_points if not dp.skip]
+    library_plot.PickleResultSummary.save(self.directory, f, d, enbw)
 
   def plot(self, file_tag='', color_given=None):
     fig, ax = plt.subplots()
