@@ -238,16 +238,17 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
   fig.canvas.manager.toolmanager.add_tool('Start/Stop', UserMeasurementStart)
   fig.canvas.manager.toolbar.add_tool('Start/Stop', 'navigation', 1)
 
-  type = 'LSD' 
+  type = 'INTEGRAL' 
 
   for topic in plotData.listTopics:
     plot_line, = ax.loglog(
       topic.f,
       { 
-        'LSD' : topic.d,
-        'PSD' : np.square(topic.d),
-        'LS'  : np.multiply(topic.d, np.sqrt(topic.enbw)),
-        'PS'  : np.multiply(np.square(topic.d), topic.enbw),
+        'LSD'       : topic.d,
+        'PSD'       : np.square(topic.d),
+        'LS'        : np.multiply(topic.d, np.sqrt(topic.enbw)),
+        'PS'        : np.multiply(np.square(topic.d), topic.enbw),
+        'INTEGRAL'  : np.sqrt(np.cumsum(np.multiply(np.square(topic.d), topic.enbw))),
       }[type],
       linestyle='none',
       linewidth=0.1,
@@ -261,8 +262,9 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
   plt.ylabel({ 
       'LSD' : f'LSD: linear spectral density [V/Hz^0.5]',
       'PSD' : f'PSD: power spectral density [V^2/Hz]',
-      'LS'  : f'LS: linear spectrum [V]',
+      'LS'  : f'LS: linear spectrum [V rms]',
       'PS'  : f'PS: power spectrum [V^2]',
+      'INTEGRAL'  : f'integral [V rms]',
   }[type])
   #plt.ylabel(f'Density [V/Hz^0.5]')
   plt.xlabel(f'Frequency [Hz]')

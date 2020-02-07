@@ -8,6 +8,8 @@ def eseries(series='E12', minimal=0.01, maximal=300, borders = False):
     maximal *= 1.00001
 
     ereihen = {
+        'E1' : [100],
+        'E3' : (100,220,470),
         'E6' : (100,150,220,330,470,680),
         'E12': (100,120,150,180,220,270,330,390,470,560,680,820),
         'E24': (100,110,120,130,150,160,180,200,220,240,270,300,330,360,390,430,470,510,560,620,680,750,820,910),
@@ -38,7 +40,7 @@ def eseries(series='E12', minimal=0.01, maximal=300, borders = False):
     last1 = 0.0
     last2 = None
     dekade_min = int(round(np.log10(minimal)-0.7))
-    dekade_max = int(round(np.log10(maximal)+0.7))
+    dekade_max = int(round(np.log10(maximal)+0.7))+2
     for decade in range(dekade_min, dekade_max):
         for value in serie:
             entry = value * 10**decade / 100.0
