@@ -362,7 +362,6 @@ class DensityPlot:
     self.dt_s = data['dt_s']
     self.skip = data['skip']
     self.frequencies = data['frequencies']
-    self.enbw = data['enbw']
     self.__Pxx_n = data['Pxx_n']
     self.__Pxx_sum = data['Pxx_sum']
     # print(f'DensityPlot {self.stage} {self.dt_s} {filename}')

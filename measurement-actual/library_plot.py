@@ -217,6 +217,44 @@ class Topic:
   def enbw(self):
     return self.__prs.enbw
 
+  @property
+  def scaling_LSD(self):
+    return self.d
+
+  @property
+  def scaling_PSD(self):
+    return np.square(self.d)
+
+  @property
+  def scaling_LS(self):
+    return np.multiply(self.d, np.sqrt(self.enbw))
+
+  @property
+  def scaling_PS(self):
+    return np.multiply(self.scaling_PSD, self.enbw)
+
+  @property
+  def scaling_INTEGRAL(self):
+    return np.sqrt(np.cumsum(self.scaling_PS)) # todo: start sum above frequency_complete_low_limit
+
+  @property
+  def decade(self): # f, d
+    return self.__decade_from_INTEGRAL(self.f, self.scaling_INTEGRAL)
+
+  def __decade_from_INTEGRAL(self, f, v):
+    f_decade = []
+    value_decade = []
+    last_value = None
+    def is_border_decade(f):
+        return abs(f * 10**-(round(np.log10(f))) - 1.0 ) < 1E-6
+    for (f, value) in zip(f, v):
+        if is_border_decade(f):
+            if last_value is not None:
+                f_decade.append(f)
+                value_decade.append(np.sqrt(value**2-last_value**2))
+            last_value = value
+    return (f_decade, value_decade)
+
 class PlotData:
   def __init__(self, filename):
     curdir = pathlib.Path(filename).absolute().parent
@@ -250,27 +288,7 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
         'DECADE'    : 'decade left of the point [V rms] Example: The value at 100 Hz represents the voltage between 100Hz/10 = 10 Hz and 100 Hz.',
   }
 
-  def decade_from_INTEGRAL(f, v):
-    f_decade = []
-    value_decade = []
-    last_value = None
-    def is_border_decade(f):
-        return abs(f * 10**-(round(np.log10(f))) - 1.0 ) < 1E-6
-    for (f, value) in zip(f, v):
-        if is_border_decade(f):
-            if last_value is not None:
-                f_decade.append(f)
-                value_decade.append(np.sqrt(value**2-last_value**2))
-            last_value = value
-    return(f_decade, value_decade)
-
   for topic in plotData.listTopics:
-    LSD = topic.d
-    PSD = np.square(topic.d)
-    LS = np.multiply(topic.d, np.sqrt(topic.enbw))
-    PS = np.multiply(PSD, topic.enbw)
-    INTEGRAL = np.sqrt(np.cumsum(PS)) # todo: start sum above frequency_complete_low_limit
-    f_decade, v_decade = decade_from_INTEGRAL(topic.f, INTEGRAL)
     plot_line, = ax.loglog(
       #topic.f,
       { 
@@ -279,15 +297,15 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
         'LS'        : topic.f,
         'PS'        : topic.f,
         'INTEGRAL'  : topic.f,
-        'DECADE'    : f_decade,
+        'DECADE'    : topic.decade[0], # f
       }[type],
       { 
-        'LSD'       : LSD,
-        'PSD'       : PSD,
-        'LS'        : LS,
-        'PS'        : PS,
-        'INTEGRAL'  : INTEGRAL,
-        'DECADE'    : v_decade,
+        'LSD'       : topic.scaling_LSD,
+        'PSD'       : topic.scaling_PSD,
+        'LS'        : topic.scaling_LS,
+        'PS'        : topic.scaling_PS,
+        'INTEGRAL'  : topic.scaling_INTEGRAL,
+        'DECADE'    : topic.decade[1], # d
       }[type],
       linestyle='none',
       linewidth=0.1,
