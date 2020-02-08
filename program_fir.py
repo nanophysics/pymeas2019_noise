@@ -280,6 +280,8 @@ class DensityPlot:
       'Pxx_sum': Pxx_sum,
       'skip': skip,
     }
+    if not os.path.exists(directory):
+      os.makedirs(directory)
     filenameFull = os.path.join(directory, filename)
     with open(filenameFull, 'wb') as f:
       pickle.dump(data, f)
@@ -665,7 +667,7 @@ class OutTrash:
     '''
     return ''
 
-class InFile:
+class InFileObsolete:
   '''
   Stream-Source: Drives a output of Stream-Interface
   '''
@@ -694,36 +696,34 @@ class InFile:
 
         self.out.push(buf_V)
 
-class InSin:
+class InSyntetic:
   '''
   Stream-Source: Drives a output of Stream-Interface
   '''
-  def __init__(self, out, time_total_s=10.0, dt_s=0.01):
+  def __init__(self, out, dt_s, time_total_s, signal):
     self.out = out
-    self.time_total_s = time_total_s
     self.dt_s = dt_s
-    out.init(stage=0, dt_s=dt_s)
+    self.total_samples = time_total_s/dt_s
+    self.signal = signal
+    self.pushcalulator_next = PushCalculator(dt_s)
+    self.out.init(stage=0, dt_s=dt_s)
 
-  def process_(self, sample_start, samples, dt_s):
-    pass
   def process(self):
-    t = np.arange(0, self.time_total_s, self.dt_s)
-    # nse = np.random.randn(len(t))
-    r = np.exp(-t / 0.05)
-    # cnse = np.convolve(nse, r) * dt_s
-    # cnse = cnse[:len(t)]
-    s = 1.0 * np.sin(2 * np.pi * t / 2.0) #+ 0 * cnse
+    push_size_samples = self.pushcalulator_next.push_size_samples
+    sample_start = 0
 
-    if False:
-      ax.plot(s, linewidth=0.1, color='blue')
+    while sample_start < self.total_samples:
+      array = self.signal.calculate(dt_s=self.dt_s, sample_start=sample_start, push_size_samples=push_size_samples)
+      assert len(array) == push_size_samples
+      self.out.push(array)
+      sample_start += push_size_samples
 
-    offset = 0
-    while True:
-      if offset > len(s):
-        print('DONE')
-        return
-      self.out.push(s[offset:offset+SAMPLES_SELECT])
-      offset += SAMPLES_SELECT
+      MAX_CALCULATIONS = 30
+      for _ in range(MAX_CALCULATIONS):
+        calculation_stage = self.out.push(None)
+        done = len(calculation_stage) == 0
+        if done:
+          break
 
 class UniformPieces:
   '''
@@ -737,9 +737,9 @@ class UniformPieces:
 
   def init(self, stage, dt_s):
     self.stage = stage
+    self.total_samples = 0
     self.out.init(stage=stage, dt_s=dt_s)
     self.pushcalulator_next = PushCalculator(dt_s)
-    self.total_samples = 0
 
   def done(self):
     self.out.done()

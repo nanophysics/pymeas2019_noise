@@ -129,11 +129,3 @@ if __name__ == '__main__':
     i.join()
     sp.plot()
 
-  if False:
-    import program_fir
-
-    sp = program_fir.SampleProcess(fir_count=3)
-    i = program_fir.InSin(sp.output, time_total_s=10.0, dt_s=0.01)
-    i.process()
-    sp.plot()
-

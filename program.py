@@ -18,7 +18,8 @@ MSL_EQUIPMENT_PATH = TOPDIR.joinpath('libraries/msl-equipment')
 assert MSL_EQUIPMENT_PATH.joinpath('README.rst').is_file(), f'Subrepo is missing (did you clone with --recursive?): {MSL_EQUIPMENT_PATH}'
 sys.path.insert(0, str(MSL_EQUIPMENT_PATH))
 
-sys.path.insert(0, str(TOPDIR.joinpath('measurement-actual')))
+MEASUREMENT_ACTUAL='measurement-actual'
+sys.path.insert(0, str(TOPDIR.joinpath(MEASUREMENT_ACTUAL)))
 
 try:
   import msl.loadlib
