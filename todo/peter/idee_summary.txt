@@ -1,0 +1,19 @@
+summary_aquisition = {
+'0_fast' : [ 'fs' :125E6,
+             'aquisition_time_s : 0.5],
+'1_medium' : [ 'fs' :125E6,
+             'aquisition_time_s : 0.5],
+'2_slow' : [ 'fs' :125E6,
+             'aquisition_time_s : 3720],
+
+data = {
+'PSD' :    [ 'type': 'PSD',
+             'name': 'power spectral density',
+             'unit': '[V^2/Hz],
+             'frequency': [0.001, 0.002, ......12400],
+             'value': [0.001, 0.002, ......12400],
+'LSD'      [...
+'LS'       [...
+'PS'       [...
+'INTEGRAL' [...
+'DECADE'

@@ -238,17 +238,47 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
   fig.canvas.manager.toolmanager.add_tool('Start/Stop', UserMeasurementStart)
   fig.canvas.manager.toolbar.add_tool('Start/Stop', 'navigation', 1)
 
-  type = 'INTEGRAL' 
+  type = 'DECADE' 
+  #type = 'LSD'
+
+  def decade_from_INTEGRAL(f, v):
+    f_decade = []
+    value_decade = []
+    last_value = None
+    def is_border_decade(f):
+        return abs(f * 10**-(round(np.log10(f))) - 1.0 ) < 1E-6
+    for (f, value) in zip(f, v):
+        if is_border_decade(f):
+            if last_value is not None:
+                f_decade.append(f)
+                value_decade.append(np.sqrt(value**2-last_value**2))
+            last_value = value
+    return(f_decade, value_decade)
 
   for topic in plotData.listTopics:
+    LSD = topic.d
+    PSD = np.square(topic.d)
+    LS = np.multiply(topic.d, np.sqrt(topic.enbw))
+    PS = np.multiply(PSD, topic.enbw)
+    INTEGRAL = np.sqrt(np.cumsum(PS))
+    f_decade, v_decade = decade_from_INTEGRAL(topic.f, INTEGRAL)
     plot_line, = ax.loglog(
-      topic.f,
+      #topic.f,
       { 
-        'LSD'       : topic.d,
-        'PSD'       : np.square(topic.d),
-        'LS'        : np.multiply(topic.d, np.sqrt(topic.enbw)),
-        'PS'        : np.multiply(np.square(topic.d), topic.enbw),
-        'INTEGRAL'  : np.sqrt(np.cumsum(np.multiply(np.square(topic.d), topic.enbw))),
+        'LSD'       : topic.f,
+        'PSD'       : topic.f,
+        'LS'        : topic.f,
+        'PS'        : topic.f,
+        'INTEGRAL'  : topic.f,
+        'DECADE'    : f_decade,
+      }[type],
+      { 
+        'LSD'       : LSD,
+        'PSD'       : PSD,
+        'LS'        : LS,
+        'PS'        : PS,
+        'INTEGRAL'  : INTEGRAL,
+        'DECADE'    : v_decade,
       }[type],
       linestyle='none',
       linewidth=0.1,
@@ -265,6 +295,7 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
       'LS'  : f'LS: linear spectrum [V rms]',
       'PS'  : f'PS: power spectrum [V^2]',
       'INTEGRAL'  : f'integral [V rms]',
+      'DECADE'  : f'decade left of the point [V rms]',
   }[type])
   #plt.ylabel(f'Density [V/Hz^0.5]')
   plt.xlabel(f'Frequency [Hz]')
