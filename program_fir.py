@@ -180,9 +180,9 @@ class Density:
     self.out.init(stage=stage, dt_s=dt_s)
 
     # TodoHans: eleganter machen, program_config_frequencies.eseries... von einem bessern ort nehmen
-    self.enbw = []
-    for f_eserie_left, f_eserie, f_eserie_right in program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8, borders=True):
-      self.enbw.append(f_eserie_right - f_eserie_left)
+    # self.enbw = []
+    # for f_eserie_left, f_eserie, f_eserie_right in program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8, borders=True):
+    #   self.enbw.append(f_eserie_right - f_eserie_left)
 
   def done(self):
     self.out.done()
@@ -257,7 +257,6 @@ class Density:
       stage=self.stage, 
       dt_s=self.dt_s, 
       frequencies=self.frequencies, 
-      enbw=self.enbw,
       Pxx_n=self.Pxx_n, 
       Pxx_sum=self.Pxx_sum
     )
@@ -268,7 +267,7 @@ class Density:
 
 class DensityPlot:
   @classmethod
-  def save(cls, config, directory, stage, dt_s, frequencies, enbw, Pxx_n, Pxx_sum):
+  def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum):
     skip = stage < config.fir_count_skipped
     skiptext = FILENAME_TAG_SKIP if skip else ''
     filename = f'densitystep_{config.stepname}_{stage:02d}{skiptext}.pickle'
@@ -277,7 +276,6 @@ class DensityPlot:
       'stage': stage,
       'dt_s': dt_s,
       'frequencies': frequencies,
-      'enbw': enbw,
       'Pxx_n': Pxx_n,
       'Pxx_sum': Pxx_sum,
       'skip': skip,

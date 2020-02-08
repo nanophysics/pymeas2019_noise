@@ -239,7 +239,16 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
   fig.canvas.manager.toolbar.add_tool('Start/Stop', 'navigation', 1)
 
   type = 'DECADE' 
-  #type = 'LSD'
+  type = 'PS'
+
+  helping_text={
+        'LSD'       : 'LSD: linear spectral density [V/Hz^0.5] represents the noise density. Useful to describe random noise.',
+        'PSD'       : 'PSD: power spectral density [V^2/Hz] ist just the square of the LSD. This representation of random noise is useful if you want to sum up the signal over a given frequency interval. ',
+        'LS'        : 'LS: linear spectrum [V rms] represents the voltage in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.',
+        'PS'        : 'PS: power spectrum [V^2] represents the square of LS. Useful if you want to measure the amplitude of a sinusoidal signal which is just between two frequency bins. You can now add the two values to get the amplitude of the sinusoidal signal.',
+        'INTEGRAL'  : 'integral [V rms] represents the integrated voltage from the lowest measured frequency up to the actual frequency. Example: Value at 1 kHz: is the voltage between 0.01 Hz and 1 kHz.',
+        'DECADE'    : 'decade left of the point [V rms] Example: The value at 100 Hz represents the voltage between 100Hz/10 = 10 Hz and 100 Hz.',
+  }
 
   def decade_from_INTEGRAL(f, v):
     f_decade = []
@@ -260,7 +269,7 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
     PSD = np.square(topic.d)
     LS = np.multiply(topic.d, np.sqrt(topic.enbw))
     PS = np.multiply(PSD, topic.enbw)
-    INTEGRAL = np.sqrt(np.cumsum(PS))
+    INTEGRAL = np.sqrt(np.cumsum(PS)) # todo: start sum above frequency_complete_low_limit
     f_decade, v_decade = decade_from_INTEGRAL(topic.f, INTEGRAL)
     plot_line, = ax.loglog(
       #topic.f,
