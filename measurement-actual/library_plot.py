@@ -1,6 +1,7 @@
 import re
 import time
 import numpy as np
+import types
 import pickle
 import pathlib
 import matplotlib.pyplot as plt
@@ -8,6 +9,7 @@ import matplotlib.ticker
 import matplotlib.animation
 import matplotlib.backend_tools
 import matplotlib.artist as artist
+matplotlib.use('TkAgg')
 
 def x():
   import tkinter
@@ -35,7 +37,49 @@ def x():
 
   pass
 
-# x()
+class UserSelectPresentation(matplotlib.backend_tools.ToolBase):
+  # keyboard shortcut
+  description = 'Select Presentation'
+
+  def selectPresentation(self):
+    import tkinter
+    import tkinter.ttk
+    dialog = tkinter.Tk() 
+    dialog.geometry('800x100')
+    dialog.columnconfigure(0, weight=1)
+    dialog.rowconfigure(0, weight=1)
+    dialog.rowconfigure(1, weight=1)
+
+    labelTop = tkinter.Label(dialog, text='Select a presentation')
+    labelTop.grid(column=0, row=0, sticky=tkinter.EW)
+
+    labels = [f'{p.tag}: {p.y_label}' for p in PRESENTATIONS.list]
+    # combobox = tkinter.Listbox(dialog, values=labels)
+    combobox = tkinter.ttk.Combobox(dialog, values=labels)
+    combobox.grid(column=0, row=1, sticky=tkinter.EW)
+    combobox.current(0)
+
+    class Globals: pass
+    globals = Globals()
+    globals.selected = None
+
+    def callbackFunc(event):
+      globals.selected = PRESENTATIONS.list[combobox.current()]
+      print(f'Selected:  {globals.selected.tag}')
+      dialog.quit()
+
+    combobox.bind("<<ComboboxSelected>>", callbackFunc)
+
+    dialog.mainloop()
+    dialog.destroy()
+    return globals.selected
+
+  def trigger(self, *args, **kwargs):
+    matplotlib.backend_tools.ToolBase.trigger(self, *args, **kwargs)
+    presentation = self.selectPresentation()
+    if presentation == None:
+      return
+    globals.update_presentation(presentation=presentation)
 
 class ListTools(matplotlib.backend_tools.ToolBase):
   '''List all the tools controlled by the `ToolManager`'''
@@ -173,7 +217,7 @@ class Topic:
     self.__prs = prs
     self.__plot_line = None
     self.toggle = True
-  
+
   def set_plot_line(self, plot_line):
     self.__plot_line = plot_line
 
@@ -183,13 +227,13 @@ class Topic:
     start = time.time()
     changed = self.__prs.reload_if_changed()
     if changed:
-      # self.toggle = not self.toggle
-      # factor = 1.1 if self.toggle else 1.0
-      # d = [factor*v for v in self.__prs.d]
-      # self.__plot_line.set_data(self.__prs.f, d)
-      self.__plot_line.set_data(self.__prs.f, self.__prs.d)
+      self.recalculate_data()
       print(f'changed {self.__ra.topic} {changed} {time.time()-start:0.2f}s')
     return changed
+
+  def recalculate_data(self):
+    x, y = globals.presentation.get_xy(self)
+    self.__plot_line.set_data(x, y)
 
   @classmethod
   def load(cls, dir_raw):
@@ -238,22 +282,94 @@ class Topic:
     return np.sqrt(np.cumsum(self.scaling_PS)) # todo: start sum above frequency_complete_low_limit
 
   @property
-  def decade(self): # f, d
-    return self.__decade_from_INTEGRAL(self.f, self.scaling_INTEGRAL)
+  def decade_f_d(self):
+    '''
+    return f, d
+    '''
+    return self.__xy_decade_from_INTEGRAL(self.f, self.scaling_INTEGRAL)
 
-  def __decade_from_INTEGRAL(self, f, v):
+  def __xy_decade_from_INTEGRAL(self, f, v):
+    '''
+    Returns frequency and density per decade.
+    '''
     f_decade = []
     value_decade = []
     last_value = None
     def is_border_decade(f):
-        return abs(f * 10**-(round(np.log10(f))) - 1.0 ) < 1E-6
+      return abs(f * 10**-(round(np.log10(f))) - 1.0 ) < 1E-6
     for (f, value) in zip(f, v):
-        if is_border_decade(f):
-            if last_value is not None:
-                f_decade.append(f)
-                value_decade.append(np.sqrt(value**2-last_value**2))
-            last_value = value
-    return (f_decade, value_decade)
+      if is_border_decade(f):
+        if last_value is not None:
+          f_decade.append(f)
+          value_decade.append(np.sqrt(value**2-last_value**2))
+        last_value = value
+    return f_decade, value_decade
+
+class Presentation:
+  def __init__(self, tag, help_text, xy_func, y_label):
+    assert isinstance(tag, str)
+    assert isinstance(help_text, str)
+    assert isinstance(xy_func, types.FunctionType)
+    assert isinstance(y_label, str)
+    self.tag = tag
+    self.help_text = help_text
+    self.__xy_func = xy_func
+    self.y_label = y_label
+
+  def get_xy(self, topic):
+    return self.__xy_func(topic)
+
+class Presentations:
+  def __init__(self):
+    self.list = (
+      Presentation(
+        tag = 'LSD',
+        y_label = 'linear spectral density [V/Hz^0.5]',
+        help_text = 'linear spectral density [V/Hz^0.5] represents the noise density. Useful to describe random noise.',
+        xy_func = lambda topic: (topic.f, topic.scaling_LSD),
+      ),
+      Presentation(
+        tag = 'PSD',
+        y_label = 'power spectral density [V^2/Hz]',
+        help_text = 'power spectral density [V^2/Hz] ist just the square of the LSD. This representation of random noise is useful if you want to sum up the signal over a given frequency interval. ',
+        xy_func = lambda topic: (topic.f, topic.scaling_PSD)
+      ),
+      Presentation(
+        tag = 'LS',
+        y_label = 'linear spectrum [V rms]',
+        help_text = 'linear spectrum [V rms] represents the voltage in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.',
+        xy_func = lambda topic: (topic.f, topic.scaling_LS)
+      ),
+      Presentation(
+        tag = 'PS',
+        y_label = 'power spectrum [V^2]',
+        help_text = 'power spectrum [V^2] represents the square of LS. Useful if you want to measure the amplitude of a sinusoidal signal which is just between two frequency bins. You can now add the two values to get the amplitude of the sinusoidal signal.',
+        xy_func = lambda topic: (topic.f, topic.scaling_PS),
+      ),
+      Presentation(
+        tag = 'INTEGRAL',
+        y_label = 'integral [V rms]',
+        help_text = 'integral [V rms] represents the integrated voltage from the lowest measured frequency up to the actual frequency. Example: Value at 1 kHz: is the voltage between 0.01 Hz and 1 kHz.',
+        xy_func = lambda topic: (topic.f, topic.scaling_INTEGRAL),
+      ),
+      Presentation(
+        tag = 'DECADE',
+        y_label = 'decade left of the point [V rms]',
+        help_text = 'decade left of the point [V rms] Example: The value at 100 Hz represents the voltage between 100Hz/10 = 10 Hz and 100 Hz.',
+        xy_func = lambda topic: topic.decade_f_d
+      ),
+    )
+
+    self.tags = [p.tag for p in self.list]
+    self.dict = {p.tag:p for p in self.list}
+
+  def get(self, tag):
+    try:
+      return self.dict[tag]
+    except KeyError:
+      raise Exception(f'Presentation {tag} not found! Choose one of {self.tags}.')
+
+PRESENTATIONS = Presentations()
 
 class PlotData:
   def __init__(self, filename):
@@ -264,10 +380,47 @@ class PlotData:
         continue
       self.listTopics.append(Topic.load(dir_raw))
 
-def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=False):
+def do_plots(**args):
+  '''
+  Print all presentation (LSD, LS, PS, etc.)
+  '''
+  for tag in PRESENTATIONS.tags:
+    do_plot(presentation_tag=tag, **args)
+
+class Globals:
+  def __init__(self):
+    self.presentation = None
+    self.plotData = None
+    self.fig = None
+
+  def set(self, plotData, fig):
+    assert self.plotData is None
+    assert self.fig is None
+    self.plotData = plotData
+    self.fig = fig
+
+  def update_presentation(self, presentation=None, update=True):
+    if presentation is not None:
+      self.presentation = presentation
+    if update:
+      assert self.plotData is not None
+      plt.ylabel(f'{self.presentation.tag}: {self.presentation.y_label}')
+      for topic in self.plotData.listTopics:
+        topic.recalculate_data()
+      for ax in self.fig.get_axes():
+        ax.autoscale()
+      self.fig.canvas.draw()
+
+globals = Globals()
+
+
+def do_plot(plotData, title, do_show=False, write_files=('png', 'svg'), do_animate=False, presentation_tag='LSD'):
+  globals.update_presentation(PRESENTATIONS.get(presentation_tag), update=False)
+
   plt.rcParams['toolbar'] = 'toolmanager'
 
   fig, ax = plt.subplots()
+  globals.set(plotData, fig)
   plt.title(title)
   fig.canvas.manager.toolmanager.add_tool('List', ListTools)
   fig.canvas.manager.toolmanager.add_tool('Autozoom', UserAutozoom)
@@ -276,37 +429,13 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
   fig.canvas.manager.toolmanager.add_tool('Start/Stop', UserMeasurementStart)
   fig.canvas.manager.toolbar.add_tool('Start/Stop', 'navigation', 1)
 
-  type = 'DECADE' 
-  type = 'PS'
-
-  helping_text={
-        'LSD'       : 'LSD: linear spectral density [V/Hz^0.5] represents the noise density. Useful to describe random noise.',
-        'PSD'       : 'PSD: power spectral density [V^2/Hz] ist just the square of the LSD. This representation of random noise is useful if you want to sum up the signal over a given frequency interval. ',
-        'LS'        : 'LS: linear spectrum [V rms] represents the voltage in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.',
-        'PS'        : 'PS: power spectrum [V^2] represents the square of LS. Useful if you want to measure the amplitude of a sinusoidal signal which is just between two frequency bins. You can now add the two values to get the amplitude of the sinusoidal signal.',
-        'INTEGRAL'  : 'integral [V rms] represents the integrated voltage from the lowest measured frequency up to the actual frequency. Example: Value at 1 kHz: is the voltage between 0.01 Hz and 1 kHz.',
-        'DECADE'    : 'decade left of the point [V rms] Example: The value at 100 Hz represents the voltage between 100Hz/10 = 10 Hz and 100 Hz.',
-  }
+  fig.canvas.manager.toolmanager.add_tool('Presenation', UserSelectPresentation)
+  fig.canvas.manager.toolbar.add_tool('Presenation', 'navigation', 1)
 
   for topic in plotData.listTopics:
+    x, y = globals.presentation.get_xy(topic)
     plot_line, = ax.loglog(
-      #topic.f,
-      { 
-        'LSD'       : topic.f,
-        'PSD'       : topic.f,
-        'LS'        : topic.f,
-        'PS'        : topic.f,
-        'INTEGRAL'  : topic.f,
-        'DECADE'    : topic.decade[0], # f
-      }[type],
-      { 
-        'LSD'       : topic.scaling_LSD,
-        'PSD'       : topic.scaling_PSD,
-        'LS'        : topic.scaling_LS,
-        'PS'        : topic.scaling_PS,
-        'INTEGRAL'  : topic.scaling_INTEGRAL,
-        'DECADE'    : topic.decade[1], # d
-      }[type],
+      x, y,
       linestyle='none',
       linewidth=0.1,
       marker='.',
@@ -316,16 +445,8 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
     )
     topic.set_plot_line(plot_line)
 
-  plt.ylabel({ 
-      'LSD' : f'LSD: linear spectral density [V/Hz^0.5]',
-      'PSD' : f'PSD: power spectral density [V^2/Hz]',
-      'LS'  : f'LS: linear spectrum [V rms]',
-      'PS'  : f'PS: power spectrum [V^2]',
-      'INTEGRAL'  : f'integral [V rms]',
-      'DECADE'  : f'decade left of the point [V rms]',
-  }[type])
-  #plt.ylabel(f'Density [V/Hz^0.5]')
-  plt.xlabel(f'Frequency [Hz]')
+  #plt.ylabel('Density [V/Hz^0.5]')
+  plt.xlabel('Frequency [Hz]')
   # plt.ylim( 1e-11,1e-6)
   # plt.xlim(1e-2, 1e5) # temp Peter
   # plt.grid(True)
@@ -334,11 +455,12 @@ def do_plot(plotData, title, do_show=False, do_write_files=False, do_animate=Fal
   ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
   ax.legend(loc='lower left', shadow=True, fancybox=False)
 
-  if do_write_files:
-    for ext in ('png', 'svg'):
-      filename = pathlib.Path(__file__).parent.joinpath(f'result_density.{ext}')
-      print(filename)
-      fig.savefig(filename, dpi=300)
+  globals.update_presentation()
+
+  for ext in write_files:
+    filename = pathlib.Path(__file__).parent.joinpath(f'result_density_{globals.presentation.tag}.{ext}')
+    print(filename)
+    fig.savefig(filename, dpi=300)
 
   if do_show:
     plt.show()
