@@ -110,6 +110,7 @@ class UserAutozoom(matplotlib.backend_tools.ToolBase):
   description = 'Auto Zoom'
   def trigger(self, *args, **kwargs):
     for ax in self.figure.get_axes():
+      ax.relim()
       ax.autoscale()
     self.figure.canvas.draw()
     print('Did Autozoom')
@@ -408,6 +409,7 @@ class Globals:
       for topic in self.plotData.listTopics:
         topic.recalculate_data()
       for ax in self.fig.get_axes():
+        ax.relim()
         ax.autoscale()
       self.fig.canvas.draw()
 
@@ -429,8 +431,8 @@ def do_plot(plotData, title, do_show=False, write_files=('png', 'svg'), do_anima
   fig.canvas.manager.toolmanager.add_tool('Start/Stop', UserMeasurementStart)
   fig.canvas.manager.toolbar.add_tool('Start/Stop', 'navigation', 1)
 
-  fig.canvas.manager.toolmanager.add_tool('Presenation', UserSelectPresentation)
-  fig.canvas.manager.toolbar.add_tool('Presenation', 'navigation', 1)
+  fig.canvas.manager.toolmanager.add_tool('Presentation', UserSelectPresentation)
+  fig.canvas.manager.toolbar.add_tool('Presentation', 'navigation', 1)
 
   for topic in plotData.listTopics:
     x, y = globals.presentation.get_xy(topic)
@@ -453,7 +455,10 @@ def do_plot(plotData, title, do_show=False, write_files=('png', 'svg'), do_anima
   plt.grid(True, which="major", axis="both", linestyle="-", color='gray', linewidth=0.5)
   plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
   ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
-  ax.legend(loc='lower left', shadow=True, fancybox=False)
+  #ax.legend(loc='lower left', shadow=True, fancybox=False)
+  ax.legend(fancybox=True, framealpha=0.5)
+  leg = plt.legend()
+  leg.get_frame().set_linewidth(0.0)
 
   globals.update_presentation()
 
