@@ -501,6 +501,7 @@ class Selector:
         if f_eserie > f_high_limit_Hz:
           if not lastDensity:
             # We are finished with this loop
+            # TodoHans: save above frequency_complete_low_limit here if P is None?
             return list_density_points
           # Special case for the last point: select high frequencies too
 
@@ -704,6 +705,8 @@ class InSin:
     self.dt_s = dt_s
     out.init(stage=0, dt_s=dt_s)
 
+  def process_(self, sample_start, samples, dt_s):
+    pass
   def process(self):
     t = np.arange(0, self.time_total_s, self.dt_s)
     # nse = np.random.randn(len(t))
