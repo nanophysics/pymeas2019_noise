@@ -132,7 +132,8 @@ class FIR:
     assert len(array_decimate) > SAMPLES_LEFT_RIGHT
     assert len(array_decimate) % DECIMATE_FACTOR == 0
 
-    array_decimated = scipy.signal.decimate(
+    correction_factor = 1.01 # Peter: estimated from measurements with syntetic data, the decimate seams to be a bit off, quick and dirty
+    array_decimated = correction_factor * scipy.signal.decimate(
         array_decimate, DECIMATE_FACTOR, ftype='iir', zero_phase=True
     )
 

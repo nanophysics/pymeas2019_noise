@@ -22,24 +22,27 @@ class TestSignal:
     # produces sines every decade with added white noise
     # you should be able to see the given values in the measurement
     time_0 = sample_start * dt_s
+    print(f'time s: {time_0:0.1f}')
     time = np.arange(push_size_samples) * dt_s + time_0
     signal = np.random.normal(scale=self.noise_density_V_sqrtHz*np.sqrt(1/(2.0*dt_s)), size=push_size_samples)
     for sine_freq_Hz in self.list_frequencies:
       signal += self.sine_amp_V_rms*np.sqrt(2)*np.sin(2*np.pi*sine_freq_Hz*time)
     assert len(signal) == push_size_samples
+    #print('.', end='')
     return signal
 
 if __name__ == '__main__':
   class SampleProcessConfig:
     def __init__(self):
-      self.fir_count = 8
-      self.fir_count_skipped = 4
+      self.fir_count = 20
+      self.fir_count_skipped = 0
       self.stepname = 'slow'
 
   dt_s = 1.0/run_0_measure.f2_slow_fs_hz
-  signal = TestSignal(sine_amp_V_rms=0.1, noise_density_V_sqrtHz=0.1)
+  signal = TestSignal(sine_amp_V_rms=1E-4, noise_density_V_sqrtHz=1E-7)
 
   config = SampleProcessConfig()
   sp = program_fir.SampleProcess(config=config, directory_raw=f'{program.MEASUREMENT_ACTUAL}/raw-green-syntetic')
-  i = program_fir.InSyntetic(sp.output, signal=signal, dt_s=dt_s, time_total_s=60.0)
+  i = program_fir.InSyntetic(sp.output, signal=signal, dt_s=dt_s, time_total_s=10.0)
   i.process()
+  print('Done')
