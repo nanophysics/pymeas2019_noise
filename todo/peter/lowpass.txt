@@ -1,4 +1,5 @@
-
+done...
+---------------------------------
 5442D
 
 Eingangswiderstand 1 MOhm

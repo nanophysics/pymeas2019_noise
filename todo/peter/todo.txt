@@ -1,4 +1,17 @@
 
+autoscale input
+
+
+summary mit 0.1 bis 10 Hz noise
+messzeit
+
+
+step_size sprunghoehen, in bändern E12
+time_series
+
+
+---------------------------------------------------------
+old
 
 Darstellung von LSD und von linear Spectrum in V
 
@@ -24,8 +37,7 @@ https://matplotlib.org/devdocs/gallery/event_handling/ginput_manual_clabel_sgski
 
 
 
-step_size sprunghoehen, in bändern E12
-time_series
+
 
 Idee Live update:
 https://pythonprogramming.net/python-matplotlib-live-updating-graphs/
@@ -37,8 +49,7 @@ zusammenfassung: spannung je dekade?
 ordner farben rotieren?
 
 
----------------------------------------------------------
-old
+
 
 Damit weniger Flickernoise:
 Optimaler Range, Offset automatisch abgleichen und einrechnen.
