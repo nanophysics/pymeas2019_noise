@@ -31,6 +31,7 @@ except ImportError as ex:
   sys.exit(0)
 
 import library_topic
+import library_plot
 import program_fir
 
 import program_picoscope_5442D as program_picoscope
@@ -185,7 +186,7 @@ def run_condense(dir_measurement):
     run_condense_0to1(dir_raw=dir_raw, trace=True)
 
     plotData = library_topic.PlotDataSingleDirectory(dir_raw)
-    library_topic.do_plots(plotData=plotData, do_show=False, write_files=('png', ), write_files_directory=dir_raw)
+    library_plot.do_plots(plotData=plotData, do_show=False, write_files=('png', ), write_files_directory=dir_raw)
 
 
 def run_condense_0to1(dir_raw, trace=False):
