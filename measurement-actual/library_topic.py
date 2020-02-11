@@ -94,6 +94,17 @@ class Topic:
     self.__plot_line = None
     self.toggle = True
 
+  def get_as_dict(self):
+    return dict(
+      topic=self.topic,
+      raw_data = dict(
+        d=self.d,
+        f=self.f,
+        enbw=self.enbw,
+      ),
+      presentations = PRESENTATIONS.get_as_dict(self)
+    )
+
   def set_plot_line(self, plot_line):
     self.__plot_line = plot_line
 
@@ -200,6 +211,16 @@ class Presentation:
 
   def get_xy(self, topic):
     return self.__xy_func(topic)
+  
+  def get_as_dict(self, topic):
+    x, y = self.get_xy(topic)
+    return dict(
+      tag = self.tag,
+      help_text = self.help_text,
+      y_label = self.y_label,
+      x = x,
+      y = y,
+    )
 
 class Presentations:
   def __init__(self):
@@ -250,6 +271,9 @@ class Presentations:
       return self.dict[tag]
     except KeyError:
       raise Exception(f'Presentation {tag} not found! Choose one of {self.tags}.')
+
+  def get_as_dict(self, topic):
+    return {p.tag:p.get_as_dict(topic) for p in self.list}
 
 PRESENTATIONS = Presentations()
 

@@ -9,8 +9,8 @@ def run():
   import program
   program.run_condense(dir_measurement)
 
-  import run_2_plot_composite 
-  run_2_plot_composite.run()
+  import run_2_composite_plots
+  run_2_composite_plots.run()
 
 if __name__ == '__main__':
   run()

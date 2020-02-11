@@ -177,17 +177,25 @@ def run_condense(dir_measurement):
   #   cProfile.run('program.run_condense_0to1()', sort='tottime')
   #   import sys
   #   sys.exit(0)
-  dir_result = dir_measurement.joinpath(DIRECTORY_RESULT)
-  if not dir_result.exists():
-    dir_result.mkdir()
+
+  # dir_result = dir_measurement.joinpath(DIRECTORY_RESULT)
+  # if not dir_result.exists():
+  #   dir_result.mkdir()
 
   for dir_raw in iter_dir_raw(dir_measurement):
     run_condense_0to1(dir_raw=dir_raw, trace=False)
     run_condense_0to1(dir_raw=dir_raw, trace=True)
 
     plotData = library_topic.PlotDataSingleDirectory(dir_raw)
+    write_presentation_summary_file(plotData, dir_raw)
     library_plot.do_plots(plotData=plotData, do_show=False, write_files=('png', ), write_files_directory=dir_raw)
 
+def write_presentation_summary_file(plotData, directory):
+  assert len(plotData.listTopics) == 1
+  dict_result = plotData.listTopics[0].get_as_dict()
+
+  with open(directory.joinpath('result_presentation.py'), 'w') as f:
+    pprint.PrettyPrinter(indent=2, width=1024, stream=f).pprint(dict_result)
 
 def run_condense_0to1(dir_raw, trace=False):
   list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)

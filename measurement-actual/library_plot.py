@@ -87,6 +87,9 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
 
   globals.update_presentation()
 
+  # Uncomment to set fix frequency axis
+  # ax.set_xlim(1e-3, 1e7)
+
   if write_files_directory is None:
     # The current directory
     write_files_directory = pathlib.Path(__file__).parent

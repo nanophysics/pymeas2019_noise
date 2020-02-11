@@ -5,6 +5,7 @@
 **/data_*.d_bin
 **/__pycache__
 **/densitystep_*.pickle
+**/result_*.py
 **/result_*.png
 **/result_*.svg
 **/result_*.txt
