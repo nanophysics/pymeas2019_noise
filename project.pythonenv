@@ -1,0 +1,13 @@
+# See
+# https://code.visualstudio.com/docs/python/environments#_environment-variable-definitions-file
+
+#
+# This will modify PYTHONPATH as follows:
+#  - PYTHONPATH from this file. Every element is automatically prefixed by the ${workspaceFolder}
+#  - ${workspaceFolder}
+#  - PYTHONPATH from the environment
+#
+# To verify the path, use this code in the top-level of a module:
+#   print('>>>' + str(sys.path) + '<<<')
+# 
+PYTHONPATH=.;measurement-actual

@@ -1,3 +1,4 @@
+import sys
 import math
 
 import library_path
@@ -111,7 +112,14 @@ def run():
   # thread = program_fir.DensityPlot.directory_plot_thread(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
   configSetup = program.get_configSetup_by_filename(dict_config_setup)
 
-  configSetup.measure_for_all_steps(dir_measurement, start_animation=False)
+  try:
+    print('sys.argv')
+    print(sys.argv)
+    topic_name = sys.argv[1]
+  except IndexError:
+    topic_name = None
+  print(f'command line: topic_name={topic_name}')
+  configSetup.measure_for_all_steps(dir_measurement, topic_name=topic_name)
   program.run_condense(dir_measurement)
 
   # import time

@@ -1,11 +1,10 @@
-import time
 import library_plot
-import run_2_plot_composite
+import config_measurement
 
 def run():
   plotData = library_plot.PlotDataMultipleDirectories(__file__)
 
-  library_plot.do_plot(plotData, title=run_2_plot_composite.TITLE, do_animate=True)
+  library_plot.do_plot(plotData, title=config_measurement.TITLE, do_animate=True, write_files=())
 
 if __name__ == '__main__':
   run()
