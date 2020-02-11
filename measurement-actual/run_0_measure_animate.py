@@ -1,8 +1,9 @@
 import library_plot
+import library_topic
 import config_measurement
 
 def run():
-  plotData = library_plot.PlotDataMultipleDirectories(__file__)
+  plotData = library_topic.PlotDataMultipleDirectories(__file__)
 
   library_plot.do_plot(plotData, title=config_measurement.TITLE, do_animate=True, write_files=())
 
