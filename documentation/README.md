@@ -74,22 +74,29 @@ Check the function of all stages, use the picoscope SW provides by picoscope to 
 
 We start with a measurement of the shortet AC coupling stage.
 
-change input voltage range in run_0_measure.py
-in all stages to 
-input_Vp = PS5000ARange.R_1V
+change config_measurement.py
+```
+inputRange=program_picoscope.InputRange.R_1V,
+duration_slow_s=1*3600.0, # maximum time
+skalierungsfaktor=1.0E-3 # -> gain of the preamplifier
+```
 
-Start ???.py with a doubleclick.
+doubleclick run_2_composite_plot_interactive.py
 
-![](?.jpg)
+![](images/start_background.png)
 
 ckick start
+
 give name 'short' as the input of the AC coupling stage is shorted.
 give color 'green'.
+
+![](images/start_background_2.png)
+
 start
 
-after one minute stop with control c...?
+after one minute on cmd window stop with control c...?
 
-![](?.jpg)
+![](images/start_background_3.png)
 
 Now we connect the reference voltage to the AC coupling stage.
 
@@ -98,11 +105,12 @@ give name 'reference XY'
 give color 'red'
 start
 
-![](?.jpg)
+![](images/start_reference_1.png)
 
 * you can see 1/f region of the reference noise
 * you can see the white noise region of the reference noise
 * the background noise of the measuring setup 'short' is well below the noise measurement. If this would not be the case the background noise has an influence on the result. To be able to compare these values it is important to measure the background noise with exactly the same settings as the measurement itself.
+* above 100kHz the amplifier has a built in low pass
 
 start again
 rename folder

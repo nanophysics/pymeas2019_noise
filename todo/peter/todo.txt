@@ -1,14 +1,9 @@
 
+keine topics, ganz am anfang
+C:\data\temp\pymeas2019_noise_git\measurement-actual>python run_2_composite_plot_interactive.py
+No handles with labels found to put in legend.
 
-run_0_measure.py einfacher. Wichtige Sachen gerade am Anfang, andere auslagern.
-
-
-  
-  
-  wo 
-  ax.set_xlim(1e-3, 1e7)
-
-
+aktualisieren bei umbenennen ordner klappt nicht
 
 
 
