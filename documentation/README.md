@@ -1,3 +1,5 @@
+# DRAFT
+
 # pymeas2019
 
 ## Highlights
@@ -17,7 +19,8 @@
   - `git clone --recurse-submodules https://github.com/nanopysics/pymeas2019_noise.git`
 - Start measurement
   - `cd pymeas2019_noise\measurement-actual`
-  - `run_0_measure.bat`
+  - `run_2_composite_plot_interactive.bat`
+  - start
 
 ## Directory structure
 
@@ -26,34 +29,18 @@
     The results of the actual measurement. \
     If the measurements are done, the directory may be moved away.
 
-    - `run_0_measure.py` \
-      This will run a measurement according the configuration within the file. \
+    - `config_measurement.py` \
+      configuration within the file. \
       The results will be placed in a subfolder `raw-blue-2020-01-18_20-30-22`. \
       You may copy and rename this folder but you have to preserve `raw-<color>-<topic>`.
 
-    - `run_1_plot.py` \
+    - `run_1_condense.bat` \
       This will loop over all `raw-xxx` directories and create `result_xxx` files.
 
     - `run_2_plot_composite.py` \
       You may still run this script when the folder is moved away. \
       This will loop over all `raw-xxx` directories and read `raw-xxx\result_summary.pickle`.
-      Then the diagram `result_density.png` will be created.
-
-## Workflow
-
-### 0-Measure
-
-Configure the measurement in `run_0_measure.py` and run it.
-For every measurement, a new `raw-xx` folder will be created.
-
-### 1-Condense
-
-Condense the measured data in the `raw-xx` folders. This may be run without repeating the measurement.
-
-### 2-Plot
-
-This step will create a plot including all measurements available in the `raw-xx` folders.
-
+      Diagrams will be created.
 
 ## Usecase: Measuring the Noise of a voltage-reference
 ![input filter channel B](images/usecase_voltage_reference.jpg)
@@ -108,9 +95,10 @@ start
 ![](images/start_reference_1.png)
 
 * you can see 1/f region of the reference noise
-* you can see the white noise region of the reference noise
+* you can see the white noise region of the reference noise.
+* some peaks: 50 Hz, 150 Hz and 250 Hz
 * the background noise of the measuring setup 'short' is well below the noise measurement. If this would not be the case the background noise has an influence on the result. To be able to compare these values it is important to measure the background noise with exactly the same settings as the measurement itself.
-* above 100kHz the amplifier has a built in low pass
+* at 100kHz the amplifier has a built in low pass
 
 start again
 rename folder
@@ -120,15 +108,15 @@ restart animate
 Now, as this measurement is done, you can copy the folder measurement-actual to an other place.
 To measurement_ref_XYZ for example. Here you can keep your measurement.
 
-You can delete all files with a filenames starting with 'result_' and generate them again with run_2_composite_plots.py ???
+You can delete all files with a filenames starting with 'result_' and generate them again with run_2_composite_plots.py ??? 
 
-Lets change the range of the x-Axis for example.
-Change library_plot.py ... 
-
-set limits to diagram
-  change file xx
-  start xx.py
-  cha
+you may optimize diagrams for your needs.
+library_plot.py
+Matplotlib commands here will act to all presentations.
+```
+  # Uncomment to set fix frequency axis
+  # ax.set_xlim(1e-3, 1e7)
+```
 
 ## Usecase: Measuring the Noise of two voltage-references
 ![input filter channel B](images/usecase_voltage_references.jpg)
