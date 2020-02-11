@@ -9,7 +9,6 @@ import math
 import time
 import cmath
 import signal
-import pprint
 import logging
 import pathlib
 import itertools
@@ -44,8 +43,6 @@ DIRECTORY_TOP = os.path.dirname(os.path.abspath(__file__))
 DIRECTORY_RESULT = 'result'
 
 DEFINED_BY_SETUP='DEFINED_BY_SETUP'
-
-pp = pprint.PrettyPrinter(indent=2)
 
 class ConfigStep:
   def __init__(self, dict_values={}):
@@ -194,8 +191,9 @@ def write_presentation_summary_file(plotData, directory):
   assert len(plotData.listTopics) == 1
   dict_result = plotData.listTopics[0].get_as_dict()
 
-  with open(directory.joinpath('result_presentation.py'), 'w') as f:
-    pprint.PrettyPrinter(indent=2, width=1024, stream=f).pprint(dict_result)
+  with open(directory.joinpath('result_presentation.txt'), 'w') as f:
+    # pprint.PrettyPrinter(indent=2, width=1024, stream=f).pprint(dict_result)
+    SpecializedPrettyPrint(stream=f).pprint(dict_result)
 
 def run_condense_0to1(dir_raw, trace=False):
   list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
@@ -248,3 +246,39 @@ def measure(configSetup, dir_measurement):
     traceback.print_exc()
     print('Hit any key to terminate')
     sys.stdin.read()
+
+class SpecializedPrettyPrint:
+  def __init__(self, stream):
+    self._stream = stream
+
+  def pprint(self, d):
+    assert isinstance(d, dict)
+    self._stream.write('{\n')
+    self._print(d, '    ')
+    self._stream.write('}\n')
+
+  def _print(self, o, indent):
+    if isinstance(o, dict):
+      for k, i in o.items():
+        assert isinstance(k, str)
+        key_string = indent + repr(k) + ': '
+        if isinstance(i, str):
+          self._stream.write(key_string + repr(i) + ',\n')
+          continue
+        if isinstance(i, list) or isinstance(i, np.ndarray):
+          self._stream.write(key_string + '[')
+          def _repr(v):
+            assert isinstance(v, float)
+            return repr(v)
+          self._stream.write(', '.join([_repr(v) for v in i]))
+          self._stream.write(indent + '],\n')
+          continue
+        if isinstance(i, dict):
+          self._stream.write(key_string + '{\n')
+          self._print(i, indent + '    ')
+          self._stream.write(indent + '},\n')
+          continue
+
+        raise Exception(f'Unknown datatype {type(i)} for object "{i}"')
+      return
+    raise Exception(f'Unknown datatype {type(o)} for object "{o}"')
