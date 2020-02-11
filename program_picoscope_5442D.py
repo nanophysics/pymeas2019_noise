@@ -2,7 +2,6 @@ import re
 import os
 import math
 import time
-import signal
 import logging
 import numpy as np
 import program
@@ -34,15 +33,6 @@ if PICSCOPE_MODEL==PICSCOPE_MODEL_2204A:
   # Setting up dt_s and desired_sample_time_s seems to be buggy!
   PICSCOPE_ADDRESS='SDK::ps2000'
   ALL_CHANNELS = ('A', 'B')
-
-ctrl_c_pressed = False
-
-def signal_handler(sig, frame):
-    print('You pressed Ctrl+C!')
-    global ctrl_c_pressed
-    ctrl_c_pressed = True
-
-signal.signal(signal.SIGINT, signal_handler)
 
 class PicoScope:
   def __init__(self, configStep):
@@ -93,7 +83,7 @@ class PicoScope:
       selected1_dt_s = 2.0/max_sampling_rate
       desired_sample_time_s = 5000*selected1_dt_s
 
-    selected2_dt_s, num_samples = self.scope.set_timebase(selected1_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
+    selected2_dt_s, _num_samples = self.scope.set_timebase(selected1_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
 
     assert configStep.dt_s is not None
     if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
@@ -107,7 +97,7 @@ class PicoScope:
     # total_samples = int(configStep.duration_s/selected_dt_s)
     # print(f'total_samples={total_samples_before}) -> {total_samples}')
 
-  def acquire(self, configStep, stream_output):
+  def acquire(self, configStep, stream_output, handlerCtrlC):
     assert isinstance(configStep, program.ConfigStep)
 
     valid_ranges = set(range.value for range in self.scope.enRange)
@@ -194,7 +184,7 @@ class PicoScope:
           stream.list_overflow.append(self.actual_sample_count+start_index)
 
         self.actual_sample_count += num_samples
-        if ctrl_c_pressed or (self.actual_sample_count > total_samples):
+        if handlerCtrlC.ctrl_c_pressed or (self.actual_sample_count > total_samples):
           self.streaming_done = True
           stream.put_EOF()
           print(r'\nSTOP(time over)', end='')
@@ -215,7 +205,7 @@ class PicoScope:
         # get the latest streaming values
         self.scope.get_streaming_latest_values(my_streaming_ready)
       if PICSCOPE_MODEL == PICSCOPE_MODEL_2204A:
-        rc = self.scope.get_streaming_last_values(my_get_overview_buffer)
+        _rc = self.scope.get_streaming_last_values(my_get_overview_buffer)
         # rc==1: if the callback will be called
         # rc==0: if the callback will not be called, either because one of the inputs
         #        is out of range or because there are no samples available

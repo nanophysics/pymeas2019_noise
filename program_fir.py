@@ -74,7 +74,7 @@ class FIR:
     self.out.init(stage=stage+1, dt_s=decimated_dt_s)
 
   def done(self):
-    print(f'Statistics {self.stage}: count {self.statistics_count}, samples in {self.statistics_samples_in*self.__dt_s:0.3f}s, samples out {self.statistics_samples_out*self.__dt_s*DECIMATE_FACTOR:0.3f}s')
+    # print(f'Statistics {self.stage}: count {self.statistics_count}, samples in {self.statistics_samples_in*self.__dt_s:0.3f}s, samples out {self.statistics_samples_out*self.__dt_s*DECIMATE_FACTOR:0.3f}s')
     self.out.done()
 
   def push(self, array_in):

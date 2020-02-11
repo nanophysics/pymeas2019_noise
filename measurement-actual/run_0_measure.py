@@ -115,12 +115,19 @@ def run():
   try:
     print('sys.argv')
     print(sys.argv)
-    topic_name = sys.argv[1]
+    directory_name = sys.argv[1]
   except IndexError:
-    topic_name = None
-  print(f'command line: topic_name={topic_name}')
-  configSetup.measure_for_all_steps(dir_measurement, topic_name=topic_name)
-  program.run_condense(dir_measurement)
+    directory_name = None
+  print(f'command line: directory_name={directory_name}')
+
+  try:
+    configSetup.measure_for_all_steps(dir_measurement, directory_name=directory_name)
+    program.run_condense(dir_measurement)
+  except Exception:
+    import traceback
+    traceback.print_exc()
+    print('Hit any key to terminate')
+    sys.stdin.readline()
 
   # import time
   # time.sleep(10.0)
