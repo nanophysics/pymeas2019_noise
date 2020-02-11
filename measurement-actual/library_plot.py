@@ -10,6 +10,10 @@ import matplotlib.animation
 import matplotlib.backend_tools
 import matplotlib.artist as artist
 matplotlib.use('TkAgg')
+# Hide messages like:
+#   Treat the new Tool classes introduced in v1.5 as experimental for now, the API will likely change in version 2.1 and perhaps the rcParam as well
+import warnings
+warnings.filterwarnings(action='ignore')
 
 def x():
   import tkinter
@@ -372,7 +376,7 @@ class Presentations:
 
 PRESENTATIONS = Presentations()
 
-class PlotData:
+class PlotDataMultipleDirectories:
   def __init__(self, filename):
     curdir = pathlib.Path(filename).absolute().parent
     self.listTopics = []
@@ -382,6 +386,12 @@ class PlotData:
       self.listTopics.append(Topic.load(dir_raw))
 
     self.listTopics.sort(key=lambda topic: topic.topic.upper()) 
+
+class PlotDataSingleDirectory:
+  def __init__(self, dir_raw):
+    self.listTopics = [
+      Topic.load(dir_raw)
+    ]
 
 class Globals:
   def __init__(self):
@@ -418,14 +428,15 @@ def do_plots(**args):
   for tag in PRESENTATIONS.tags:
     do_plot(presentation_tag=tag, **args)
 
-def do_plot(plotData, title, do_show=False, write_files=('png', 'svg'), do_animate=False, presentation_tag='LSD'):
+def do_plot(plotData, title=None, do_show=False, write_files=('png', 'svg'), write_files_directory=None, do_animate=False, show_legend=True, presentation_tag='LSD'):
   globals.update_presentation(PRESENTATIONS.get(presentation_tag), update=False)
 
   plt.rcParams['toolbar'] = 'toolmanager'
 
   fig, ax = plt.subplots()
   globals.set(plotData, fig)
-  plt.title(title)
+  if title:
+    plt.title(title)
   fig.canvas.manager.toolmanager.add_tool('List', ListTools)
   fig.canvas.manager.toolmanager.add_tool('Autozoom', UserAutozoom)
   fig.canvas.manager.toolbar.add_tool('Autozoom', 'navigation', 1)
@@ -449,23 +460,23 @@ def do_plot(plotData, title, do_show=False, write_files=('png', 'svg'), do_anima
     )
     topic.set_plot_line(plot_line)
 
-  #plt.ylabel('Density [V/Hz^0.5]')
   plt.xlabel('Frequency [Hz]')
-  # plt.ylim( 1e-11,1e-6)
-  # plt.xlim(1e-2, 1e5) # temp Peter
-  # plt.grid(True)
   plt.grid(True, which="major", axis="both", linestyle="-", color='gray', linewidth=0.5)
   plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
   ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
-  #ax.legend(loc='lower left', shadow=True, fancybox=False)
-  ax.legend(fancybox=True, framealpha=0.5)
-  leg = plt.legend()
-  leg.get_frame().set_linewidth(0.0)
+  if show_legend:
+    ax.legend(fancybox=True, framealpha=0.5)
+    leg = plt.legend()
+    leg.get_frame().set_linewidth(0.0)
 
   globals.update_presentation()
 
+  if write_files_directory is None:
+    # The current directory
+    write_files_directory = pathlib.Path(__file__).parent
+
   for ext in write_files:
-    filename = pathlib.Path(__file__).parent.joinpath(f'result_{globals.presentation.tag}.{ext}')
+    filename = write_files_directory.joinpath(f'result_{globals.presentation.tag}.{ext}')
     print(filename)
     fig.savefig(filename, dpi=300)
 
@@ -494,3 +505,9 @@ def do_plot(plotData, title, do_show=False, write_files=('png', 'svg'), do_anima
                     repeat=False) 
 
     plt.show()
+    return
+
+  fig.clf()
+  plt.close(fig)
+  plt.clf()
+  plt.close()

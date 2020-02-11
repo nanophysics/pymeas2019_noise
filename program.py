@@ -289,10 +289,10 @@ def run_condense(dir_measurement):
   for dir_raw in iter_dir_raw(dir_measurement):
     run_condense_0to1(dir_raw=dir_raw, trace=False)
     run_condense_0to1(dir_raw=dir_raw, trace=True)
-    pass
-    # import program_fir
-    # program_fir.DensityPlot.directory_plot(program.DIRECTORY_0_RAW, program.DIRECTORY_1_CONDENSED)
-    pass
+
+    plotData = library_plot.PlotDataSingleDirectory(dir_raw)
+    library_plot.do_plots(plotData=plotData, do_show=False, write_files=('png', ), write_files_directory=dir_raw)
+
 
 def run_condense_0to1(dir_raw, trace=False):
   list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
