@@ -44,7 +44,7 @@ def start_animation(plotData, fig, func_animate):
   return animation
 
 class UserMeasurementStart(matplotlib.backend_tools.ToolBase):
-  description = 'Measurement Start/Stop'
+  description = 'Measurement Start'
 
   def get_random_color(self):
     COLORS = (

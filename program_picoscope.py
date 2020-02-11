@@ -5,11 +5,11 @@ from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 
 class InputRange(enum.IntEnum):
   R_10mV_do_not_use = PS5000ARange.R_10MV # do not use! use 100mV range instead (noise of picoscope is similar in 100mV range)
-  R_20MV_do_not_use = PS5000ARange.R_20MV #  do not use! use 100mV range instead (noise of picoscope is similar in 100mV range)
-  R_50MV_do_not_use = PS5000ARange.R_50MV # do not use! use 100mV range instead (noise of picoscope is similar in 100mV range)
-  R_100MV = PS5000ARange.R_100MV # good range     # low noise of picoscope
-  R_200MV = PS5000ARange.R_200MV
-  R_500MV = PS5000ARange.R_500MV #  big increase of picoscope noise compared to 200 mV range
+  R_20mV_do_not_use = PS5000ARange.R_20MV #  do not use! use 100mV range instead (noise of picoscope is similar in 100mV range)
+  R_50mV_do_not_use = PS5000ARange.R_50MV # do not use! use 100mV range instead (noise of picoscope is similar in 100mV range)
+  R_100mV = PS5000ARange.R_100MV # good range     # low noise of picoscope
+  R_200mV = PS5000ARange.R_200MV
+  R_500mV = PS5000ARange.R_500MV #  big increase of picoscope noise compared to 200 mV range
   R_1V = PS5000ARange.R_1V
   R_2V = PS5000ARange.R_2V
   R_5V = PS5000ARange.R_5V
