@@ -155,7 +155,7 @@ class Density:
   Stream-Source: Drives a output of Stream-Interface
 
   This class processes the data-stream and every `self.config.interval_s` does some density calculation...
-  The class DensitySummary will the access self.Pxx_sum/self.Pxx_n to create a density plot.
+  The class LsdSummary will the access self.Pxx_sum/self.Pxx_n to create a density plot.
   '''
   def __init__(self, out, config, directory):
     # TODO: Make all members private!
@@ -554,7 +554,7 @@ class ColorRotator:
   def color(self):
     return next(self.iter)
 
-class DensitySummary:
+class LsdSummary:
   def __init__(self, list_density, directory, trace=False):
     self.directory = directory
     self.trace = trace
@@ -586,7 +586,7 @@ class DensitySummary:
 
   def write_summary_file(self, trace):
     file_tag = '_trace' if trace else ''
-    filename_summary = f'{self.directory}/result_summary{file_tag}.txt'
+    filename_summary = f'{self.directory}/result_summary_LSD{file_tag}.txt'
     with open(filename_summary, 'w') as f:
       for dp in self.list_density_points:
         f.write(dp.line)
@@ -598,7 +598,7 @@ class DensitySummary:
     enbw = [dp.enbw for dp in self.list_density_points if not dp.skip]
     library_plot.PickleResultSummary.save(self.directory, f, d, enbw)
 
-  def plot(self, file_tag='', color_given=None):
+  def plot(self, file_tag=''):
     fig, ax = plt.subplots()
 
     # https://matplotlib.org/3.1.1/api/markers_api.html
@@ -613,8 +613,6 @@ class DensitySummary:
         f = [dp.f for dp in list_density_points]
         d = [dp.d for dp in list_density_points]
         color = color_fancy = colorRotator.color
-        if color_given is not None:
-          color = color_given
         linestyle = 'none'
         marker = '.'
         markersize = 3
@@ -634,8 +632,8 @@ class DensitySummary:
     plt.grid(True, which="major", axis="both", linestyle="-", color='gray', linewidth=0.5)
     plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
     ax.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=20))
-    filebase = f'{self.directory}/result_densitysummary{file_tag}'
-    print(f' DensitySummary {filebase}')
+    filebase = f'{self.directory}/result_summary_LSD{file_tag}'
+    print(f' Summary LSD {filebase}')
     fig.savefig(filebase+'.png', dpi=300)
     # fig.savefig(filebase+'.svg')
     # plt.show()

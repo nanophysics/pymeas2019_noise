@@ -30,7 +30,7 @@ stage 35 push_size_samples 256 time_s 2251799.813685248
 TODO: matplotlib animate
 TODO: directory structure
 TODO: run with simulator
-
+TODO: Unterschiedliche decimate() und summary()
 
 Anleitung
 Cash von result_density_summary.txt

@@ -106,8 +106,8 @@ class MeasurementDataObsolete:
 
 
 
-    # ds = DensitySummary(self.list_density, config=self.config, directory=self.directory_condensed)
-    # ds.plot()
+    # lsd_summary = LsdSummary(self.list_density, config=self.config, directory=self.directory_condensed)
+    # lsd_summary.plot()
 
     print(f'Duration {time.time()-start:0.2f}')
 
@@ -265,8 +265,8 @@ def reload_if_changed(dir_raw):
       # data = pickle.load(f)
       # EOFError: Ran out of input
       return False
-    ds = program_fir.DensitySummary(list_density, directory=dir_raw, trace=False)
-    ds.write_summary_pickle()
+    lsd_summary = program_fir.LsdSummary(list_density, directory=dir_raw, trace=False)
+    lsd_summary.write_summary_pickle()
     return True
   return False
 
@@ -297,17 +297,13 @@ def run_condense(dir_measurement):
 def run_condense_0to1(dir_raw, trace=False):
   list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
 
-  ds = program_fir.DensitySummary(list_density, directory=dir_raw, trace=trace)
-  ds.write_summary_file(trace=trace)
+  lsd_summary = program_fir.LsdSummary(list_density, directory=dir_raw, trace=trace)
+  lsd_summary.write_summary_file(trace=trace)
   if not trace:
-    ds.write_summary_pickle()
+    lsd_summary.write_summary_pickle()
 
   file_tag = '_trace' if trace else ''
-  ds.plot(file_tag=file_tag, color_given='blue')
-
-  if not trace:
-    file_tag = '_colors'
-    ds.plot(file_tag=file_tag)
+  lsd_summary.plot(file_tag=file_tag)
 
 class ResultCommon:
   def __init__(self):
