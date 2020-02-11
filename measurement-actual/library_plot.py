@@ -1,4 +1,5 @@
 import re
+import sys
 import time
 import numpy as np
 import types
@@ -15,37 +16,58 @@ matplotlib.use('TkAgg')
 import warnings
 warnings.filterwarnings(action='ignore')
 
-def x():
-  import tkinter
-  import tkinter.ttk
+class UserMeasurementStart(matplotlib.backend_tools.ToolBase):
+  description = 'Measurement Start/Stop'
 
-  window = tkinter.Tk()
+  def startDialog(self):
+    import tkinter
+    import tkinter.ttk
 
-  window.title("Python Tkinter Text Box")
-  window.minsize(600,400)
+    self.topic_name = None
+    dialog = tkinter.Tk()
 
-  def clickStart():
-    label.configure(text= 'Hello ' + name.get())
+    dialog.title("Start Measurement")
+    dialog.minsize(400, 100)
+    dialog.columnconfigure(0, weight=1)
+    dialog.rowconfigure(0, weight=1)
+    dialog.rowconfigure(1, weight=1)
+    dialog.rowconfigure(2, weight=2)
+    
+    def clickStart():
+      self.topic_name = entryTopic.get()
+      dialog.quit()
 
-  label = tkinter.ttk.Label(window, text = "Enter Your Name")
-  label.grid(column = 0, row = 0)
+    label=tkinter.ttk.Label(dialog, text="Topic name of this measurement")
+    label.grid(column=0, row=0, sticky=tkinter.EW)
 
-  name = tkinter.StringVar()
-  nameEntered = tkinter.ttk.Entry(window, width = 15, textvariable = name)
-  nameEntered.grid(column = 0, row = 1)
+    entryTopic = tkinter.ttk.Entry(dialog, width=50)
+    entryTopic.grid(column=0, row=1, sticky=tkinter.EW)
+    entryTopic.insert(0, ResultAttributes.getdatetime())
 
-  button = tkinter.ttk.Button(window, text = "Start Measurement", command = clickStart)
-  button.grid(column= 0, row = 2)
+    button = tkinter.ttk.Button(dialog, text="Start", command=clickStart)
+    button.grid(column=0, row=2)
 
-  window.mainloop()
+    dialog.mainloop()
+    # Will return from 'mainloop()' when 'dialog.quit()' was called.
+    dialog.destroy()
 
-  pass
+    return self.topic_name
+
+  def trigger(self, *args, **kwargs):
+    topic_name = self.startDialog()
+    if topic_name is None:
+      # The dialog has been closed
+      return
+
+    # The start button has been pressed
+    import subprocess
+    import run_0_measure
+    subprocess.Popen(['cmd.exe', '/K', 'start', sys.executable, run_0_measure.__file__, topic_name])
 
 class UserSelectPresentation(matplotlib.backend_tools.ToolBase):
-  # keyboard shortcut
   description = 'Select Presentation'
 
-  def selectPresentation(self):
+  def selectPresentationDialog(self):
     import tkinter
     import tkinter.ttk
     dialog = tkinter.Tk() 
@@ -63,24 +85,23 @@ class UserSelectPresentation(matplotlib.backend_tools.ToolBase):
     combobox.grid(column=0, row=1, sticky=tkinter.EW)
     combobox.current(0)
 
-    class Globals: pass
-    globals = Globals()
-    globals.selected = None
+    self.selected_presentation = None
 
     def callbackFunc(event):
-      globals.selected = PRESENTATIONS.list[combobox.current()]
-      print(f'Selected:  {globals.selected.tag}')
+      self.selected_presentation = PRESENTATIONS.list[combobox.current()]
+      print(f'Selected:  {self.selected_presentation.tag}')
       dialog.quit()
 
     combobox.bind("<<ComboboxSelected>>", callbackFunc)
 
     dialog.mainloop()
+    # Will return from 'mainloop()' when 'dialog.quit()' was called.
     dialog.destroy()
-    return globals.selected
+    return self.selected_presentation
 
   def trigger(self, *args, **kwargs):
     matplotlib.backend_tools.ToolBase.trigger(self, *args, **kwargs)
-    presentation = self.selectPresentation()
+    presentation = self.selectPresentationDialog()
     if presentation == None:
       return
     globals.update_presentation(presentation=presentation)
@@ -119,29 +140,6 @@ class UserAutozoom(matplotlib.backend_tools.ToolBase):
     self.figure.canvas.draw()
     print('Did Autozoom')
 
-class UserMeasurementStart(matplotlib.backend_tools.ToolToggleBase):
-  # keyboard shortcut
-  default_keymap = 'p'
-  description = 'Measurement Start/Stop'
-  def trigger(self, *args, **kwargs):
-    matplotlib.backend_tools.ToolToggleBase.trigger(self, *args, **kwargs)
-    if self.toggled:
-      print('Start')
-      x()
-    else:
-      print('Stop')
-
-colors=(
-  'blue',
-  'orange',
-  'black',
-  'green',
-  'red',
-  'cyan',
-  'magenta',
-  # 'yellow',
-)
-
 class ResultAttributes:
   RESULT_DIR_PATTERN='raw-*'
   REG_DIR=re.compile(r'^raw-(?P<color>.+?)-(?P<topic>.+)$')
@@ -156,9 +154,14 @@ class ResultAttributes:
     self.topic = d['topic']
 
   @classmethod
-  def result_dir_actual(cls):
-    color = 'red' #  random.choice(colors)
-    return time.strftime('raw-' + color + '-%Y-%m-%d_%H-%M-%S', time.localtime())
+  def getdatetime(cls):
+    return time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())
+
+  @classmethod
+  def result_dir_actual(cls, topic_name=None):
+    if topic_name is None:
+      topic_name = cls.getdatetime()
+    return f'raw-red-{topic_name}'
 
 class PickleResultSummary:
   def __init__(self, f, d, enbw):
@@ -420,7 +423,6 @@ class Globals:
 
 globals = Globals()
 
-
 def do_plots(**args):
   '''
   Print all presentation (LSD, LS, PS, etc.)
@@ -437,15 +439,16 @@ def do_plot(plotData, title=None, do_show=False, write_files=('png', 'svg'), wri
   globals.set(plotData, fig)
   if title:
     plt.title(title)
+
   fig.canvas.manager.toolmanager.add_tool('List', ListTools)
   fig.canvas.manager.toolmanager.add_tool('Autozoom', UserAutozoom)
   fig.canvas.manager.toolbar.add_tool('Autozoom', 'navigation', 1)
 
-  fig.canvas.manager.toolmanager.add_tool('Start/Stop', UserMeasurementStart)
-  fig.canvas.manager.toolbar.add_tool('Start/Stop', 'navigation', 1)
-
   fig.canvas.manager.toolmanager.add_tool('Presentation', UserSelectPresentation)
   fig.canvas.manager.toolbar.add_tool('Presentation', 'navigation', 1)
+
+  fig.canvas.manager.toolmanager.add_tool('Start', UserMeasurementStart)
+  fig.canvas.manager.toolbar.add_tool('Start', 'navigation', 1)
 
   for topic in plotData.listTopics:
     x, y = globals.presentation.get_xy(topic)
@@ -497,12 +500,15 @@ def do_plot(plotData, title=None, do_show=False, write_files=('png', 'svg'), wri
       while True:
         yield 42
 
-    ani = matplotlib.animation.FuncAnimation(fig,
-                    func=animate, 
-                    frames=endless_iter(),
-                    interval=1000, # Delay between frames in milliseconds
-                    init_func=None, # A function used to draw a clear frame. If not given, the results of drawing from the first item in the frames sequence will be used.
-                    repeat=False) 
+    _animation = matplotlib.animation.FuncAnimation(fig,
+      func=animate, 
+      frames=endless_iter(),
+      # Delay between frames in milliseconds
+      interval=1000,
+      # A function used to draw a clear frame. If not given, the results of drawing from the first item in the frames sequence will be used.
+      init_func=None,
+      repeat=False
+    ) 
 
     plt.show()
     return

@@ -221,18 +221,12 @@ class ConfigSetup:
   def update_by_channel_file(self, dict_config_setup):
     self.update_by_dict(dict_config_setup)
 
-  def measure_for_all_steps(self, dir_measurement, start_animation=False):
-    dir_results = dir_measurement.joinpath(library_plot.ResultAttributes.result_dir_actual())
+  def measure_for_all_steps(self, dir_measurement, topic_name=None):
+    dir_results = dir_measurement.joinpath(library_plot.ResultAttributes.result_dir_actual(topic_name))
     if dir_results.exists():
       self.delete_directory_contents(str(dir_results))
     else:
       dir_results.mkdir()
-
-    if start_animation:
-      import subprocess
-      import run_0_measure_animate
-
-      subprocess.Popen(['cmd.exe', '/K', 'start', sys.executable, run_0_measure_animate.__file__])
 
     for configStep in self.steps:
       picoscope = program_picoscope.PicoScope(configStep)
