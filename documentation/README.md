@@ -3,8 +3,9 @@
 ## Highlights
 
 * Measures noise from 56 MHz down to very low frequencies. Just start a measurement and observe lower frequencies apearing. Stop the measurement when you are satisfied. (in comparison: with other instruments you have to choose a time window, then you wait until the time is over and then you see what you got. Playing around at low frequencies this is very inefficient and boring.)
-* Frequency points have equally distance in logaritmic scale: 12 bins in one decade for example. (in coparison: normally the frequency spacing is constant, 1 Hz for example. At high frequencies the bin size is very small and the noise corresponding high. Useless presentation if you show data, especially if you show data in logaritmic scale.)
-* Cheap setup.
+* Frequency points have equally distance in logaritmic scale: 12 bins in one decade for example. You get diagrams over a many decades of frequency. (in coparison: normally the frequency spacing is constant, 1 Hz for example. At high frequencies the bin size is very small and the noise corresponding high. Useless presentation if you show data, especially if you show data in logaritmic scale.)
+* Presentation as LSD, PSD, LS or PS.
+* Cheap setup, around 1000 USD for the oscilloscope.
 
 ## Installation
 
@@ -56,8 +57,8 @@ This step will create a plot including all measurements available in the `raw-xx
 
 ## Usecase: Measuring the Noise of a voltage-reference
 ![input filter channel B](images/usecase_voltage_reference.jpg)
-A voltage reference has 10V at the output. An AC coupling network only passes higher frequencies to a preamplifier. After the noise is amplified, it passes to channel A and trough an input filter to channel B. The input filter is used as an antialiasing filter because we sample slow at input B.
-This setup is useful to characterize the noise between 0.1 Hz and 100 kHz.
+A voltage reference has 10V at the output. An AC coupling network only passes higher frequencies to a preamplifier. After the noise is amplified, it passes to channel A and trough an input filter to channel B. The input filter is used as an antialiasing filter because we sample slow at input B. Channel A is sampled at 125 MHz without bandwith limitation and 62.5 MHz with build in bandwith limitation at 20 MHz.
+This setup is useful to characterize the noise between 0.1 Hz and 100 kHz for example.
 
 ![input filter channel B](images/input_filter_channel_b.jpg)
 
@@ -108,7 +109,13 @@ rename folder
 delete folder
 restart animate
 
-copy folder measurement-actual to somewhere else
+Now, as this measurement is done, you can copy the folder measurement-actual to an other place.
+To measurement_ref_XYZ for example. Here you can keep your measurement.
+
+You can delete all files with a filenames starting with 'result_' and generate them again with run_2_composite_plots.py ???
+
+Lets change the range of the x-Axis for example.
+Change library_plot.py ... 
 
 set limits to diagram
   change file xx
@@ -120,6 +127,6 @@ set limits to diagram
 
 If you want to go to below 0.1 Hz with your measurement on easy trick is to measure the difference of two references. As long as the noise of the references is not correlated (and this is normally not the case) you can expect about sqrt(2) times the noise of a single reference.
 
-And yes, the offset after the preamplifier should be low. You could adjust by adjust one reference a bit for example.
+And yes, the offset after the preamplifier should be low. You could adjust the offset by adjust one reference a bit for example.
 
 
