@@ -206,28 +206,6 @@ def run_condense_0to1(dir_raw, trace=False):
   file_tag = '_trace' if trace else ''
   lsd_summary.plot(file_tag=file_tag)
 
-class ResultCommon:
-  def __init__(self):
-    print('get_configSetups: {}'.format(get_configSetups()))
-    self.list_resultSetup = []
-    self.dict_resultSetupReference = {}
-    for configsetup_filename in get_configSetups():
-      config = get_configSetup_by_filename(configsetup_filename)
-      resultSetup = config.condense_1to2()
-      if config.reference == None:
-        self.dict_resultSetupReference[config.setup_name] = resultSetup
-      else:
-        self.list_resultSetup.append(resultSetup)
-  
-  def plot(self):
-    for resultSetup in self.list_resultSetup:
-      resultSetupReference = self.dict_resultSetupReference[resultSetup.configSetup.reference]
-      plot_for_one_setup(resultSetup, resultSetupReference)
-
-def run_condense_1to2_result():
-  resultCommon = ResultCommon()
-  resultCommon.plot()
-
 def measure(configSetup, dir_measurement):
   try:
     directory_name = sys.argv[1]
@@ -237,7 +215,7 @@ def measure(configSetup, dir_measurement):
 
   try:
     configSetup.measure_for_all_steps(dir_measurement, directory_name=directory_name)
-    program.run_condense(dir_measurement)
+    run_condense(dir_measurement)
 
     import run_1_condense
     run_1_condense.run()
