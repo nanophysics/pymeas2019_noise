@@ -3,12 +3,24 @@
 wie verschiedene representations machen in ordnern und in composite?
 alte plots ausschalten result_densitysummary.png ?
 
-autoscale input
+
+start stop mit namen aus animate
+
+run_0_measure.py einfacher. Wichtige Sachen gerade am Anfang, andere auslagern.
+
+
+
+
+
+
+
 
 
 summary mit 0.1 bis 10 Hz noise
 messzeit
 
+later:
+autoscale input
 
 step_size sprunghoehen, in bändern E12
 time_series
