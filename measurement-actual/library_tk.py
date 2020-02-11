@@ -4,10 +4,14 @@ import matplotlib.backend_tools
 import library_topic
 
 matplotlib.use('TkAgg')
+
 # Hide messages like:
 #   Treat the new Tool classes introduced in v1.5 as experimental for now, the API will likely change in version 2.1 and perhaps the rcParam as well
 import warnings
 warnings.filterwarnings(action='ignore')
+
+def initialize(plt):
+  plt.rcParams['toolbar'] = 'toolmanager'
 
 def add_buttons(fig):
   fig.canvas.manager.toolmanager.add_tool('List', ListTools)

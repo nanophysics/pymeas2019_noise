@@ -222,3 +222,21 @@ def run_condense_1to2_result():
   resultCommon = ResultCommon()
   resultCommon.plot()
 
+def measure(configSetup, dir_measurement):
+  try:
+    directory_name = sys.argv[1]
+    print(f'command line: directory_name={directory_name}')
+  except IndexError:
+    directory_name = None
+
+  try:
+    configSetup.measure_for_all_steps(dir_measurement, directory_name=directory_name)
+    program.run_condense(dir_measurement)
+
+    import run_1_condense
+    run_1_condense.run()
+  except Exception:
+    import traceback
+    traceback.print_exc()
+    print('Hit any key to terminate')
+    sys.stdin.read()

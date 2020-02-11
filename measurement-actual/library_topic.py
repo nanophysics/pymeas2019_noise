@@ -27,8 +27,8 @@ class ResultAttributes:
   @classmethod
   def result_dir_actual(cls, directory_name=None):
     if directory_name is None:
-      f'{DIRECTORY_NAME_RAW_PREFIX}-red-{cls.getdatetime()}'
-      assert directory_name.startwith(DIRECTORY_NAME_RAW_PREFIX)
+      return f'{DIRECTORY_NAME_RAW_PREFIX}red-{cls.getdatetime()}'
+    assert directory_name.startswith(DIRECTORY_NAME_RAW_PREFIX)
     return directory_name
 
 class PickleResultSummary:
@@ -103,7 +103,7 @@ class Topic:
     changed = self.__prs.reload_if_changed()
     if changed:
       self.recalculate_data(presentation)
-      print(f'changed {self.__ra.topic} {changed} {time.time()-start:0.2f}s')
+      print(f'changed {time.time()-start:0.2f}s "{self.__ra.topic}"')
     return changed
 
   def recalculate_data(self, presentation):

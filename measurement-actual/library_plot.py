@@ -47,7 +47,9 @@ def do_plots(**args):
 def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=('png', 'svg'), write_files_directory=None, presentation_tag='LSD'):
   globals.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
 
-  plt.rcParams['toolbar'] = 'toolmanager'
+  if do_show or do_animate:
+    import library_tk
+    library_tk.initialize(plt)
 
   fig, ax = plt.subplots()
   globals.set(plotData, fig, ax)
@@ -57,7 +59,7 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
 
   if do_show or do_animate:
     import library_tk
-    library_tk.add_buttons(fig)
+    library_tk.add_buttons( fig)
 
   def initialize_plot_lines():
     for topic in plotData.listTopics:
