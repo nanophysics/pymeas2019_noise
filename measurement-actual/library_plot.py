@@ -381,12 +381,7 @@ class PlotData:
         continue
       self.listTopics.append(Topic.load(dir_raw))
 
-def do_plots(**args):
-  '''
-  Print all presentation (LSD, LS, PS, etc.)
-  '''
-  for tag in PRESENTATIONS.tags:
-    do_plot(presentation_tag=tag, **args)
+    self.listTopics.sort(key=lambda topic: topic.topic.upper()) 
 
 class Globals:
   def __init__(self):
@@ -395,8 +390,8 @@ class Globals:
     self.fig = None
 
   def set(self, plotData, fig):
-    assert self.plotData is None
-    assert self.fig is None
+    # assert self.plotData is None
+    # assert self.fig is None
     self.plotData = plotData
     self.fig = fig
 
@@ -415,6 +410,13 @@ class Globals:
 
 globals = Globals()
 
+
+def do_plots(**args):
+  '''
+  Print all presentation (LSD, LS, PS, etc.)
+  '''
+  for tag in PRESENTATIONS.tags:
+    do_plot(presentation_tag=tag, **args)
 
 def do_plot(plotData, title, do_show=False, write_files=('png', 'svg'), do_animate=False, presentation_tag='LSD'):
   globals.update_presentation(PRESENTATIONS.get(presentation_tag), update=False)

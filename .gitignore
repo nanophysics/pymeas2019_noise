@@ -11,3 +11,4 @@
 **/result_*.pickle
 /obsolete/
 .ipynb_checkpoints
+todo/peter/tests/*

@@ -1,5 +1,4 @@
 
-diagramme in composite darstellung sortieren nach topic
 
 wie verschiedene representations machen in ordnern und in composite?
 alte plots ausschalten result_densitysummary.png ?
