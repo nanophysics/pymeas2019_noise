@@ -463,7 +463,7 @@ def do_plot(plotData, title, do_show=False, write_files=('png', 'svg'), do_anima
   globals.update_presentation()
 
   for ext in write_files:
-    filename = pathlib.Path(__file__).parent.joinpath(f'result_density_{globals.presentation.tag}.{ext}')
+    filename = pathlib.Path(__file__).parent.joinpath(f'result_{globals.presentation.tag}.{ext}')
     print(filename)
     fig.savefig(filename, dpi=300)
 

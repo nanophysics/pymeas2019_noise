@@ -39,12 +39,12 @@ fir_count_2_slow = f2_slow_fir_count_skipped + 27 # free to choose
 
 dict_config_setup = dict(
   setup_name = 'Measure Noise Density',
-  # input_Vp = PS5000ARange.R_10MV,
-  # input_Vp = PS5000ARange.R_20MV,
-  # input_Vp = PS5000ARange.R_50MV,
-  # input_Vp = PS5000ARange.R_100MV,
+  # input_Vp = PS5000ARange.R_10MV,   do not use! use 100mV range instead (noise of picoscope is similar in 100mV range)
+  # input_Vp = PS5000ARange.R_20MV,   do not use! use 100mV range instead (noise of picoscope is similar in 100mV range)
+  # input_Vp = PS5000ARange.R_50MV ,  do not use! use 100mV range instead (noise of picoscope is similar in 100mV range)
+  # input_Vp = PS5000ARange.R_100MV,  good range, low noise of picoscope
   # input_Vp = PS5000ARange.R_200MV,
-  # input_Vp = PS5000ARange.R_500MV,
+  # input_Vp = PS5000ARange.R_500MV,  big increase of picoscope noise compared to 200 mV range
   # input_Vp = PS5000ARange.R_1V,
   # input_Vp = PS5000ARange.R_2V,
   # input_Vp = PS5000ARange.R_5V,
