@@ -116,7 +116,7 @@ class PicoScope:
 
     dt_s = self.calculate_dt_s(configStep, max_samples_bytes)
     total_samples = int(configStep.duration_s/dt_s)
-    print(f'Choosen dt_s {dt_s:.3e}s / {1.0/dt_s:.2e}Hz')
+    print(f'Aquisition with dt_s {dt_s:.3E}s , fs {1.0/dt_s:.3E}Hz')
 
     # PicoScope 6
     # 8ns
@@ -151,6 +151,9 @@ class PicoScope:
 
     self.actual_sample_count = 0
     self.streaming_done = False
+
+    start = time.time()
+    last_update = time.time()
 
     if PICSCOPE_MODEL == PICSCOPE_MODEL_2204A:
       @callbacks.GetOverviewBuffersMaxMin
@@ -191,12 +194,12 @@ class PicoScope:
 
         if overflow:
           print(r'\noverflow')
-        print('.', end='')
+        #print('.', end='')
 
         assert auto_stop == False
         assert triggered == False
 
-    start = time.time()
+    
     self.scope.run_streaming(auto_stop=False)
     while not self.streaming_done:
       # wait until the latest streaming values are ready
@@ -209,6 +212,16 @@ class PicoScope:
         # rc==1: if the callback will be called
         # rc==0: if the callback will not be called, either because one of the inputs
         #        is out of range or because there are no samples available
+      def seconds_to_string(t):
+        day = t//86400
+        hour = (t-(day*86400))//3600
+        minit = (t - ((day*86400) + (hour*3600)))//60
+        seconds = t - ((day*86400) + (hour*3600) + (minit*60))
+        return(f'{day:d}d {hour:2d}h {minit:2d}m {seconds:2d}s')
+      if (time.time()-last_update) > 10:
+        last_update += 10
+        spent = int(time.time()-start)
+        print(f'Spent {seconds_to_string(spent)}, remaining {seconds_to_string(int(configStep.duration_s - spent))}, collected samples {self.actual_sample_count:0.3E}, enter Ctrl-C to stop now')
 
     print()
     self.scope.stop()

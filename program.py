@@ -215,10 +215,9 @@ def measure(configSetup, dir_measurement):
 
   try:
     configSetup.measure_for_all_steps(dir_measurement, directory_name=directory_name)
-    run_condense(dir_measurement)
-
-    import run_1_condense
-    run_1_condense.run()
+    #run_condense(dir_measurement) # 20200212 Peter, nicht jedes mal, lieber von Hand
+    #import run_1_condense # 20200212 Peter, nicht jedes mal, lieber von Hand
+    #run_1_condense.run() # 20200212 Peter, nicht jedes mal, lieber von Hand
   except Exception:
     import traceback
     traceback.print_exc()

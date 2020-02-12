@@ -1,4 +1,4 @@
-TITLE = 'Preamplifier Noise 2020: Measure Noise Density'
+TITLE = 'Noise Demo Title'
 
 def get_dict_config_setup():
   import program_picoscope

@@ -50,7 +50,7 @@ def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):
   assert isinstance(skalierungsfaktor, float)
 
   dict_config_setup = dict(
-    setup_name = 'Measure Noise Density',
+    setup_name = 'Measure',
 
     steps = ( 
       dict(

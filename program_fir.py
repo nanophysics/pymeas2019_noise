@@ -229,7 +229,7 @@ class Density:
   def density(self, array):
     # print('')
     # print(f'Stage {self.stage:02d} dt_s {self.dt_s:016.12f}, len(array)={len(array_in)} -> {len(array_density)}, mean V:{np.mean(array_density):0.6f}', end='')
-    #print("Average: %0.9f V" % np.mean(array_density))
+    # print("Average: %0.9f V" % np.mean(array_density))
 
     self.frequencies, Pxx = scipy.signal.periodogram(
       array,

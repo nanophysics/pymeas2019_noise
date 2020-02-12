@@ -88,7 +88,8 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
   globals.update_presentation()
 
   # Uncomment to set fix frequency axis
-  # ax.set_xlim(1e-3, 1e7)
+  # ax.set_xlim(1e-6, 1e7)
+  # ax.set_ylim(1e-10, 1e-1)
 
   if write_files_directory is None:
     # The current directory

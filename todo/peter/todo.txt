@@ -1,11 +1,4 @@
 
-keine topics, ganz am anfang
-C:\data\temp\pymeas2019_noise_git\measurement-actual>python run_2_composite_plot_interactive.py
-No handles with labels found to put in legend.
-
-aktualisieren bei umbenennen ordner klappt nicht
-
-
 
 
 summary mit 0.1 bis 10 Hz noise
