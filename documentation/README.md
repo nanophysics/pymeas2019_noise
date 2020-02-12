@@ -125,4 +125,8 @@ If you want to go to below 0.1 Hz with your measurement on easy trick is to meas
 
 And yes, the offset after the preamplifier should be low. You could adjust the offset by adjust one reference a bit for example.
 
+the lowest frequency you can see is about 
+
+f_lowest = 1 / (1.3 * aquisition_time)
+
 
