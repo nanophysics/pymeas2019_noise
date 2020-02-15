@@ -62,22 +62,24 @@ class InThread:
     self.__func_convert = func_convert
     self.list_overflow = []
     self.__samples_processed = 0
-    self.queue = queue.Queue()
-    self.queue_size = 0
-    self.queue_size_max = SIZE_MAX_INT16/50 # 2%
+    self.__queue = queue.Queue()
+    self.__queue_size = 0
+    self.__queue_size_max = SIZE_MAX_INT16/50 # 2%
     self.out.init(stage=0, dt_s=dt_s)
     self.__progress = Progress(dt_s, duration_s)
+    self.__lock = threading.Lock()
 
   def worker(self):
     while True:
-      raw_data_in = self.queue.get()
+      raw_data_in = self.__queue.get()
       if raw_data_in is None:
         self.out.done()
         break
       samples = len(raw_data_in)
-      self.queue_size -= samples
+      with self.__lock:
+        self.__queue_size -= samples
+      assert self.__queue_size >= 0
       self.__samples_processed += samples
-      assert self.queue_size >= 0
       # print('push: ', end='')
       array_in = self.__func_convert(raw_data_in)
       rc = self.out.push(array_in)
@@ -89,17 +91,19 @@ class InThread:
     self.thread.start()
 
   def put_EOF(self):
-    self.queue.put(None)
+    self.__queue.put(None)
 
   def put(self, raw_data):
-    self.queue.put(raw_data)
-    assert self.queue_size >= 0
-    self.queue_size += len(raw_data)
-    if self.queue_size > self.queue_size_max:
-      self.queue_size_max = min(int(1.5*self.queue_size), SIZE_MAX_INT16)
-      print(f'Max queue size: used {100.0*self.queue_size/SIZE_MAX_INT16:.0f}%')
+    self.__queue.put(raw_data)
+    assert self.__queue_size >= 0
+    samples = len(raw_data)
+    with self.__lock:
+      self.__queue_size += samples
+    if self.__queue_size > self.__queue_size_max:
+      self.__queue_size_max = min(int(1.5*self.__queue_size), SIZE_MAX_INT16)
+      print(f'Max queue size: used {100.0*self.__queue_size/SIZE_MAX_INT16:.0f}%')
     # Return True if queue is full
-    return self.queue_size > SIZE_MAX_INT16
+    return self.__queue_size > SIZE_MAX_INT16
 
   def join(self):
     self.thread.join()
