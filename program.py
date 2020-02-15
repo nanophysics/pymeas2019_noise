@@ -6,7 +6,6 @@ import re
 import os
 import sys
 import math
-import time
 import cmath
 import signal
 import logging
@@ -74,12 +73,19 @@ class ConfigStep:
 
 class HandlerCtrlC:
   def __init__(self):
-    self.ctrl_c_pressed = False
+    self.__ctrl_c_pressed = False
     signal.signal(signal.SIGINT, self.__signal_handler)
 
   def __signal_handler(self, sig, frame):
       print('You pressed Ctrl+C!')
-      self.ctrl_c_pressed = True
+      self.__ctrl_c_pressed = True
+    
+  @property
+  def ctrl_c_pressed(self):
+    if self.__ctrl_c_pressed:
+      # Reset the handler
+      signal.signal(signal.SIGINT, signal.SIG_DFL)
+    return self.__ctrl_c_pressed
 
 handlerCtrlC = HandlerCtrlC()
 
@@ -117,21 +123,23 @@ class ConfigSetup:
     self.update_by_dict(dict_config_setup)
 
   def measure_for_all_steps(self, dir_measurement, directory_name=None):
-    dir_results = dir_measurement.joinpath(library_topic.ResultAttributes.result_dir_actual(directory_name))
-    if dir_results.exists():
-      self.delete_directory_contents(str(dir_results))
+    dir_raw = dir_measurement.joinpath(library_topic.ResultAttributes.result_dir_actual(directory_name))
+    if dir_raw.exists():
+      self.delete_directory_contents(str(dir_raw))
     else:
-      dir_results.mkdir()
+      dir_raw.mkdir()
 
     for configStep in self.steps:
       picoscope = program_picoscope.PicoScope(configStep)
       picoscope.connect()
-      sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), str(dir_results))
+      sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), str(dir_raw))
       picoscope.acquire(configStep=configStep, stream_output=sample_process.output, handlerCtrlC=handlerCtrlC)
       picoscope.close()
 
       if handlerCtrlC.ctrl_c_pressed:
         break
+
+    return dir_raw
 
 def get_configSetup_by_filename(dict_config_setup):
   import config_common
@@ -180,13 +188,25 @@ def run_condense(dir_measurement):
   #   dir_result.mkdir()
 
   for dir_raw in iter_dir_raw(dir_measurement):
-    run_condense_0to1(dir_raw=dir_raw, trace=False)
-    run_condense_0to1(dir_raw=dir_raw, trace=True)
+    run_condense_dir_raw(dir_raw)
 
-    plotData = library_topic.PlotDataSingleDirectory(dir_raw)
-    write_presentation_summary_file(plotData, dir_raw)
+def run_condense_dir_raw(dir_raw, do_plot=True):
+  run_condense_0to1(dir_raw=dir_raw, do_plot=do_plot, trace=False)
+  run_condense_0to1(dir_raw=dir_raw, do_plot=do_plot, trace=True)
+
+  plotData = library_topic.PlotDataSingleDirectory(dir_raw)
+  write_presentation_summary_file(plotData, dir_raw)
+  if do_plot:
     library_plot.do_plots(plotData=plotData, do_show=False, write_files=('png', ), write_files_directory=dir_raw)
 
+  try:
+    import library_1_postprocess
+  except ModuleNotFoundError:
+    print('No library_1_postprocess...')
+    return
+  print(f'library_1_postprocess.postprocess({dir_raw})')
+  library_1_postprocess.postprocess(dir_raw)
+  
 def write_presentation_summary_file(plotData, directory):
   assert len(plotData.listTopics) == 1
   dict_result = plotData.listTopics[0].get_as_dict()
@@ -195,7 +215,7 @@ def write_presentation_summary_file(plotData, directory):
     # pprint.PrettyPrinter(indent=2, width=1024, stream=f).pprint(dict_result)
     SpecializedPrettyPrint(stream=f).pprint(dict_result)
 
-def run_condense_0to1(dir_raw, trace=False):
+def run_condense_0to1(dir_raw, trace=False, do_plot=True):
   list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
 
   lsd_summary = program_fir.LsdSummary(list_density, directory=dir_raw, trace=trace)
@@ -203,8 +223,9 @@ def run_condense_0to1(dir_raw, trace=False):
   if not trace:
     lsd_summary.write_summary_pickle()
 
-  file_tag = '_trace' if trace else ''
-  lsd_summary.plot(file_tag=file_tag)
+  if do_plot:
+    file_tag = '_trace' if trace else ''
+    lsd_summary.plot(file_tag=file_tag)
 
 def measure(configSetup, dir_measurement):
   try:
@@ -214,7 +235,8 @@ def measure(configSetup, dir_measurement):
     directory_name = None
 
   try:
-    configSetup.measure_for_all_steps(dir_measurement, directory_name=directory_name)
+    dir_raw = configSetup.measure_for_all_steps(dir_measurement, directory_name=directory_name)
+    return dir_raw
     #run_condense(dir_measurement) # 20200212 Peter, nicht jedes mal, lieber von Hand
     #import run_1_condense # 20200212 Peter, nicht jedes mal, lieber von Hand
     #run_1_condense.run() # 20200212 Peter, nicht jedes mal, lieber von Hand
@@ -223,13 +245,6 @@ def measure(configSetup, dir_measurement):
     traceback.print_exc()
     print('Hit any key to terminate')
     sys.stdin.read()
-
-def seconds_to_string(t):
-  day = t//86400
-  hour = (t-(day*86400))//3600
-  minit = (t - ((day*86400) + (hour*3600)))//60
-  seconds = t - ((day*86400) + (hour*3600) + (minit*60))
-  return(f'{day:d}d {hour:2d}h {minit:2d}m {seconds:2d}s')
 
 class SpecializedPrettyPrint:
   def __init__(self, stream):
