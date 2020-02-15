@@ -116,7 +116,7 @@ class PicoScope:
 
     dt_s = self.calculate_dt_s(configStep, max_samples_bytes)
     total_samples = int(configStep.duration_s/dt_s)
-    print(f'Aquisition with dt_s {dt_s:.3E} s , fs {1.0/dt_s:.3E} Hz')
+    print(f'Aquisition with dt_s {dt_s:.3E}s, fs {1.0/dt_s:.3E}Hz')
 
     # PicoScope 6
     # 8ns
@@ -146,15 +146,11 @@ class PicoScope:
     def convert(adu_values):
       volts = channel_gain * adu_values
       return volts
-    stream = program_measurement_stream.InThread(stream_output, dt_s=dt_s, func_convert=convert)
+    stream = program_measurement_stream.InThread(stream_output, dt_s=dt_s, duration_s=configStep.duration_s, func_convert=convert)
     stream.start()
 
     self.actual_sample_count = 0
     self.streaming_done = False
-
-    start = time.time()
-    last_update = time.time()
-    print_update_interval = 10.0
 
     if PICSCOPE_MODEL == PICSCOPE_MODEL_2204A:
       @callbacks.GetOverviewBuffersMaxMin
@@ -200,7 +196,7 @@ class PicoScope:
         assert auto_stop == False
         assert triggered == False
 
-    
+    start_s = time.time()
     self.scope.run_streaming(auto_stop=False)
     while not self.streaming_done:
       # wait until the latest streaming values are ready
@@ -213,19 +209,10 @@ class PicoScope:
         # rc==1: if the callback will be called
         # rc==0: if the callback will not be called, either because one of the inputs
         #        is out of range or because there are no samples available
-      if (time.time()-last_update) > print_update_interval:
-        last_update += print_update_interval
-        spent = int(time.time()-start)
-        #print(f'Spent {seconds_to_string(spent)}, remaining {seconds_to_string(int(configStep.duration_s - spent))}, collected samples {self.actual_sample_count:0.3E}, enter Ctrl-C to stop now')
-        print(f'Spent: {program.seconds_to_string(spent)}, '+
-        f'remaining: {program.seconds_to_string(int(configStep.duration_s - spent))}, '+
-        f'collected samples {self.actual_sample_count:,d}'.replace(',','\'') +
-        ', enter Ctrl-C to stop now')
 
-    print()
     self.scope.stop()
     self.scope.disconnect()
-    print(f'Time spent in aquisition {time.time()-start:1.1f}s')
+    print(f'Time spent in aquisition {time.time()-start_s:1.1f}s')
     print('Waiting for thread to terminate...')
     stream.join()
 
