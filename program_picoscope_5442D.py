@@ -116,7 +116,7 @@ class PicoScope:
 
     dt_s = self.calculate_dt_s(configStep, max_samples_bytes)
     total_samples = int(configStep.duration_s/dt_s)
-    print(f'Aquisition with dt_s {dt_s:.3E}s , fs {1.0/dt_s:.3E}Hz')
+    print(f'Aquisition with dt_s {dt_s:.3E} s , fs {1.0/dt_s:.3E} Hz')
 
     # PicoScope 6
     # 8ns
@@ -217,9 +217,10 @@ class PicoScope:
         last_update += print_update_interval
         spent = int(time.time()-start)
         #print(f'Spent {seconds_to_string(spent)}, remaining {seconds_to_string(int(configStep.duration_s - spent))}, collected samples {self.actual_sample_count:0.3E}, enter Ctrl-C to stop now')
-        print(f'Spent: {program.seconds_to_string(spent)}, \
-        remaining: {program.seconds_to_string(int(configStep.duration_s - spent))}, \
-        collected samples {self.actual_sample_count:d}, enter Ctrl-C to stop now')
+        print(f'Spent: {program.seconds_to_string(spent)}, '+
+        f'remaining: {program.seconds_to_string(int(configStep.duration_s - spent))}, '+
+        f'collected samples {self.actual_sample_count:,d}'.replace(',','\'') +
+        ', enter Ctrl-C to stop now')
 
     print()
     self.scope.stop()
