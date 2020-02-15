@@ -74,12 +74,19 @@ class ConfigStep:
 
 class HandlerCtrlC:
   def __init__(self):
-    self.ctrl_c_pressed = False
+    self.__ctrl_c_pressed = False
     signal.signal(signal.SIGINT, self.__signal_handler)
 
   def __signal_handler(self, sig, frame):
       print('You pressed Ctrl+C!')
-      self.ctrl_c_pressed = True
+      self.__ctrl_c_pressed = True
+    
+  @property
+  def ctrl_c_pressed(self):
+    if self.__ctrl_c_pressed:
+      # Reset the handler
+      signal.signal(signal.SIGINT, signal.SIG_DFL)
+    return self.__ctrl_c_pressed
 
 handlerCtrlC = HandlerCtrlC()
 
