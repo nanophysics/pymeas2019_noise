@@ -224,6 +224,13 @@ def measure(configSetup, dir_measurement):
     print('Hit any key to terminate')
     sys.stdin.read()
 
+def seconds_to_string(t):
+  day = t//86400
+  hour = (t-(day*86400))//3600
+  minit = (t - ((day*86400) + (hour*3600)))//60
+  seconds = t - ((day*86400) + (hour*3600) + (minit*60))
+  return(f'{day:d}d {hour:2d}h {minit:2d}m {seconds:2d}s')
+
 class SpecializedPrettyPrint:
   def __init__(self, stream):
     self._stream = stream

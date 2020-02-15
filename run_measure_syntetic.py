@@ -38,7 +38,7 @@ if __name__ == '__main__':
       self.fir_count_skipped = 0
       self.stepname = 'slow'
 
-  dt_s = 1.0/run_0_measure.f2_slow_fs_hz
+  dt_s = 2**5 / 125E6
   signal = TestSignal(sine_amp_V_rms=1E-4, noise_density_V_sqrtHz=1E-7)
 
   config = SampleProcessConfig()

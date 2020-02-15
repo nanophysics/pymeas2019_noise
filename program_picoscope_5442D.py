@@ -154,6 +154,7 @@ class PicoScope:
 
     start = time.time()
     last_update = time.time()
+    print_update_interval = 10.0
 
     if PICSCOPE_MODEL == PICSCOPE_MODEL_2204A:
       @callbacks.GetOverviewBuffersMaxMin
@@ -212,16 +213,13 @@ class PicoScope:
         # rc==1: if the callback will be called
         # rc==0: if the callback will not be called, either because one of the inputs
         #        is out of range or because there are no samples available
-      def seconds_to_string(t):
-        day = t//86400
-        hour = (t-(day*86400))//3600
-        minit = (t - ((day*86400) + (hour*3600)))//60
-        seconds = t - ((day*86400) + (hour*3600) + (minit*60))
-        return(f'{day:d}d {hour:2d}h {minit:2d}m {seconds:2d}s')
-      if (time.time()-last_update) > 10:
-        last_update += 10
+      if (time.time()-last_update) > print_update_interval:
+        last_update += print_update_interval
         spent = int(time.time()-start)
-        print(f'Spent {seconds_to_string(spent)}, remaining {seconds_to_string(int(configStep.duration_s - spent))}, collected samples {self.actual_sample_count:0.3E}, enter Ctrl-C to stop now')
+        #print(f'Spent {seconds_to_string(spent)}, remaining {seconds_to_string(int(configStep.duration_s - spent))}, collected samples {self.actual_sample_count:0.3E}, enter Ctrl-C to stop now')
+        print(f'Spent: {program.seconds_to_string(spent)}, \
+        remaining: {program.seconds_to_string(int(configStep.duration_s - spent))}, \
+        collected samples {self.actual_sample_count:d}, enter Ctrl-C to stop now')
 
     print()
     self.scope.stop()
