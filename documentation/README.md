@@ -12,16 +12,38 @@
 
 ## Installation
 
-- Picoscope Oscilloscope SW
+Tested on Windows 10, Windows 7 and with the versions shown below.
 
-- Picoscope Application - SDK: This is NOT required
-- pip install -r requirements.txt
-- Pymeas2019_noise
-  - `git clone --recurse-submodules https://github.com/nanopysics/pymeas2019_noise.git`
-- Start measurement
-  - `cd pymeas2019_noise\measurement-actual`
-  - `run_2_composite_plot_interactive.bat`
-  - start
+### Picoscope Oscilloscope SW
+www.picotech.com/downloads
+Windows PicoScope 6.14.10
+SDK: This is NOT required
+
+### python
+we use:
+https://www.python.org/downloads/release/python-372/
+python 3.7.2 32 bit, install using defaults
+
+### git
+https://git-scm.com/download/win
+install using defaults
+
+### install pymeas2019_noise
+start `cmd.exe`
+
+```
+python -m pip install --upgrade pip
+cd C:\data\temp        (for example, choose yourself)
+git clone --recurse-submodules https://github.com/nanophysics/pymeas2019_noise.git
+cd pymeas2019_noise
+pip install -r requirements.txt
+```
+
+restart pc
+
+* file explorer: pymeas2019_noise/measurement-actual
+* double click run_0_plot_interactive.bat`
+click start
 
 ## Directory structure
 
@@ -38,12 +60,11 @@
     - `run_1_condense.bat` \
       This will loop over all `raw-xxx` directories and create `result_xxx` files.
 
-    - `run_2_plot_composite.py` \
+    - `run_0_plot_interactive.bat` \
       You may still run this script when the folder is moved away. \
       This will loop over all `raw-xxx` directories and read `raw-xxx\result_summary.pickle`.
-      Diagrams will be created.
 
-## Usecase: Measuring the Noise of a voltage-reference
+## Usecase: Measure noise of a voltage-reference
 ![input filter channel B](images/usecase_voltage_reference.jpg)
 A voltage reference has 10V at the output. An AC coupling network only passes higher frequencies to a preamplifier. After the noise is amplified, it passes to channel A and trough an input filter to channel B. The input filter is used as an antialiasing filter because we sample slow at input B. Channel A is sampled at 125 MHz without bandwith limitation and 62.5 MHz with build in bandwith limitation at 20 MHz.
 This setup is useful to characterize the noise between 0.1 Hz and 100 kHz for example.
@@ -73,7 +94,7 @@ doubleclick run_2_composite_plot_interactive.py
 
 ![](images/start_background.png)
 
-ckick start
+click start
 
 give name 'short' as the input of the AC coupling stage is shorted.
 give color 'green'.
