@@ -114,7 +114,8 @@ class Topic:
     changed = self.__prs.reload_if_changed()
     if changed:
       self.recalculate_data(presentation)
-      print(f'changed {time.time()-start:0.2f}s "{self.__ra.topic}"')
+      #print(f'changed {time.time()-start:0.2f}s "{self.__ra.topic}"')
+      print(f'plot: reload changed data: "{self.__ra.topic}"')
     return changed
 
   def recalculate_data(self, presentation):

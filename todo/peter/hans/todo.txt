@@ -1,0 +1,21 @@
+DONE: matplotlib animate
+DONE: directory structure
+DONE: run with simulator
+TODO: Unterschiedliche decimate() und summary()
+
+Anleitung
+Crash von result_density_summary.txt
+Farbige Graphen
+Warum Unterschied ‘result_summary_trace-topic1.txt’ / ‘result_summary-topic1.txt’? Was bedeutet skip?
+
+GUI:
+  - Start -> Color, Topic
+  - Stop
+
+Meas:
+  - Run in Popen
+  - Parameter Color, Topic
+  - Exit-Communication (stdin?)
+
+https://stackoverflow.com/questions/1112343/how-do-i-capture-sigint-in-python
+https://docs.python.org/3.7/library/signal.html

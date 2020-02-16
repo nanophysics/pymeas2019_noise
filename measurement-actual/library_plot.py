@@ -33,6 +33,15 @@ class Globals:
       for ax in self.fig.get_axes():
         ax.relim()
         ax.autoscale()
+        plt.xlabel('Frequency [Hz]')
+        plt.grid(True, which="major", axis="both", linestyle="-", color='gray', linewidth=0.5)
+        plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
+        ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
+        ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
+        # Uncomment to modify figure
+        # self.fig.set_size_inches(13.0, 7.0)
+        # ax.set_xlim(1e-2, 1e2)
+        # ax.set_ylim(1e-10, 1e-1)
       self.fig.canvas.draw()
 
 globals = Globals()
@@ -80,16 +89,7 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
 
   initialize_plot_lines()
 
-  plt.xlabel('Frequency [Hz]')
-  plt.grid(True, which="major", axis="both", linestyle="-", color='gray', linewidth=0.5)
-  plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
-  ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
-
   globals.update_presentation()
-
-  # Uncomment to set fix frequency axis
-  # ax.set_xlim(1e-6, 1e7)
-  # ax.set_ylim(1e-10, 1e-1)
 
   if write_files_directory is None:
     # The current directory
@@ -108,6 +108,7 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
         if plotData.directories_changed():
           plotData.remove_lines_and_reload_data(fig, ax)
           initialize_plot_lines()
+          #initialize_grid()
           return
 
         for topic in plotData.listTopics:

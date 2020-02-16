@@ -631,7 +631,7 @@ class LsdSummary:
     # plt.grid(True)
     plt.grid(True, which="major", axis="both", linestyle="-", color='gray', linewidth=0.5)
     plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
-    ax.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=20))
+    ax.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=30))
     filebase = f'{self.directory}/result_summary_LSD{file_tag}'
     print(f' Summary LSD {filebase}')
     fig.savefig(filebase+'.png', dpi=300)

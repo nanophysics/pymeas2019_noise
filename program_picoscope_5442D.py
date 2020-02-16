@@ -190,7 +190,7 @@ class PicoScope:
           print(r'\nSTOP(time over)', end='')
 
         if overflow:
-          print(r'\noverflow')
+          print('!!! Overflow !!!  Voltage to big at input of picoscope. Change input range.')
         #print('.', end='')
 
         assert auto_stop == False
