@@ -1,3 +1,9 @@
+# The user can use a postprocess to evaluate the quality of a device for example.
+# Just delete this file if no need for postprocess
+# The example shows the calculation of flicker noise 0.1 ... 10 Hz
+# The measurement time could be set to 60s for example. 
+# Just start run_0_measure.bat and observe the result
+
 import math
 import pathlib
 
@@ -24,4 +30,13 @@ def postprocess(dir_raw):
         print( f'Flickernoise: not enough values to calculate.' )
         return
     flicker_noise_Vrms = math.sqrt(P_sum)
+    flicker_noise_limit_Vrms = 1.0E-6
+    print('')
     print( f'Flickernoise: 0.1 Hz to 10 Hz is {flicker_noise_Vrms:0.3E} Vrms' )
+    if flicker_noise_Vrms < flicker_noise_limit_Vrms:
+        print( f'This flickernoise is below the limit of {flicker_noise_limit_Vrms:0.3E} Vrms' )
+        print( f'Good component' )
+    else:
+        print( f'This flickernoise is above the limit of {flicker_noise_limit_Vrms:0.3E} Vrms' )
+        print( f'Bad component' )  
+

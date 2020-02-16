@@ -1,4 +1,4 @@
-
+ohne eine messung crashed run_0_plot_interactive.bat 
 
 
 summary mit 0.1 bis 10 Hz noise

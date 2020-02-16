@@ -106,6 +106,7 @@ give color 'green'.
 start
 
 after one minute, cmd window, stop with ctrl-c.
+Close the cmd window yourself.
 
 
 ![](images/start_background_3.png)
