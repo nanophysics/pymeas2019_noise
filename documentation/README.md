@@ -1,5 +1,3 @@
-# DRAFT
-
 # pymeas2019
 
 ## Highlights
@@ -9,6 +7,10 @@
 * Frequency points have equally distance in logaritmic scale: 12 bins in one decade for example. You get diagrams over a many decades of frequency. (in coparison: normally the frequency spacing is constant, 1 Hz for example. At high frequencies the bin size is very small and the noise corresponding high. Useless presentation if you show data, especially if you show data in logaritmic scale.)
 * Presentation as LSD, PSD, LS or PS.
 * Cheap setup, around 1000 USD for the oscilloscope.
+
+## State of development
+Alpha, no guarantee at all. 
+We just developed for our needs, over some weekends and during long evenings.
 
 ## Installation
 
@@ -105,7 +107,14 @@ start
 
 after one minute on cmd window stop with control c...?
 
+
 ![](images/start_background_3.png)
+
+* you can see 1/f region (0.01 Hz to 1 Hz)
+* you can see the white noise region (10 Hz to 10k Hz)
+* some peaks: 50 Hz, 150 Hz and 250 Hz
+* at 100kHz the amplifier has a built in low pass
+
 
 Now we connect the reference voltage to the AC coupling stage.
 
@@ -114,13 +123,11 @@ give name 'reference XY'
 give color 'red'
 start
 
+the background noise of the measuring setup 'short' is well below the noise measurement. If this would not be the case the background noise has an influence on the result. To be able to compare these values it is important to measure the background noise with exactly the same settings as the measurement itself.
+
 ![](images/start_reference_1.png)
 
-* you can see 1/f region of the reference noise
-* you can see the white noise region of the reference noise.
-* some peaks: 50 Hz, 150 Hz and 250 Hz
-* the background noise of the measuring setup 'short' is well below the noise measurement. If this would not be the case the background noise has an influence on the result. To be able to compare these values it is important to measure the background noise with exactly the same settings as the measurement itself.
-* at 100kHz the amplifier has a built in low pass
+
 
 start again
 rename folder
@@ -133,17 +140,48 @@ To measurement_ref_XYZ for example. Here you can keep your measurement.
 You can delete all files with a filenames starting with 'result_' and generate them again with run_2_composite_plots.py ??? 
 
 you may optimize diagrams for your needs.
-library_plot.py
+
 Matplotlib commands here will act to all presentations.
+
+change library_plot.py
 ```
-  # Uncomment to set fix frequency axis
-  # ax.set_xlim(1e-3, 1e7)
+# Uncomment to modify figure
+# self.fig.set_size_inches(13.0, 7.0)
+ax.set_xlim(1e-1, 1e4)
+# ax.set_ylim(1e-10, 1e-1)
 ```
+
+restart run_0_plot_interactive.bat
+
+![](images/start_reference_1_lim.png)
+
+We see the useful range between 0.1 Hz and 1 Hz. The reference voltage noise is well above the 'short' noise. The measurement therefore is useful. A lot of 'dirt' is between 10 Hz and 1000 Hz.
+
+We press the button 'Presentation' and choose LS: linear spectrum.
+
+![](images/start_reference_LS.png)
+
+We move the curser to the point at 50 Hz
+
+![](images/50hz.png)
+
+and can read the 50 Hz sinusoidal signal is about 7 uV rms. 
+(if the signal is spread over multiple points its more complicate to measure the voltage...)
+
+We press the button 'Presentation' and choose INTEGRAL.
+
+![](images/integral.png)
+
+We now want to know the noise voltage in the range between 0.1Hz and 10kHz.
+* At 0.1 Hz we have about 1.3 uV rms
+* At 10 kHz we have about 43 uV rms
+* We calculate the difference:
+sqrt(43uV^2 - 1.3uV^2) = 43 uV rms
 
 ## Usecase: Measuring the Noise of two voltage-references
-![input filter channel B](images/usecase_voltage_references.jpg)
+![](images/usecase_voltage_references.jpg)
 
-If you want to go to below 0.1 Hz with your measurement on easy trick is to measure the difference of two references. As long as the noise of the references is not correlated (and this is normally not the case) you can expect about sqrt(2) times the noise of a single reference.
+If you want to go to below 0.1 Hz with your measurement an easy trick is to measure the difference of two references. As long as the noise of the references is not correlated (and this is normally not the case as long as you do not have to much mains noise coupled to your setup) you can expect about sqrt(2) times the noise of a single reference.
 
 And yes, the offset after the preamplifier should be low. You could adjust the offset by adjust one reference a bit for example.
 
@@ -152,3 +190,13 @@ the lowest frequency you can see is about
 f_lowest = 1 / (1.3 * aquisition_time)
 
 
+## Noise Picoscope
+
+![](images/PS_5442D_MSO_noise.png)
+
+With a preamplifier with a gain of 1000 we measured this noise contribution of the picoscope. The noise level could be quite different from device to device.
+The 100mV range shows about the same noise as the ranges below. Therefore you should use the 100mV range or above.
+
+To geht the noise level at the oscilloscope input, multiply the values shown in the diagram by 1000.
+
+The noise level of the picoscope is not overwhelming but for the price an size it's ok.
