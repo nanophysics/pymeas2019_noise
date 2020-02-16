@@ -176,7 +176,7 @@ We now want to know the noise voltage in the range between 0.1Hz and 10kHz.
 * At 0.1 Hz we have about 1.3 uV rms
 * At 10 kHz we have about 43 uV rms
 * We calculate the difference:
-sqrt(43uV^2 - 1.3uV^2) = 43 uV rms
+sqrt(43uV^2 - 1.3uV^2) = 43 uV rms (assuming we have only random noise what is not completely true)
 
 ## Usecase: Measuring the Noise of two voltage-references
 ![](images/usecase_voltage_references.jpg)
