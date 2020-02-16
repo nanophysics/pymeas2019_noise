@@ -105,7 +105,7 @@ give color 'green'.
 
 start
 
-after one minute on cmd window stop with control c...?
+after one minute, cmd window, stop with ctrl-c.
 
 
 ![](images/start_background_3.png)
@@ -123,23 +123,23 @@ give name 'reference XY'
 give color 'red'
 start
 
-the background noise of the measuring setup 'short' is well below the noise measurement. If this would not be the case the background noise has an influence on the result. To be able to compare these values it is important to measure the background noise with exactly the same settings as the measurement itself.
+The background noise of the measuring setup 'short' is well below the noise measurement. If this would not be the case, the background noise would have an influence on the result. To be able to compare these values it is important to measure the background noise with exactly the same settings as the measurement itself.
 
 ![](images/start_reference_1.png)
 
 
-
-start again
-rename folder
-delete folder
-restart animate
+You could:
+* start more measurements
+* rename folders
+* delete folders
+* restart animate
 
 Now, as this measurement is done, you can copy the folder measurement-actual to an other place.
 To measurement_ref_XYZ for example. Here you can keep your measurement.
 
 You can delete all files with a filenames starting with 'result_' and generate them again with run_2_composite_plots.py ??? 
 
-you may optimize diagrams for your needs.
+You may optimize diagrams for your needs.
 
 Matplotlib commands here will act to all presentations.
 
