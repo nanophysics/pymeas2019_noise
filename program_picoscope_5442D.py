@@ -160,7 +160,7 @@ class PicoScope:
         if auto_stop:
           self.streaming_done = True
           stream.put_EOF()
-          print(r'\nSTOP(time over)', end='')
+          print(r'STOP(time over)', end='')
 
     if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
       @callbacks.ps5000aStreamingReady
@@ -177,7 +177,7 @@ class PicoScope:
         if queueFull:
           self.streaming_done = True
           stream.put_EOF()
-          print(r'\nSTOP(queue full)', end='')
+          print(r'STOP(queue full)', end='')
 
         if overflow:
           # logfile.write(f'Overflow: {self.actual_sample_count+start_index}\n')
@@ -187,7 +187,7 @@ class PicoScope:
         if handlerCtrlC.ctrl_c_pressed or (self.actual_sample_count > total_samples):
           self.streaming_done = True
           stream.put_EOF()
-          print(r'\nSTOP(time over)', end='')
+          print(r'STOP(time over)', end='')
 
         if overflow:
           print('!!! Overflow !!!  Voltage to big at input of picoscope. Change input range.')
