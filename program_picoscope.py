@@ -63,7 +63,7 @@ def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):
         # Picoscope
         input_channel = 'A', # channel A is connected without filter to the amplifier out
         input_Vp = inputRange,
-        bandwitdth = 'BW_FULL',
+        bandwitdth = 'BW_20MHZ',
         offset = 0.0,
         resolution = '15bit',
         duration_s = 2.0,
