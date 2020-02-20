@@ -1,12 +1,13 @@
 # pymeas2019
 
-## Highlights:
+## Highlights
 
 * Measures noise from 56 MHz down to very low frequencies. Just start a measurement and observe lower frequencies apearing over time. Stop the measurement when you are satisfied. (in comparison: with other instruments you have to choose a time window, then you wait until the time is over and then you see what you got. Playing around at low frequencies this is very inefficient and boring.)
 * Measuring over many decades of frequency. (in comparison: this is normally not possible as the number of samples is limited to 10M for example. In addition: if you want to measure at a low frequency, you have to reduce the samplerate acordingly to get long aquisition time. Now, with the low samplerate, you get in trouble with the nyquist theorem. You need low frequency antialiasing filters: this can be very tricky.)
 * Frequency points have equally distance in logaritmic scale: 12 bins in one decade for example. You get diagrams over a many decades of frequency. (in coparison: normally the frequency spacing is constant, 1 Hz for example. At high frequencies the bin size is very small and the noise corresponding high. Useless presentation if you show data, especially if you show data in logaritmic scale.)
 * Presentation as LSD, PSD, LS or PS.
 * Cheap setup, around 1000 USD for the oscilloscope.
+
 
 ## State of development
 Alpha, no guarantee at all. 
@@ -201,3 +202,6 @@ The 100mV range shows about the same noise as the ranges below. Therefore you sh
 To geht the noise level at the oscilloscope input, multiply the values shown in the diagram by 1000.
 
 The noise level of the picoscope is not overwhelming but for the price an size it's ok.
+
+## Limitation
+* Not perfect for signals above 30 MHz. There is no good antialiasing filter for the samplerates 62.5 MHz and 125 MHz. This can lead to spurious measurements if your signal contains frequencies above 30 MHz. Example: you have a sinusoidal signal at 61.5 MHz. Due to the missing antialiasing filter you will see a 1 MHz signal in your measurement: 62.5 MHz - 61.5 MHz = 1 MHz.
