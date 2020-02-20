@@ -38,7 +38,7 @@ python -m pip install --upgrade pip
 cd C:\data\temp        (for example, choose yourself)
 git clone --recurse-submodules https://github.com/nanophysics/pymeas2019_noise.git
 cd pymeas2019_noise
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 restart pc
