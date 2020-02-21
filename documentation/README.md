@@ -25,7 +25,9 @@ SDK: This is NOT required
 ### python
 we use:
 https://www.python.org/downloads/release/python-372/
-python 3.7.2 32 bit, install using defaults
+python 3.7.2 32 bit
+Windows x86 executable installer
+install using defaults
 
 ### git
 https://git-scm.com/download/win
