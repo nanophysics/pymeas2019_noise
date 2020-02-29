@@ -7,7 +7,7 @@ is64bit = sys.maxsize > 2**32
 if is64bit:
   SIZE_MAX_BYTES = 1e9
 else:
-  SIZE_MAX_BYTES = 1e8
+  SIZE_MAX_BYTES = 1e9
 BYTES_INT16 = 2
 SIZE_MAX_INT16 = SIZE_MAX_BYTES//BYTES_INT16
 

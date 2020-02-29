@@ -66,7 +66,7 @@ def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):
         bandwitdth = 'BW_20MHZ',
         offset = 0.0,
         resolution = '15bit',
-        duration_s = 2.0,
+        duration_s = 3600.0, #  Memory will limit time (7s)
         dt_s = 1.0 / f0_fast_fs_hz,
       ),
       dict(
@@ -82,7 +82,7 @@ def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):
         bandwitdth = 'BW_20MHZ',
         offset = 0.0,
         resolution = '16bit',
-        duration_s = 2.0,
+        duration_s = 3600.0, #  Memory will limit time (9.7s)
         dt_s = 1.0 / f1_medium_fs_hz,
       ),
       dict(

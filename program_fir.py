@@ -20,8 +20,8 @@ PERIODOGRAM_OVERLAP = 2**4  # number of overlaps
 assert SAMPLES_DENSITY % PERIODOGRAM_OVERLAP == 0
 SAMPLES_SELECT_MAX = 2**23
 
-NUMPY_FLOAT_TYPE=np.float
-# NUMPY_FLOAT_TYPE=np.float32
+# NUMPY_FLOAT_TYPE=np.float
+NUMPY_FLOAT_TYPE=np.float32
 
 #   <---------------- INPUT ---------========------->
 #
