@@ -18,7 +18,8 @@ from msl.equipment.resources.picotech.picoscope import callbacks
 from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 from msl.equipment.resources.picotech.picoscope.enums import PS5000ARatioMode
 
-PICSCOPE_MODEL_5442D='5442D'
+PICSCOPE_MODEL_5442D='5442D' # Peter
+# PICSCOPE_MODEL_5442D='5444D' # Andre
 PICSCOPE_MODEL_2204A='2204A'
 # The picoscope we are going to use
 PICSCOPE_MODEL=PICSCOPE_MODEL_5442D
@@ -57,6 +58,8 @@ class PicoScope:
     for retry in range(1000):
       try:
         self.scope = self.record.connect()  # establish a connection to the PicoScope
+        info = self.scope.get_unit_info()
+        # print(f'picoscope info={info}')
         break
       except msl.equipment.exceptions.PicoTechError as ex:
         print(f'ERROR: {ex}')
@@ -64,6 +67,7 @@ class PicoScope:
           raise
 
   def close(self):
+    # self.scope.set_data_buffer(configStep.input_channel)
     self.scope.disconnect()
 
   def calculate_dt_s(self, configStep, max_samples_bytes):
@@ -82,6 +86,12 @@ class PicoScope:
       max_sampling_rate = 10e5
       selected1_dt_s = 2.0/max_sampling_rate
       desired_sample_time_s = 5000*selected1_dt_s
+
+    MAX_SAMPLES = 67108608 # On Peters 5442D
+    desired_sample_time_max_s = MAX_SAMPLES*selected1_dt_s
+    if desired_sample_time_s > desired_sample_time_max_s:
+      print(f'Avoid buffer getting too big: reducing sample time from {desired_sample_time_s:0.1f} to {desired_sample_time_max_s:0.1f}s!')
+      desired_sample_time_s = desired_sample_time_max_s
 
     selected2_dt_s, _num_samples = self.scope.set_timebase(selected1_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
 
@@ -211,7 +221,8 @@ class PicoScope:
         #        is out of range or because there are no samples available
 
     self.scope.stop()
-    self.scope.disconnect()
+    self.close()
+    
     print(f'Time spent in aquisition {time.time()-start_s:1.1f}s')
     print('Waiting for thread to terminate...')
     stream.join()

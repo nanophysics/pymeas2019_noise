@@ -20,6 +20,9 @@ PERIODOGRAM_OVERLAP = 2**4  # number of overlaps
 assert SAMPLES_DENSITY % PERIODOGRAM_OVERLAP == 0
 SAMPLES_SELECT_MAX = 2**23
 
+NUMPY_FLOAT_TYPE=np.float
+# NUMPY_FLOAT_TYPE=np.float32
+
 #   <---------------- INPUT ---------========------->
 #
 #  |<-- LEFT -->|<--====- SELECT -====-->|<- RIGHT ->|
@@ -174,7 +177,7 @@ class Density:
     self.pushcalulator = PushCalculator(dt_s)
     self.mode_fifo = self.pushcalulator.push_size_samples < SAMPLES_DENSITY
     if self.mode_fifo:
-      self.array = np.empty(0, dtype=np.float)
+      self.array = np.empty(0, dtype=NUMPY_FLOAT_TYPE)
     else:
       self.array = None
 
@@ -647,7 +650,7 @@ class OutTrash:
     Stream-Sink: Implements a Stream-Interface
   '''
   def __init__(self):
-    self.array = np.empty(0, dtype=np.float)
+    self.array = np.empty(0, dtype=NUMPY_FLOAT_TYPE)
 
   def init(self, stage, dt_s):
     self.stage = stage
@@ -732,7 +735,7 @@ class UniformPieces:
   '''
   def __init__(self, out):
     self.out = out
-    self.array = np.empty(0, dtype=np.float)
+    self.array = np.empty(0, dtype=NUMPY_FLOAT_TYPE)
 
   def init(self, stage, dt_s):
     self.stage = stage
