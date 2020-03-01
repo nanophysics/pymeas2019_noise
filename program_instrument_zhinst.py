@@ -20,7 +20,7 @@ SCOPE_INPUT_SELECT=0 # Signal input 1
 SCOPE_STREAM_RATE=12
 DEV = 'dev3883'
 
-class PicoScope:
+class Instrument:
   def __init__(self, configStep):
     """Perform the operation of opening the instrument connection"""
     self.dev = DEV

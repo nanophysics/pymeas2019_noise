@@ -35,7 +35,7 @@ if PICSCOPE_MODEL==PICSCOPE_MODEL_2204A:
   PICSCOPE_ADDRESS='SDK::ps2000'
   ALL_CHANNELS = ('A', 'B')
 
-class PicoScope:
+class Instrument:
   def __init__(self, configStep):
     self.record = msl.equipment.EquipmentRecord(
       manufacturer='Pico Technology',
@@ -232,7 +232,7 @@ class PicoScope:
 # if __name__ == '__main__':
 #   pymeas = program.PyMeas2019()
 
-#   picoscope = PicoScope()
+#   picoscope = Instrument()
 #   picoscope.connect()
 #   for frequency_hz in (1e2, 1e4, 1e6):
 #     picoscope.acquire(setup_name='ch1', frequency_hz=frequency_hz, duration_s=5.0, amplitude_Vpp=2.0)

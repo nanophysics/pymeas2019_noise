@@ -90,7 +90,7 @@ We start with a measurement of the shortet AC coupling stage.
 
 change config_measurement.py
 ```
-inputRange=program_picoscope.InputRange.R_1V,
+inputRange=program_config_instrument_picoscope.InputRange.R_1V,
 duration_slow_s=1*3600.0, # maximum time
 skalierungsfaktor=1.0E-3 # -> gain of the preamplifier
 ```

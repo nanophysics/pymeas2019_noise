@@ -10,7 +10,7 @@ import threading
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import program
-import program_config_frequencies
+import program_eseries
 import library_plot
 
 
@@ -183,9 +183,9 @@ class Density:
 
     self.out.init(stage=stage, dt_s=dt_s)
 
-    # TodoHans: eleganter machen, program_config_frequencies.eseries... von einem bessern ort nehmen
+    # TodoHans: eleganter machen, program_eseries.eseries... von einem bessern ort nehmen
     # self.enbw = []
-    # for f_eserie_left, f_eserie, f_eserie_right in program_config_frequencies.eseries(series='E12', minimal=1e-6, maximal=1e8, borders=True):
+    # for f_eserie_left, f_eserie, f_eserie_right in program_eseries.eseries(series='E12', minimal=1e-6, maximal=1e8, borders=True):
     #   self.enbw.append(f_eserie_right - f_eserie_left)
 
   def done(self):
@@ -481,7 +481,7 @@ class Average:
     
 class Selector:
   def __init__(self, series='E12'):
-    self.__eseries_borders = program_config_frequencies.eseries(series=series, minimal=1e-6, maximal=1e8, borders=True)
+    self.__eseries_borders = program_eseries.eseries(series=series, minimal=1e-6, maximal=1e8, borders=True)
 
   def fill_bins(self, density, firstDensityPoint, lastDensity, trace=False):
     # contribute, fill_bins

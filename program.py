@@ -32,7 +32,7 @@ import library_topic
 import library_plot
 import program_fir
 
-import program_picoscope_5442D as program_picoscope
+import program_picoscope_5442D as program_config_instrument_picoscope
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +131,7 @@ class ConfigSetup:
       dir_raw.mkdir()
 
     for configStep in self.steps:
-      picoscope = self.module_instrument.PicoScope(configStep)
+      picoscope = self.module_instrument.Instrument(configStep)
       picoscope.connect()
       sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), str(dir_raw))
       picoscope.acquire(configStep=configStep, stream_output=sample_process.output, handlerCtrlC=handlerCtrlC)
