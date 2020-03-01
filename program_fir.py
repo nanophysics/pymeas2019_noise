@@ -23,7 +23,7 @@ SAMPLES_SELECT_MAX = 2**23
 # NUMPY_FLOAT_TYPE=np.float
 NUMPY_FLOAT_TYPE=np.float32
 
-DEBUG_OUTPUT=True
+DEBUG_OUTPUT=False
 
 #   <---------------- INPUT ---------========------->
 #
@@ -39,7 +39,7 @@ assert SAMPLES_RIGHT % DECIMATE_FACTOR == 0
 class PushCalculator:
   """
   >>> [PushCalculator(dt_s).push_size_samples for dt_s in (1.0/125e6, 1.0/1953125.0, 1.0)]
-  [8388608, 1048576, 256]
+  [4194304, 1048576, 256]
   """
   def __init__(self, dt_s):
     self.dt_s = dt_s
@@ -233,11 +233,14 @@ class Density:
   
     assert len(array_in) >= SAMPLES_DENSITY
     self.array = array_in[:SAMPLES_DENSITY]
+    if DEBUG_OUTPUT:
+      print('')
+      print(f'Density Stage {self.stage:02d} dt_s {self.dt_s:016.12f}, len(array_in)={len(array_in)} -> {len(self.array)}')
 
   def density(self, array):
-    # print('')
-    # print(f'Stage {self.stage:02d} dt_s {self.dt_s:016.12f}, len(array)={len(array_in)} -> {len(array_density)}, mean V:{np.mean(array_density):0.6f}', end='')
-    # print("Average: %0.9f V" % np.mean(array_density))
+    if DEBUG_OUTPUT:
+      print('')
+      print(f'Density Stage {self.stage:02d} dt_s {self.dt_s:016.12f}, len(array)={len(array)} calculation')
 
     self.frequencies, Pxx = scipy.signal.periodogram(
       array,
