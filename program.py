@@ -32,7 +32,7 @@ import library_topic
 import library_plot
 import program_fir
 
-import program_picoscope_5442D as program_config_instrument_picoscope
+import program_instrument_picoscope5442D as program_config_instrument_picoscope
 
 logger = logging.getLogger(__name__)
 

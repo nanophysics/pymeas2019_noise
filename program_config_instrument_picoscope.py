@@ -3,7 +3,7 @@ import math
 
 from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 
-import program_picoscope_5442D
+import program_instrument_picoscope5442D
 
 class InputRange(enum.IntEnum):
   R_10mV_do_not_use = PS5000ARange.R_10MV # do not use! use 100mV range instead (noise of picoscope is similar in 100mV range)
@@ -53,7 +53,7 @@ def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):
 
   dict_config_setup = dict(
     setup_name = 'Measure',
-    module_instrument = program_picoscope_5442D,
+    module_instrument = program_instrument_picoscope5442D,
 
     steps = ( 
       dict(
