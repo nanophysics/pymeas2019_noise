@@ -23,6 +23,8 @@ SAMPLES_SELECT_MAX = 2**23
 # NUMPY_FLOAT_TYPE=np.float
 NUMPY_FLOAT_TYPE=np.float32
 
+DEBUG_OUTPUT=True
+
 #   <---------------- INPUT ---------========------->
 #
 #  |<-- LEFT -->|<--====- SELECT -====-->|<- RIGHT ->|
@@ -73,11 +75,13 @@ class FIR:
     self.TAG_PUSH = f'FIR {self.stage}'
     decimated_dt_s = dt_s*DECIMATE_FACTOR
     self.pushcalulator_next = PushCalculator(decimated_dt_s)
-    # print(f'stage {self.stage} push_size_samples {self.pushcalulator.push_size_samples} time_s {self.pushcalulator.dt_s*self.pushcalulator.push_size_samples}')
+    if DEBUG_OUTPUT:
+      print(f'stage {self.stage} push_size_samples {self.pushcalulator_next.push_size_samples} time_s {self.pushcalulator_next.dt_s*self.pushcalulator_next.push_size_samples}')
     self.out.init(stage=stage+1, dt_s=decimated_dt_s)
 
   def done(self):
-    # print(f'Statistics {self.stage}: count {self.statistics_count}, samples in {self.statistics_samples_in*self.__dt_s:0.3f}s, samples out {self.statistics_samples_out*self.__dt_s*DECIMATE_FACTOR:0.3f}s')
+    if DEBUG_OUTPUT:
+      print(f'Statistics {self.stage}: count {self.statistics_count}, samples in {self.statistics_samples_in*self.__dt_s:0.3f}s, samples out {self.statistics_samples_out*self.__dt_s*DECIMATE_FACTOR:0.3f}s')
     self.out.done()
 
   def push(self, array_in):
@@ -131,7 +135,8 @@ class FIR:
   def decimate(self, array_decimate):
     self.statistics_count += 1
 
-    # print(f'{self.stage},', end='')
+    if DEBUG_OUTPUT:
+      print(f'{self.stage},', end='')
     assert len(array_decimate) > SAMPLES_LEFT_RIGHT
     assert len(array_decimate) % DECIMATE_FACTOR == 0
 
