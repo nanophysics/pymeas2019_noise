@@ -5,6 +5,8 @@ import program
 import program_fir
 import run_0_measure
 
+np.random.seed(47)
+
 class TestSignal:
   def __init__(self, sine_amp_V_rms, noise_density_V_sqrtHz):
     self.sine_amp_V_rms = sine_amp_V_rms
