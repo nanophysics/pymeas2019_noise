@@ -1,3 +1,7 @@
+TODO: Rename program_config_frequencies.py -> program_eseries.py
+TODO: Rename program_picoscope.py -> program_config_instrument_picoscope.py
+TODO: Rename 'class PicoScope' -> 'Instrument'
+
 DONE: matplotlib animate
 DONE: directory structure
 DONE: run with simulator

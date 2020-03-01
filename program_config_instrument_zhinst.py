@@ -1,23 +1,7 @@
 import enum
 import math
 
-from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
-
-import program_picoscope_5442D
-
-class InputRange(enum.IntEnum):
-  R_10mV_do_not_use = PS5000ARange.R_10MV # do not use! use 100mV range instead (noise of picoscope is similar in 100mV range)
-  R_20mV_do_not_use = PS5000ARange.R_20MV #  do not use! use 100mV range instead (noise of picoscope is similar in 100mV range)
-  R_50mV_do_not_use = PS5000ARange.R_50MV # do not use! use 100mV range instead (noise of picoscope is similar in 100mV range)
-  R_100mV = PS5000ARange.R_100MV # good range     # low noise of picoscope
-  R_200mV = PS5000ARange.R_200MV
-  R_500mV = PS5000ARange.R_500MV #  big increase of picoscope noise compared to 200 mV range
-  R_1V = PS5000ARange.R_1V
-  R_2V = PS5000ARange.R_2V
-  R_5V = PS5000ARange.R_5V
-  R_10V = PS5000ARange.R_10V
-  R_20V = PS5000ARange.R_20V
-  R_50V = PS5000ARange.R_50V
+import program_instrument_zhinst
 
 # sample frequencies and fir_counts
 f0_fast_fs_hz = 125E6 # do not change this values as this is the fastest rate with 15 bit
@@ -47,13 +31,13 @@ fir_count_2_slow = f2_slow_fir_count_skipped + 27 # free to choose
 
 
 def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):
-  assert isinstance(inputRange, InputRange)
+  assert isinstance(inputRange, float)
   assert isinstance(duration_slow_s, float)
   assert isinstance(skalierungsfaktor, float)
 
   dict_config_setup = dict(
     setup_name = 'Measure',
-    module_instrument = program_picoscope_5442D,
+    module_instrument = program_instrument_zhinst,
 
     steps = ( 
       dict(

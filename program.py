@@ -93,6 +93,7 @@ class ConfigSetup:
   def __init__(self):
     self.diagram_legend = DEFINED_BY_SETUP
     self.setup_name = DEFINED_BY_SETUP
+    self.module_instrument = DEFINED_BY_SETUP
     self.steps = DEFINED_BY_SETUP
 
   # def get_filename_data(self, extension, directory=DIRECTORY_0_RAW):
@@ -130,7 +131,7 @@ class ConfigSetup:
       dir_raw.mkdir()
 
     for configStep in self.steps:
-      picoscope = program_picoscope.PicoScope(configStep)
+      picoscope = self.module_instrument.PicoScope(configStep)
       picoscope.connect()
       sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), str(dir_raw))
       picoscope.acquire(configStep=configStep, stream_output=sample_process.output, handlerCtrlC=handlerCtrlC)
