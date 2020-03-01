@@ -1,9 +1,9 @@
 import enum
 import math
 
-from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
-
 import program_instrument_picoscope5442D
+
+from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 
 class InputRange(enum.IntEnum):
   R_10mV_do_not_use = PS5000ARange.R_10MV # do not use! use 100mV range instead (noise of picoscope is similar in 100mV range)

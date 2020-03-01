@@ -21,7 +21,6 @@ MEASUREMENT_ACTUAL='measurement-actual'
 sys.path.insert(0, str(TOPDIR.joinpath(MEASUREMENT_ACTUAL)))
 
 try:
-  import msl.loadlib
   import numpy as np
   import matplotlib.pyplot as plt
 except ImportError as ex:
@@ -31,8 +30,6 @@ except ImportError as ex:
 import library_topic
 import library_plot
 import program_fir
-
-import program_instrument_picoscope5442D as program_config_instrument_picoscope
 
 logger = logging.getLogger(__name__)
 

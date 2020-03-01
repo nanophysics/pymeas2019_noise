@@ -1,7 +1,3 @@
-msl-loadlib
-xlrd
-pyserial>=3.3
 numpy
 matplotlib
 scipy
-

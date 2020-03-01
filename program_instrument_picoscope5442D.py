@@ -1,4 +1,5 @@
 import re
+import sys
 import os
 import math
 import time
@@ -10,6 +11,12 @@ import program_measurement_stream
 logger = logging.getLogger(__name__)
 
 logger.setLevel(logging.DEBUG)
+
+try:
+  import msl.loadlib
+except ImportError as ex:
+  print(f'ERROR: Failed to import ({ex}). Try: pip install -r requirements_picoscope.txt')
+  sys.exit(0)
 
 import msl.equipment
 import msl.equipment.resources.picotech.picoscope
