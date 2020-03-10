@@ -264,10 +264,9 @@ class Density:
       self.__Pxx_sum = Pxx
 
      # Stepsize statistics
-      self.stepsize_statistics(self.__fifo)
-      stepsizes_V = np.abs(np.diff(array))
-      for stepsize_V in stepsizes_V:
-        self.__stepsize_bins.add(stepsize_V)
+    stepsizes_V = np.abs(np.diff(array))
+    for stepsize_V in stepsizes_V:
+      self.__stepsize_bins.add(stepsize_V)
 
     _filenameFull = DensityPlot.save(
       config=self.__config, 
@@ -278,7 +277,8 @@ class Density:
       Pxx_n=self.__Pxx_n, 
       Pxx_sum=self.__Pxx_sum,
       stepsize_bins_count=self.__stepsize_bins.count,
-      stepsize_bins_V=self.__stepsize_bins.V
+      stepsize_bins_V=self.__stepsize_bins.V,
+      samples_V=array
     )
 
     # if self.stage > 8:
@@ -287,7 +287,7 @@ class Density:
 
 class DensityPlot:
   @classmethod
-  def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum, stepsize_bins_count, stepsize_bins_V):
+  def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum, stepsize_bins_count, stepsize_bins_V, samples_V):
     skip = stage < config.fir_count_skipped
     skiptext = FILENAME_TAG_SKIP if skip else ''
     filename = f'densitystep_{config.stepname}_{stage:02d}{skiptext}.pickle'
@@ -301,6 +301,7 @@ class DensityPlot:
       'skip': skip,
       'stepsize_bins_count': stepsize_bins_count,
       'stepsize_bins_V': stepsize_bins_V,
+      'samples_V': samples_V,
     }
     if not os.path.exists(directory):
       os.makedirs(directory)
@@ -394,6 +395,7 @@ class DensityPlot:
     self.__Pxx_sum = data['Pxx_sum']
     self.__stepsize_bins_count = data['stepsize_bins_count']
     self.__stepsize_bins_V = data['stepsize_bins_V']
+    self.__samples_V = data['samples_V']
     # print(f'DensityPlot {self.stage} {self.dt_s} {filename}')
 
   @property
