@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import program
 import program_eseries
+import program_classify
 import library_plot
 
 
@@ -24,6 +25,8 @@ SAMPLES_SELECT_MAX = 2**23
 NUMPY_FLOAT_TYPE=np.float32
 
 DEBUG_OUTPUT=False
+
+classify_stepsize = program_classify.Classify()
 
 #   <---------------- INPUT ---------========------->
 #
@@ -166,13 +169,12 @@ class Density:
   The class LsdSummary will the access self.Pxx_sum/self.Pxx_n to create a density plot.
   '''
   def __init__(self, out, config, directory):
-    # TODO: Make all members private!
-
     self.out = out
     self.__Pxx_sum = None
     self.__Pxx_n = 0
     self.__config = config
     self.__directory = directory
+    self.__stepsize_bins = classify_stepsize.bins_factory()
 
   def init(self, stage, dt_s):
     self.__stage = stage
@@ -182,9 +184,13 @@ class Density:
     self.__pushcalulator = PushCalculator(dt_s)
     self.__mode_fifo = self.__pushcalulator.push_size_samples < SAMPLES_DENSITY
     if self.__mode_fifo:
-      self.__array = np.empty(0, dtype=NUMPY_FLOAT_TYPE)
+      # In this stage, only a few samples will be pushed
+      # We create a fifo
+      self.__fifo = np.empty(0, dtype=NUMPY_FLOAT_TYPE)
     else:
-      self.__array = None
+      # In this stage, we will get sufficient samples for every push
+      # There is no need to allocate a fifo-array.
+      self.__fifo = None
 
     self.out.init(stage=stage, dt_s=dt_s)
 
@@ -200,34 +206,34 @@ class Density:
         Return: None
     '''
     if array_in is None:
-      if (self.__array is None) or (len(self.__array) < SAMPLES_DENSITY):
+      if (self.__fifo is None) or (len(self.__fifo) < SAMPLES_DENSITY):
         # Not sufficient data
         return self.out.push(None)
 
       # Time is over. Calculate density
-      assert len(self.__array) == SAMPLES_DENSITY
+      assert len(self.__fifo) == SAMPLES_DENSITY
       # if len(self.array) != SAMPLES_DENSITY:
       #   print('Density not calculated')
       # if self.stage >= 4:
       #   print(f'self.density {self.stage}')
-      self.density(self.__array)
+      self.density(self.__fifo)
       if self.__mode_fifo:
-        self.__array = self.__array[self.__pushcalulator.push_size_samples:]
+        self.__fifo = self.__fifo[self.__pushcalulator.push_size_samples:]
       else:
-        self.__array = None
+        self.__fifo = None
       return self.__TAG_PUSH
 
-    self.out.push(array_in)
     assert array_in is not None
+    self.out.push(array_in)
 
     # Add to 'self.array'
     if self.__mode_fifo:
       assert len(array_in) == self.__pushcalulator.push_size_samples
-      self.__array = np.append(self.__array, array_in)
+      self.__fifo = np.append(self.__fifo, array_in)
       return
   
     assert len(array_in) >= SAMPLES_DENSITY
-    self.__array = array_in[:SAMPLES_DENSITY]
+    self.__fifo = array_in[:SAMPLES_DENSITY]
     if DEBUG_OUTPUT:
       print('')
       print(f'Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array_in)={len(array_in)} -> {len(self.__array)}')
@@ -257,6 +263,11 @@ class Density:
       self.__Pxx_n = 1
       self.__Pxx_sum = Pxx
 
+     # Stepsize statistics
+      self.stepsize_statistics(self.__fifo)
+      stepsizes_V = np.abs(np.diff(array))
+      for stepsize_V in stepsizes_V:
+        self.__stepsize_bins.add(stepsize_V)
 
     _filenameFull = DensityPlot.save(
       config=self.__config, 
@@ -265,7 +276,9 @@ class Density:
       dt_s=self.__dt_s, 
       frequencies=self.frequencies, 
       Pxx_n=self.__Pxx_n, 
-      Pxx_sum=self.__Pxx_sum
+      Pxx_sum=self.__Pxx_sum,
+      stepsize_bins_count=self.__stepsize_bins.count,
+      stepsize_bins_V=self.__stepsize_bins.V
     )
 
     # if self.stage > 8:
@@ -274,7 +287,7 @@ class Density:
 
 class DensityPlot:
   @classmethod
-  def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum):
+  def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum, stepsize_bins_count, stepsize_bins_V):
     skip = stage < config.fir_count_skipped
     skiptext = FILENAME_TAG_SKIP if skip else ''
     filename = f'densitystep_{config.stepname}_{stage:02d}{skiptext}.pickle'
@@ -286,6 +299,8 @@ class DensityPlot:
       'Pxx_n': Pxx_n,
       'Pxx_sum': Pxx_sum,
       'skip': skip,
+      'stepsize_bins_count': stepsize_bins_count,
+      'stepsize_bins_V': stepsize_bins_V,
     }
     if not os.path.exists(directory):
       os.makedirs(directory)
@@ -377,6 +392,8 @@ class DensityPlot:
     self.frequencies = data['frequencies']
     self.__Pxx_n = data['Pxx_n']
     self.__Pxx_sum = data['Pxx_sum']
+    self.__stepsize_bins_count = data['stepsize_bins_count']
+    self.__stepsize_bins_V = data['stepsize_bins_V']
     # print(f'DensityPlot {self.stage} {self.dt_s} {filename}')
 
   @property
