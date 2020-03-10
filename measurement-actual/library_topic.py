@@ -32,25 +32,26 @@ class ResultAttributes:
     return directory_name
 
 class PickleResultSummary:
-  def __init__(self, f, d, enbw):
+  def __init__(self, f, d, enbw, dict_stages):
     self.f = f
     self.d = d
     self.enbw = enbw
+    self.dict_stages = dict_stages
 
     self.x_filename = None
     self.x_directory = None
 
   def __getstate__(self):
     # Only these elements will be pickled
-    return { 'f': self.f, 'd': self.d, 'enbw': self.enbw } 
+    return { 'f': self.f, 'd': self.d, 'enbw': self.enbw, 'dict_stages': self.dict_stages } 
 
   @classmethod
   def filename(cls, directory):
     return directory.joinpath('result_summary.pickle')
 
   @classmethod
-  def save(cls, directory, f, d, enbw):
-    prs = PickleResultSummary(f, d, enbw)
+  def save(cls, directory, f, d, enbw, dict_stages):
+    prs = PickleResultSummary(f, d, enbw, dict_stages)
     filename_summary_pickle = cls.filename(directory)
     with open(filename_summary_pickle, 'wb') as f:
       pickle.dump(prs, f)
@@ -68,7 +69,7 @@ class PickleResultSummary:
       assert isinstance(prs, PickleResultSummary)
     if prs is None:
       # The summary file has not been calculated yet.
-      prs = PickleResultSummary(f=[], d=[], enbw=[])
+      prs = PickleResultSummary(f=[], d=[], enbw=[], dict_stages={})
     prs.x_directory = directory
     prs.x_filename = filename_summary_pickle
     return prs
@@ -82,6 +83,7 @@ class PickleResultSummary:
       self.f = prs.f
       self.d = prs.d
       self.enbw = prs.enbw
+      self.dict_stages = prs.dict_stages
 
     return changed
 
@@ -110,7 +112,7 @@ class Topic:
 
   def reload_if_changed(self, presentation):
     assert self.__plot_line is not None
-    start = time.time()
+    # start = time.time()
     changed = self.__prs.reload_if_changed()
     if changed:
       self.recalculate_data(presentation)
@@ -120,6 +122,7 @@ class Topic:
 
   def recalculate_data(self, presentation):
     x, y = presentation.get_xy(self)
+    assert len(x) == len(y)
     self.__plot_line.set_data(x, y)
 
   def clear_line(self):
@@ -142,6 +145,28 @@ class Topic:
   @property
   def color(self):
     return self.__ra.color  
+
+  def get_stepsize(self, stage):
+    assert isinstance(stage, int)
+    dict_stage = self.__prs.dict_stages.get(stage, None)
+    if dict_stage is None:
+      return ((0.0, 1.0), (0.0, 1.0))
+    stepsize_bins_count = dict_stage['stepsize_bins_count']
+    stepsize_bins_V = dict_stage['stepsize_bins_V']
+    # Mask all array-elements with bins_count == 0
+    stepsize_bins_count = np.ma.masked_equal(stepsize_bins_count, 0)
+    return (stepsize_bins_V, stepsize_bins_count)
+
+  def get_timeserie(self, stage):
+    assert isinstance(stage, int)
+    dict_stage = self.__prs.dict_stages.get(stage, None)
+    if dict_stage is None:
+      return ((0.0, 1.0), (0.0, 1.0))
+    samples_V = dict_stage['samples_V']
+    dt_s = dict_stage['dt_s']
+    # TODO(Hans): Cash this array
+    x = np.linspace(start=0.0, stop=dt_s*len(samples_V), num=len(samples_V))
+    return (x, samples_V)
 
   @property
   def f(self):
@@ -200,67 +225,95 @@ class Topic:
     return f_decade, value_decade
 
 class Presentation:
-  def __init__(self, tag, help_text, xy_func, y_label):
+  def __init__(self, tag, help_text, xy_func, x_label, y_label, logarithmic_scales=True):
     assert isinstance(tag, str)
     assert isinstance(help_text, str)
     assert isinstance(xy_func, types.FunctionType)
     assert isinstance(y_label, str)
+    assert isinstance(x_label, str)
+    assert isinstance(logarithmic_scales, bool)
     self.tag = tag
     self.help_text = help_text
     self.__xy_func = xy_func
+    self.x_label = x_label
     self.y_label = y_label
+    self.logarithmic_scales = logarithmic_scales
 
   def get_xy(self, topic):
-    return self.__xy_func(topic)
+    stage = 2
+    return self.__xy_func(topic, stage)
   
   def get_as_dict(self, topic):
     x, y = self.get_xy(topic)
     return dict(
       tag = self.tag,
       help_text = self.help_text,
+      x_label = self.x_label,
       y_label = self.y_label,
       x = x,
       y = y,
     )
 
+X_LABEL = 'Frequency [Hz]'
 class Presentations:
   def __init__(self):
     self.list = (
       Presentation(
         tag = 'LSD',
+        x_label = X_LABEL,
         y_label = 'linear spectral density [V/Hz^0.5]',
         help_text = 'linear spectral density [V/Hz^0.5] represents the noise density. Useful to describe random noise.',
-        xy_func = lambda topic: (topic.f, topic.scaling_LSD),
+        xy_func = lambda topic, stage: (topic.f, topic.scaling_LSD),
       ),
       Presentation(
         tag = 'PSD',
+        x_label = X_LABEL,
         y_label = 'power spectral density [V^2/Hz]',
         help_text = 'power spectral density [V^2/Hz] ist just the square of the LSD. This representation of random noise is useful if you want to sum up the signal over a given frequency interval. ',
-        xy_func = lambda topic: (topic.f, topic.scaling_PSD)
+        xy_func = lambda topic, stage: (topic.f, topic.scaling_PSD)
       ),
       Presentation(
         tag = 'LS',
+        x_label = X_LABEL,
         y_label = 'linear spectrum [V rms]',
         help_text = 'linear spectrum [V rms] represents the voltage in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.',
-        xy_func = lambda topic: (topic.f, topic.scaling_LS)
+        xy_func = lambda topic, stage: (topic.f, topic.scaling_LS)
       ),
       Presentation(
         tag = 'PS',
+        x_label = X_LABEL,
         y_label = 'power spectrum [V^2]',
         help_text = 'power spectrum [V^2] represents the square of LS. Useful if you want to measure the amplitude of a sinusoidal signal which is just between two frequency bins. You can now add the two values to get the amplitude of the sinusoidal signal.',
-        xy_func = lambda topic: (topic.f, topic.scaling_PS),
+        xy_func = lambda topic, stage: (topic.f, topic.scaling_PS),
       ),
       Presentation(
         tag = 'INTEGRAL',
+        x_label = X_LABEL,
         y_label = 'integral [V rms]',
         help_text = 'integral [V rms] represents the integrated voltage from the lowest measured frequency up to the actual frequency. Example: Value at 1 kHz: is the voltage between 0.01 Hz and 1 kHz.',
-        xy_func = lambda topic: (topic.f, topic.scaling_INTEGRAL),
+        xy_func = lambda topic, stage: (topic.f, topic.scaling_INTEGRAL),
       ),
       Presentation(
         tag = 'DECADE',
+        x_label = X_LABEL,
         y_label = 'decade left of the point [V rms]',
         help_text = 'decade left of the point [V rms] Example: The value at 100 Hz represents the voltage between 100Hz/10 = 10 Hz and 100 Hz.',
-        xy_func = lambda topic: topic.decade_f_d
+        xy_func = lambda topic, stage: topic.decade_f_d
+      ),
+      Presentation(
+        tag = 'STEPSIZE',
+        x_label = 'stepsize [V]',
+        y_label = 'count samples [samples/s]',
+        help_text = 'TODO.',
+        xy_func = lambda topic, stage: topic.get_stepsize(stage)
+      ),
+      Presentation(
+        tag = 'TIMESERIE',
+        x_label = 'timeserie [s]',
+        y_label = 'sample [V]',
+        help_text = 'TODO.',
+        xy_func = lambda topic, stage: topic.get_timeserie(stage),
+        logarithmic_scales = False
       ),
     )
 
@@ -278,7 +331,6 @@ class Presentations:
 
 PRESENTATIONS = Presentations()
 
-import time
 class PlotDataMultipleDirectories:
   def __init__(self, filename):
     self.topdir = pathlib.Path(filename).absolute().parent
@@ -302,10 +354,13 @@ class PlotDataMultipleDirectories:
     set_directories_new = {d.name for d in self.read_directories()}
     return self.set_directories != set_directories_new
 
-  def remove_lines_and_reload_data(self, fig, ax):
+  def remove_lines(self, fig, ax):
     for topic in self.listTopics:
       topic.clear_line()
     ax.legend().remove()
+
+  def remove_lines_and_reload_data(self, fig, ax):
+    self.remove_lines(fig, ax)
 
     self.__load_data()
 

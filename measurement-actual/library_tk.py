@@ -116,7 +116,7 @@ class UserSelectPresentation(matplotlib.backend_tools.ToolBase):
     import tkinter
     import tkinter.ttk
     dialog = tkinter.Tk() 
-    dialog.geometry('800x100')
+    dialog.geometry('300x100')
     dialog.columnconfigure(0, weight=1)
     dialog.rowconfigure(0, weight=1)
     dialog.rowconfigure(1, weight=1)

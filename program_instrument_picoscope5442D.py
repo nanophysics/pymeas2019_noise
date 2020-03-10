@@ -161,7 +161,7 @@ class Instrument:
 
     channel_gain = configStep.skalierungsfaktor * channel._volts_per_adu
     def convert(adu_values):
-      volts = channel_gain * adu_values
+      volts = np.multiply(channel_gain, adu_values, dtype=np.float32) # NUMPY_FLOAT_TYPE
       return volts
     stream = program_measurement_stream.InThread(stream_output, dt_s=dt_s, duration_s=configStep.duration_s, func_convert=convert)
     stream.start()

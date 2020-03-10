@@ -22,22 +22,49 @@ class Globals:
     self.fig = fig
     self.ax = ax
 
+  def initialize_plot_lines(self):
+    for topic in self.plotData.listTopics:
+      x, y = globals.presentation.get_xy(topic)
+      assert len(x) == len(y)
+      plot_line, = self.ax.plot(
+        x, y,
+        linestyle='none',
+        linewidth=0.1,
+        marker='.',
+        markersize=3, 
+        color=topic.color,
+        label=topic.topic
+      )
+      scale = 'log' if globals.presentation.logarithmic_scales else 'linear'
+      self.ax.set_xscale(scale)
+      self.ax.set_yscale(scale)
+      topic.set_plot_line(plot_line)
+
+    leg = self.ax.legend(fancybox=True, framealpha=0.5)
+    leg.get_frame().set_linewidth(0.0)
+
   def update_presentation(self, presentation=None, update=True):
     if presentation is not None:
       self.presentation = presentation
+      if self.plotData is not None:
+        # The presentation changed, update the graph
+        self.plotData.remove_lines(fig=self.fig, ax=self.ax)
+        self.initialize_plot_lines()
+
     if update:
       assert self.plotData is not None
+      plt.xlabel(self.presentation.x_label)
       plt.ylabel(f'{self.presentation.tag}: {self.presentation.y_label}')
       for topic in self.plotData.listTopics:
         topic.recalculate_data(presentation=self.presentation)
       for ax in self.fig.get_axes():
         ax.relim()
         ax.autoscale()
-        plt.xlabel('Frequency [Hz]')
         plt.grid(True, which="major", axis="both", linestyle="-", color='gray', linewidth=0.5)
         plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
-        ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
-        ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
+        if globals.presentation.logarithmic_scales:
+          ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
+          ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
         # Uncomment to modify figure
         # self.fig.set_size_inches(13.0, 7.0)
         # ax.set_xlim(1e-1, 1e4)
@@ -70,25 +97,7 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
     import library_tk
     library_tk.add_buttons( fig)
 
-  def initialize_plot_lines():
-    for topic in plotData.listTopics:
-      x, y = globals.presentation.get_xy(topic)
-      plot_line, = ax.loglog(
-        x, y,
-        linestyle='none',
-        linewidth=0.1,
-        marker='.',
-        markersize=3, 
-        color=topic.color,
-        label=topic.topic
-      )
-      topic.set_plot_line(plot_line)
-
-    leg = ax.legend(fancybox=True, framealpha=0.5)
-    leg.get_frame().set_linewidth(0.0)
-
-  initialize_plot_lines()
-
+  globals.initialize_plot_lines()
   globals.update_presentation()
 
   if write_files_directory is None:
@@ -107,7 +116,7 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
       def animate(i):
         if plotData.directories_changed():
           plotData.remove_lines_and_reload_data(fig, ax)
-          initialize_plot_lines()
+          globals.initialize_plot_lines()
           #initialize_grid()
           return
 

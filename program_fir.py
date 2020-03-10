@@ -300,7 +300,7 @@ class DensityPlot:
       'Pxx_sum': Pxx_sum,
       'skip': skip,
       'stepsize_bins_count': stepsize_bins_count,
-      'stepsize_bins_V': stepsize_bins_V,
+      'stepsize_bins_V': np.array(stepsize_bins_V, dtype=NUMPY_FLOAT_TYPE),
       'samples_V': samples_V,
     }
     if not os.path.exists(directory):
@@ -393,9 +393,9 @@ class DensityPlot:
     self.frequencies = data['frequencies']
     self.__Pxx_n = data['Pxx_n']
     self.__Pxx_sum = data['Pxx_sum']
-    self.__stepsize_bins_count = data['stepsize_bins_count']
-    self.__stepsize_bins_V = data['stepsize_bins_V']
-    self.__samples_V = data['samples_V']
+    self.stepsize_bins_count = data['stepsize_bins_count']
+    self.stepsize_bins_V = data['stepsize_bins_V']
+    self.samples_V = data['samples_V']
     # print(f'DensityPlot {self.stage} {self.dt_s} {filename}')
 
   @property
@@ -588,8 +588,18 @@ class LsdSummary:
     self.__directory = directory
     self.__trace = trace
     self.__list_density_points = []
+    self.__dict_stages = {}
 
     list_density = sorted(list_density, key=DensityPlot.sort_key, reverse=True)
+    for density in list_density:
+      self.__dict_stages[density.stage] = dict(
+        stage=density.stage,
+        dt_s=density.dt_s,
+        stepsize_bins_V=density.stepsize_bins_V,
+        stepsize_bins_count=density.stepsize_bins_count,
+        samples_V=density.samples_V,
+      )
+
     for density in list_density:
       assert isinstance(density, DensityPlot)
       Pxx = density.Pxx 
@@ -614,7 +624,7 @@ class LsdSummary:
     f = [dp.f for dp in self.__list_density_points if not dp.skip]
     d = [dp.d for dp in self.__list_density_points if not dp.skip]
     enbw = [dp.enbw for dp in self.__list_density_points if not dp.skip]
-    library_plot.PickleResultSummary.save(self.__directory, f, d, enbw)
+    library_plot.PickleResultSummary.save(self.__directory, f, d, enbw, self.__dict_stages)
 
   def plot(self, file_tag=''):
     fig, ax = plt.subplots()
