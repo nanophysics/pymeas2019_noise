@@ -229,7 +229,8 @@ class Instrument:
 
     self.scope.stop()
     self.close()
-    
+
+    print()
     print(f'Time spent in aquisition {time.time()-start_s:1.1f}s')
     print('Waiting for thread to terminate...')
     stream.join()

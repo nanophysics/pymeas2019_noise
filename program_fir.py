@@ -169,29 +169,24 @@ class Density:
     # TODO: Make all members private!
 
     self.out = out
-    self.Pxx_sum = None
-    self.Pxx_n = 0
-    self.config = config
-    self.directory = directory
+    self.__Pxx_sum = None
+    self.__Pxx_n = 0
+    self.__config = config
+    self.__directory = directory
 
   def init(self, stage, dt_s):
-    self.stage = stage
-    self.dt_s = dt_s
-    self.TAG_PUSH = f'Density {self.stage}'
+    self.__stage = stage
+    self.__dt_s = dt_s
+    self.__TAG_PUSH = f'Density {self.__stage}'
 
-    self.pushcalulator = PushCalculator(dt_s)
-    self.mode_fifo = self.pushcalulator.push_size_samples < SAMPLES_DENSITY
-    if self.mode_fifo:
-      self.array = np.empty(0, dtype=NUMPY_FLOAT_TYPE)
+    self.__pushcalulator = PushCalculator(dt_s)
+    self.__mode_fifo = self.__pushcalulator.push_size_samples < SAMPLES_DENSITY
+    if self.__mode_fifo:
+      self.__array = np.empty(0, dtype=NUMPY_FLOAT_TYPE)
     else:
-      self.array = None
+      self.__array = None
 
     self.out.init(stage=stage, dt_s=dt_s)
-
-    # TodoHans: eleganter machen, program_eseries.eseries... von einem bessern ort nehmen
-    # self.enbw = []
-    # for f_eserie_left, f_eserie, f_eserie_right in program_eseries.eseries(series='E12', minimal=1e-6, maximal=1e8, borders=True):
-    #   self.enbw.append(f_eserie_right - f_eserie_left)
 
   def done(self):
     self.out.done()
@@ -205,46 +200,46 @@ class Density:
         Return: None
     '''
     if array_in is None:
-      if (self.array is None) or (len(self.array) < SAMPLES_DENSITY):
+      if (self.__array is None) or (len(self.__array) < SAMPLES_DENSITY):
         # Not sufficient data
         return self.out.push(None)
 
       # Time is over. Calculate density
-      assert len(self.array) == SAMPLES_DENSITY
+      assert len(self.__array) == SAMPLES_DENSITY
       # if len(self.array) != SAMPLES_DENSITY:
       #   print('Density not calculated')
       # if self.stage >= 4:
       #   print(f'self.density {self.stage}')
-      self.density(self.array)
-      if self.mode_fifo:
-        self.array = self.array[self.pushcalulator.push_size_samples:]
+      self.density(self.__array)
+      if self.__mode_fifo:
+        self.__array = self.__array[self.__pushcalulator.push_size_samples:]
       else:
-        self.array = None
-      return self.TAG_PUSH
+        self.__array = None
+      return self.__TAG_PUSH
 
     self.out.push(array_in)
     assert array_in is not None
 
     # Add to 'self.array'
-    if self.mode_fifo:
-      assert len(array_in) == self.pushcalulator.push_size_samples
-      self.array = np.append(self.array, array_in)
+    if self.__mode_fifo:
+      assert len(array_in) == self.__pushcalulator.push_size_samples
+      self.__array = np.append(self.__array, array_in)
       return
   
     assert len(array_in) >= SAMPLES_DENSITY
-    self.array = array_in[:SAMPLES_DENSITY]
+    self.__array = array_in[:SAMPLES_DENSITY]
     if DEBUG_OUTPUT:
       print('')
-      print(f'Density Stage {self.stage:02d} dt_s {self.dt_s:016.12f}, len(array_in)={len(array_in)} -> {len(self.array)}')
+      print(f'Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array_in)={len(array_in)} -> {len(self.__array)}')
 
   def density(self, array):
     if DEBUG_OUTPUT:
       print('')
-      print(f'Density Stage {self.stage:02d} dt_s {self.dt_s:016.12f}, len(array)={len(array)} calculation')
+      print(f'Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array)={len(array)} calculation')
 
     self.frequencies, Pxx = scipy.signal.periodogram(
       array,
-      1/self.dt_s,
+      1/self.__dt_s,
       window='hamming',
       detrend='linear'
     ) # Hz, V^2/Hz
@@ -252,25 +247,25 @@ class Density:
     # Averaging
     do_averaging = True
     if do_averaging:
-      self.Pxx_n += 1
-      if self.Pxx_sum is None:
-        self.Pxx_sum = Pxx
+      self.__Pxx_n += 1
+      if self.__Pxx_sum is None:
+        self.__Pxx_sum = Pxx
       else:
-        assert len(self.Pxx_sum) == len(Pxx)
-        self.Pxx_sum += Pxx
+        assert len(self.__Pxx_sum) == len(Pxx)
+        self.__Pxx_sum += Pxx
     else:
-      self.Pxx_n = 1
-      self.Pxx_sum = Pxx
+      self.__Pxx_n = 1
+      self.__Pxx_sum = Pxx
 
 
-    filenameFull = DensityPlot.save(
-      config=self.config, 
-      directory=self.directory, 
-      stage=self.stage, 
-      dt_s=self.dt_s, 
+    _filenameFull = DensityPlot.save(
+      config=self.__config, 
+      directory=self.__directory, 
+      stage=self.__stage, 
+      dt_s=self.__dt_s, 
       frequencies=self.frequencies, 
-      Pxx_n=self.Pxx_n, 
-      Pxx_sum=self.Pxx_sum
+      Pxx_n=self.__Pxx_n, 
+      Pxx_sum=self.__Pxx_sum
     )
 
     # if self.stage > 8:
@@ -368,6 +363,10 @@ class DensityPlot:
 
     return WorkerThread()
 
+  def sort_key(self):
+    assert isinstance(self, DensityPlot)
+    return self.stepname, self.dt_s
+
   def __init__(self, filename):
     with open(filename, 'rb') as f:
       data = pickle.load(f)
@@ -428,23 +427,23 @@ class DensityPoint:
     self.f = f
     self.d = d
     self.enbw = enbw
-    self.densityPlot = densityPlot
+    self.__densityPlot = densityPlot
 
   @property
   def stage(self):
-    return self.densityPlot.stage
+    return self.__densityPlot.stage
 
   @property
   def step(self):
-    return self.densityPlot.step
+    return self.__densityPlot.step
 
   @property
   def stepname(self):
-    return self.densityPlot.stepname
+    return self.__densityPlot.stepname
 
   @property
   def skip(self):
-    return self.densityPlot.skip
+    return self.__densityPlot.skip
 
   @property
   def line(self):
@@ -567,11 +566,11 @@ class ColorRotator:
 
 class LsdSummary:
   def __init__(self, list_density, directory, trace=False):
-    self.directory = directory
-    self.trace = trace
-    self.list_density_points = []
+    self.__directory = directory
+    self.__trace = trace
+    self.__list_density_points = []
 
-    list_density = self.__sort(list_density)
+    list_density = sorted(list_density, key=DensityPlot.sort_key, reverse=True)
     for density in list_density:
       assert isinstance(density, DensityPlot)
       Pxx = density.Pxx 
@@ -579,35 +578,24 @@ class LsdSummary:
         continue
 
       selector = Selector('E12')
-      firstDensityPoint = len(self.list_density_points) == 0
+      firstDensityPoint = len(self.__list_density_points) == 0
       lastDensity = density == list_density[-1]
-      list_density_points = selector.fill_bins(density, firstDensityPoint=firstDensityPoint, lastDensity=lastDensity, trace=self.trace)
-      self.list_density_points.extend(list_density_points)
-
-  def __sort(self, list_density):
-    def sort_key(density):
-      return density.stepname, density.dt_s
-
-    list_density_ordered = sorted(list_density, key=sort_key, reverse=True)
-    if False:
-      for density in list_density_ordered:
-        print(f'  {density.stepname} / {density.dt_s}')
-
-    return list_density_ordered
+      list_density_points = selector.fill_bins(density, firstDensityPoint=firstDensityPoint, lastDensity=lastDensity, trace=self.__trace)
+      self.__list_density_points.extend(list_density_points)
 
   def write_summary_file(self, trace):
     file_tag = '_trace' if trace else ''
-    filename_summary = f'{self.directory}/result_summary_LSD{file_tag}.txt'
+    filename_summary = f'{self.__directory}/result_summary_LSD{file_tag}.txt'
     with open(filename_summary, 'w') as f:
-      for dp in self.list_density_points:
+      for dp in self.__list_density_points:
         f.write(dp.line)
         f.write('\n')
 
   def write_summary_pickle(self):
-    f = [dp.f for dp in self.list_density_points if not dp.skip]
-    d = [dp.d for dp in self.list_density_points if not dp.skip]
-    enbw = [dp.enbw for dp in self.list_density_points if not dp.skip]
-    library_plot.PickleResultSummary.save(self.directory, f, d, enbw)
+    f = [dp.f for dp in self.__list_density_points if not dp.skip]
+    d = [dp.d for dp in self.__list_density_points if not dp.skip]
+    enbw = [dp.enbw for dp in self.__list_density_points if not dp.skip]
+    library_plot.PickleResultSummary.save(self.__directory, f, d, enbw)
 
   def plot(self, file_tag=''):
     fig, ax = plt.subplots()
@@ -616,7 +604,7 @@ class LsdSummary:
     MARKERS = '.+x*'
     colorRotator = ColorRotator()
 
-    stepnames = [(stepname, list(g)) for stepname, g in itertools.groupby(self.list_density_points, lambda density: density.stepname)]
+    stepnames = [(stepname, list(g)) for stepname, g in itertools.groupby(self.__list_density_points, lambda density: density.stepname)]
     for stepnumber, (_stepname, list_step_density) in enumerate(stepnames):
 
       stages = [(stage, list(g)) for stage, g in itertools.groupby(list_step_density, lambda dp: dp.stage)]
@@ -627,7 +615,7 @@ class LsdSummary:
         linestyle = 'none'
         marker = '.'
         markersize = 3
-        if self.trace:
+        if self.__trace:
           linestyle = '-'
           color = color_fancy
           dp = list_density_points[0]
@@ -643,7 +631,7 @@ class LsdSummary:
     plt.grid(True, which="major", axis="both", linestyle="-", color='gray', linewidth=0.5)
     plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
     ax.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=30))
-    filebase = f'{self.directory}/result_summary_LSD{file_tag}'
+    filebase = f'{self.__directory}/result_summary_LSD{file_tag}'
     print(f' Summary LSD {filebase}')
     fig.savefig(filebase+'.png', dpi=300)
     # fig.savefig(filebase+'.svg')
@@ -676,35 +664,6 @@ class OutTrash:
         Return: None
     '''
     return ''
-
-class InFileObsolete:
-  '''
-  Stream-Source: Drives a output of Stream-Interface
-  '''
-  def __init__(self, out, filename, dt_s, volts_per_adu, skalierungsfaktor):
-    self.out = out
-    self.filename = filename
-    self.volts_per_adu = volts_per_adu
-    self.skalierungsfaktor = skalierungsfaktor
-    out.init(stage=0, dt_s=dt_s)
-
-  def process(self):
-    with open(self.filename, 'rb') as fA:
-      while True:
-        # See: msl-equipment\msl\equipment\resources\picotech\picoscope\channel.py
-        # np.empty((0, 0), dtype=np.int16)
-        bytes_per_sample = 2
-
-        num_samples_chunk = SAMPLES_INPUT_BIG
-
-        data_bytes = fA.read(bytes_per_sample*num_samples_chunk)
-        if len(data_bytes) == 0:
-          print('DONE')
-          return
-        raw16Bit = np.frombuffer(data_bytes, dtype=np.int16)
-        buf_V = self.volts_per_adu * self.skalierungsfaktor * raw16Bit
-
-        self.out.push(buf_V)
 
 class InSyntetic:
   '''
