@@ -154,7 +154,11 @@ class Topic:
     stepsize_bins_count = dict_stage['stepsize_bins_count']
     stepsize_bins_V = dict_stage['stepsize_bins_V']
     # Mask all array-elements with bins_count == 0
-    stepsize_bins_count = np.ma.masked_equal(stepsize_bins_count, 0)
+    # stepsize_bins_count = np.ma.masked_equal(stepsize_bins_count, 0)
+    stepsize_bins_V = np.ma.masked_where(stepsize_bins_count == 0, stepsize_bins_V)
+    stepsize_bins_count = np.ma.masked_where(stepsize_bins_count == 0, stepsize_bins_count)
+    stepsize_bins_V = stepsize_bins_V.compressed()
+    stepsize_bins_count = stepsize_bins_count.compressed()
     return (stepsize_bins_V, stepsize_bins_count)
 
   def get_timeserie(self, stage):

@@ -265,7 +265,7 @@ class SpecializedPrettyPrint:
         if isinstance(i, list) or isinstance(i, np.ndarray):
           self._stream.write(key_string + '[')
           def _repr(v):
-            assert isinstance(v, float)
+            assert isinstance(v, (float, np.float64, np.float32, np.int32))
             return repr(v)
           self._stream.write(', '.join([_repr(v) for v in i]))
           self._stream.write(indent + '],\n')
