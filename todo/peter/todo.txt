@@ -1,8 +1,4 @@
-bei fast_0 mehr als 1.1 s erfassungszeit fehler bei Frequenzen oberhalb 1 MHz
-duration_s = 1.1, #  Memory will limit time (7s)
-irgendwas ist anders zwischen erfassen und nachbearbeiten.
 
-run_1_condense.py laeuft nicht mehr durch. habe ich zu viel geloescht?
 
 ohne eine messung crashed run_0_plot_interactive.bat 
 
@@ -19,6 +15,13 @@ time_series
 
 ---------------------------------------------------------
 old
+
+
+run_1_condense.py laeuft nicht mehr durch. habe ich zu viel geloescht?
+
+bei fast_0 mehr als 1.1 s erfassungszeit fehler bei Frequenzen oberhalb 1 MHz
+duration_s = 1.1, #  Memory will limit time (7s)
+irgendwas ist anders zwischen erfassen und nachbearbeiten.
 
 Darstellung von LSD und von linear Spectrum in V
 
