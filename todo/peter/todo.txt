@@ -13,6 +13,17 @@ step_size sprunghoehen, in bändern E12
 time_series
 
 
+MFLI
+""Analog input filter (anti-aliasing)	1 dB suppression at 5 MHz, 3 dB at 12 MHz; 3rd order roll-off"
+https://www.zhinst.com/sites/default/files/zi_appnote_mfli_cross_correlation.pdf
+Amplifiers, both with the Digitizer option MF-DIG.
+
+MFLI 6 kCHF
+MF DIG ? 
+https://www.zhinst.com/americas/products/mf-dig-digitizer
+Continuous operation	Yes, 117 kSa/s transfer to user interface
+Continuous operation to API	3.75 MSa/s single channel (USB, 1GbE)
+1.9 MSa/s two channels (USB, 1GbE)
 ---------------------------------------------------------
 old
 
