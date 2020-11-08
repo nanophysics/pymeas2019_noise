@@ -1,9 +1,13 @@
 
 aufraeumen automatisch auf minimal speicherplatz
 	clean.bat
-stepsize histogram
-voltage over time, verschiedene skalen, diagramme mit einem klick erstellen
+voltage over time, verschiedene zeit-skalen, alle diagramme mit einem klick erstellen
 automatisch substraktion spektralleistungsdichte
+	LSD: beide  quadrieren, substrahieren, wurzel.
+	PSD: subtrahieren
+	LS: ?
+	Integral ?
+	
 automatisch qualität von spannungsquellen
 	0.1 bis 10 Hz max, frequenzbereiche max
 	stepsize max summe ab gewisser grösse
@@ -15,7 +19,7 @@ messen schirm angeschlossen. ist ok?
 messen signal, range finden.
 messen signal mit range korrekt. signal
 messen short mit schirm angeschlossen, range korrekt. background
-allenfalls substraktion: background weg. noise density quadrieren, substrahieren, wurzel.
+allenfalls substraktion: background abzaehlen
 
 
 range finde idee non plus ultra: range finder.jpg
@@ -29,7 +33,7 @@ funktion autostart 100s after last overload
 funktion autostart 20s after last overload, tau = 5s, slope inside 1 tau < 1 mV
 
 Messungen anstehend:
-compact: 10 ausgänge, jeder bei -10V, 0V und 10V: 17*10*3 = 510 Messungen. oise density. Limiten Rauschen 0.1...10, höhe bei einigen Frequenzen. Step size. Fixer Spannungsrange.
+compact: 10 ausgänge, jeder bei -10V, 0V und 10V: 17*10*3 = 510 Messungen. noise density. Limiten Rauschen 0.1...10, höhe bei einigen Frequenzen. Step size. Fixer Spannungsrange.
 
 HV Amp: jeder bei -100, 0, 100V. noise density. 13*4*3 = 156 Messungen.
 
