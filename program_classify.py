@@ -1,4 +1,3 @@
-import itertools
 import numpy as np
 import program_eseries
 
@@ -45,7 +44,7 @@ def test():
 
     def timeit_intersect():
         l = ((1e-12, 0), (1e-4, 61), (1e-5, 49), (1e2, 133))
-        for v, expected_idx in l:
+        for v, _expected_idx in l:
             count.add(v)
 
     timeit_intersect()

@@ -1,14 +1,14 @@
 import time
 import numpy as np
 
-import program
-import program_measurement_stream
-
 import zhinst
 import zhinst.utils
 import zhinst.ziPython
 
-num_samples_period = 16
+import program
+import program_measurement_stream
+
+NUM_SAMPLES_PERIOD = 16
 SCOPE_INPUT_SELECT = 0  # Signal input 1
 
 # SCOPE_STREAM_RATE: The rate of the scope streaming data, the data will be
@@ -20,11 +20,15 @@ SCOPE_INPUT_SELECT = 0  # Signal input 1
 SCOPE_STREAM_RATE = 12
 DEV = "dev3883"
 
+# pylint: disable=c-extension-no-member
+
 
 class Instrument:
     def __init__(self, configStep):
         """Perform the operation of opening the instrument connection"""
         self.dev = DEV
+        self.clockbase_s = None
+        self.rate_s = None
         try:
             # self.log("Descover Zurich Instruments device \"" + self.dev + "\"..")
             discovery = zhinst.ziPython.ziDiscovery()
@@ -194,7 +198,7 @@ class Instrument:
         # Ensure buffers are flushed before subscribing.
         self.daq.sync()
 
-    def acquire(self, configStep, stream_output, handlerCtrlC):
+    def acquire(self, configStep, stream_output, handlerCtrlC):  # pylint: disable=too-many-statements,too-many-branches
         assert isinstance(configStep, program.ConfigStep)
 
         def convert(adu_values):

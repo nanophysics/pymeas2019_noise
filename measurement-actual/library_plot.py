@@ -31,10 +31,10 @@ class Globals:
 
     def initialize_plot_lines(self):
         for topic in self.plotData.listTopics:
-            x, y = globals.presentation.get_xy(topic)
+            x, y = GLOBALS.presentation.get_xy(topic)
             assert len(x) == len(y)
             (plot_line,) = self.ax.plot(x, y, linestyle="none", linewidth=0.1, marker=".", markersize=3, color=topic.color, label=topic.topic)
-            scale = "log" if globals.presentation.logarithmic_scales else "linear"
+            scale = "log" if GLOBALS.presentation.logarithmic_scales else "linear"
             self.ax.set_xscale(scale)
             self.ax.set_yscale(scale)
             topic.set_plot_line(plot_line)
@@ -61,7 +61,7 @@ class Globals:
                 ax.autoscale()
                 plt.grid(True, which="major", axis="both", linestyle="-", color="gray", linewidth=0.5)
                 plt.grid(True, which="minor", axis="both", linestyle="-", color="silver", linewidth=0.1)
-                if globals.presentation.logarithmic_scales:
+                if GLOBALS.presentation.logarithmic_scales:
                     ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
                     ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
                 # Uncomment to modify figure
@@ -71,7 +71,7 @@ class Globals:
             self.fig.canvas.draw()
 
 
-globals = Globals()
+GLOBALS = Globals()
 
 
 def do_plots(**args):
@@ -82,8 +82,8 @@ def do_plots(**args):
         do_plot(presentation_tag=tag, **args)
 
 
-def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=("png", "svg"), write_files_directory=None, presentation_tag="LSD"):
-    globals.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
+def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=("png", "svg"), write_files_directory=None, presentation_tag="LSD"):  # pylint: disable=too-many-arguments
+    GLOBALS.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
 
     if do_show or do_animate:
         import library_tk
@@ -91,7 +91,7 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
         library_tk.initialize(plt)
 
     fig, ax = plt.subplots(figsize=(8, 4))
-    globals.set(plotData, fig, ax)
+    GLOBALS.set(plotData, fig, ax)
 
     if title:
         plt.title(title)
@@ -101,15 +101,15 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
 
         library_tk.add_buttons(fig)
 
-    globals.initialize_plot_lines()
-    globals.update_presentation()
+    GLOBALS.initialize_plot_lines()
+    GLOBALS.update_presentation()
 
     if write_files_directory is None:
         # The current directory
         write_files_directory = pathlib.Path(__file__).parent
 
     for ext in write_files:
-        filename = write_files_directory.joinpath(f"result_{globals.presentation.tag}.{ext}")
+        filename = write_files_directory.joinpath(f"result_{GLOBALS.presentation.tag}.{ext}")
         print(filename)
         fig.savefig(filename, dpi=300)
 
@@ -120,12 +120,12 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
             def animate(i):
                 if plotData.directories_changed():
                     plotData.remove_lines_and_reload_data(fig, ax)
-                    globals.initialize_plot_lines()
+                    GLOBALS.initialize_plot_lines()
                     # initialize_grid()
                     return
 
                 for topic in plotData.listTopics:
-                    topic.reload_if_changed(globals.presentation)
+                    topic.reload_if_changed(GLOBALS.presentation)
 
             _animation = library_tk.start_animation(fig=fig, func_animate=animate)
             # '_animation': This avoids the garbage collector to be called !?
@@ -137,8 +137,8 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
     plt.close()
 
 
-def do_plot2(plotData, title=None, do_show=False, do_animate=False, write_files=("png", "svg"), write_files_directory=None, presentation_tag="LSD"):
-    globals.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
+def do_plot2(plotData, title=None, do_show=False, do_animate=False, write_files=("png", "svg"), write_files_directory=None, presentation_tag="LSD"):  # pylint: disable=too-many-arguments
+    GLOBALS.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
 
     if do_show or do_animate:
         import library_tk
@@ -146,5 +146,5 @@ def do_plot2(plotData, title=None, do_show=False, do_animate=False, write_files=
         library_tk.initialize(plt)
 
     fig, ax = plt.subplots(figsize=(8, 4))
-    globals.set(plotData, fig, ax)
+    GLOBALS.set(plotData, fig, ax)
     return fig

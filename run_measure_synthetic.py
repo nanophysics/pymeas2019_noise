@@ -1,11 +1,11 @@
-import scipy.signal
 import numpy as np
 
 import program
 import program_fir
-import run_0_measure
 
 np.random.seed(47)
+
+DT_S = 2 ** 5 / 125e6
 
 
 class TestSignal:
@@ -14,7 +14,7 @@ class TestSignal:
         self.noise_density_V_sqrtHz = noise_density_V_sqrtHz
         self.list_frequencies = []
         sine_freq_Hz = 0.000001  # on a E12 point, not equal to fs so we can see errors, just in case
-        maxNyquistHz = 1 / (2.0 * dt_s)
+        maxNyquistHz = 1 / (2.0 * DT_S)
         while sine_freq_Hz < 0.8 * maxNyquistHz:  # only sines below nyquist limit
             self.list_frequencies.append(sine_freq_Hz)
             print(f"sine_freq_Hz: {sine_freq_Hz}")
@@ -35,19 +35,21 @@ class TestSignal:
         return signal
 
 
-if __name__ == "__main__":
-
+def main():
     class SampleProcessConfig:
         def __init__(self):
             self.fir_count = 20
             self.fir_count_skipped = 0
             self.stepname = "slow"
 
-    dt_s = 2 ** 5 / 125e6
     signal = TestSignal(sine_amp_V_rms=1e-4, noise_density_V_sqrtHz=1e-7)
 
     config = SampleProcessConfig()
     sp = program_fir.SampleProcess(config=config, directory_raw=f"{program.MEASUREMENT_ACTUAL}/raw-green-syntetic")
-    i = program_fir.InSyntetic(sp.output, signal=signal, dt_s=dt_s, time_total_s=10.0)
+    i = program_fir.InSyntetic(sp.output, signal=signal, dt_s=DT_S, time_total_s=10.0)
     i.process()
     print("Done")
+
+
+if __name__ == "__main__":
+    main()

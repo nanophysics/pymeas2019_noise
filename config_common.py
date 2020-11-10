@@ -1,6 +1,4 @@
-import program
-
-dict_config_setup_defaults = dict(
+DICT_CONFIG_SETUP_DEFAULTS = dict(
     diagram_legend="dummyname",
     steps=(),
 )

@@ -1,18 +1,18 @@
 import os
 import math
 import time
-import scipy.signal
-import numpy as np
 import pickle
 import pathlib
 import itertools
 import threading
+
+import numpy as np
+import scipy.signal
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import program
 import program_eseries
 import program_classify
-import library_plot
+import library_topic
 
 
 TIME_INTERVAL_S = 0.9
@@ -63,7 +63,7 @@ class PushCalculator:
 FILENAME_TAG_SKIP = "_SKIP"
 
 
-class FIR:
+class FIR:  # pylint: disable=too-many-instance-attributes
     """
     Stream-Sink: Implements a Stream-Interface
     Stream-Source: Drives a output of Stream-Interface
@@ -73,6 +73,13 @@ class FIR:
         self.out = out
         self.array = None
         self.fake_left_right = True
+        self.statistics_count = None
+        self.statistics_samples_out = None
+        self.statistics_samples_in = None
+        self.stage = None
+        self.__dt_s = None
+        self.TAG_PUSH = None
+        self.pushcalulator_next = None
 
     def init(self, stage, dt_s):
         self.statistics_count = 0
@@ -92,7 +99,7 @@ class FIR:
             print(f"Statistics {self.stage}: count {self.statistics_count}, samples in {self.statistics_samples_in*self.__dt_s:0.3f}s, samples out {self.statistics_samples_out*self.__dt_s*DECIMATE_FACTOR:0.3f}s")
         self.out.done()
 
-    def push(self, array_in):
+    def push(self, array_in):  # pylint: disable=too-many-return-statements
         """
         If calculation: Return a string explaining which stage calculated.
         Else: Pass to the next stage.
@@ -135,10 +142,12 @@ class FIR:
             if self.array is None:
                 # The first time. Left&Right must be faked.
                 self.array = np.flip(array_in[:SAMPLES_LEFT_RIGHT])
+                return None
 
         self.statistics_samples_in += len(array_in)
         # Add to 'self.array'
         self.array = np.append(self.array, array_in)
+        return None
 
     def decimate(self, array_decimate):
         self.statistics_count += 1
@@ -165,7 +174,7 @@ class SampleProcessConfig:
         self.stepname = configStep.stepname
 
 
-class Density:
+class Density:  # pylint: disable=too-many-instance-attributes
     """
     Stream-Sink: Implements a Stream-Interface
     Stream-Source: Drives a output of Stream-Interface
@@ -176,11 +185,19 @@ class Density:
 
     def __init__(self, out, config, directory):
         self.out = out
-        self.__Pxx_sum = None
-        self.__Pxx_n = 0
         self.__config = config
         self.__directory = directory
         self.__stepsize_bins = classify_stepsize.bins_factory()
+
+        self.frequencies = None
+        self.__Pxx_sum = None
+        self.__Pxx_n = 0
+        self.__stage = None
+        self.__dt_s = None
+        self.__TAG_PUSH = None
+        self.__pushcalulator = None
+        self.__mode_fifo = None
+        self.__fifo = None
 
     def init(self, stage, dt_s):
         self.__stage = stage
@@ -236,13 +253,15 @@ class Density:
         if self.__mode_fifo:
             assert len(array_in) == self.__pushcalulator.push_size_samples
             self.__fifo = np.append(self.__fifo, array_in)
-            return
+            return False
 
         assert len(array_in) >= SAMPLES_DENSITY
         self.__fifo = array_in[:SAMPLES_DENSITY]
         if DEBUG_OUTPUT:
             print("")
-            print(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array_in)={len(array_in)} -> {len(self.__array)}")
+            print(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array_in)={len(array_in)}")
+
+        return None
 
     def density(self, array):
         if DEBUG_OUTPUT:
@@ -275,9 +294,9 @@ class Density:
         #   print(f'{self.stage} ')
 
 
-class DensityPlot:
+class DensityPlot:  # pylint: disable=too-many-instance-attributes
     @classmethod
-    def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum, stepsize_bins_count, stepsize_bins_V, samples_V):
+    def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum, stepsize_bins_count, stepsize_bins_V, samples_V):  # pylint: disable=too-many-arguments
         skip = stage < config.fir_count_skipped
         skiptext = FILENAME_TAG_SKIP if skip else ""
         filename = f"densitystep_{config.stepname}_{stage:02d}{skiptext}.pickle"
@@ -303,7 +322,7 @@ class DensityPlot:
 
     @classmethod
     def file_changed(cls, dir_input):
-        filename_summary = library_plot.PickleResultSummary.filename(dir_input)
+        filename_summary = library_topic.PickleResultSummary.filename(dir_input)
         timestamp_summary = 0.0
         if filename_summary.exists():
             timestamp_summary = filename_summary.stat().st_mtime
@@ -419,7 +438,7 @@ class DensityPlot:
         # plt.ylim( 1e-8,1e-6)
 
         # plt.xlim(1e2, 1e5)
-        f_limit_low = 1.0 / self.dt_s / 2.0 * useful_part
+        f_limit_low = 1.0 / self.dt_s / 2.0 * Selector.USEFUL_PART
         f_limit_high = 1.0 / self.dt_s / 2.0
         plt.axvspan(f_limit_low, f_limit_high, color="red", alpha=0.2)
         plt.grid(True)
@@ -499,6 +518,8 @@ class Average:
 
 
 class Selector:
+    USEFUL_PART = 0.75  # depending on the downsampling, useful part is the non influenced part by the low pass filtering of the FIR stage
+
     def __init__(self, series="E12"):
         self.__eseries_borders = program_eseries.eseries(series=series, minimal=1e-6, maximal=1e8, borders=True)
 
@@ -511,8 +532,7 @@ class Selector:
         list_density_points = []
 
         fmax_Hz = 1.0 / (density.dt_s * 2.0)  # highest frequency in spectogram
-        useful_part = 0.75  # depending on the downsampling, useful part is the non influenced part by the low pass filtering of the FIR stage
-        f_high_limit_Hz = useful_part * fmax_Hz
+        f_high_limit_Hz = Selector.USEFUL_PART * fmax_Hz
         f_low_limit_Hz = f_high_limit_Hz / DECIMATE_FACTOR  # every FIR stage reduces sampling frequency by factor DECIMATE_FACTOR
 
         for f_eserie_left, f_eserie, f_eserie_right in self.__eseries_borders:
@@ -602,9 +622,9 @@ class LsdSummary:
                 continue
 
             selector = Selector("E12")
-            firstDensityPoint = len(self.__list_density_points) == 0
-            lastDensity = density == list_density[-1]
-            list_density_points = selector.fill_bins(density, firstDensityPoint=firstDensityPoint, lastDensity=lastDensity, trace=self.__trace)
+            first_density_point = len(self.__list_density_points) == 0
+            last_density = density == list_density[-1]
+            list_density_points = selector.fill_bins(density, firstDensityPoint=first_density_point, lastDensity=last_density, trace=self.__trace)
             self.__list_density_points.extend(list_density_points)
 
     def write_summary_file(self, trace):
@@ -619,9 +639,9 @@ class LsdSummary:
         f = [dp.f for dp in self.__list_density_points if not dp.skip]
         d = [dp.d for dp in self.__list_density_points if not dp.skip]
         enbw = [dp.enbw for dp in self.__list_density_points if not dp.skip]
-        library_plot.PickleResultSummary.save(self.__directory, f, d, enbw, self.__dict_stages)
+        library_topic.PickleResultSummary.save(self.__directory, f, d, enbw, self.__dict_stages)
 
-    def plot(self, file_tag=""):
+    def plot(self, file_tag=""):  # pylint: disable=too-many-locals
         fig, ax = plt.subplots()
 
         # https://matplotlib.org/3.1.1/api/markers_api.html
@@ -672,6 +692,8 @@ class OutTrash:
     """
 
     def __init__(self):
+        self.stage = None
+        self.dt_s = None
         self.array = np.empty(0, dtype=NUMPY_FLOAT_TYPE)
 
     def init(self, stage, dt_s):
@@ -715,8 +737,8 @@ class InSyntetic:
             self.out.push(array)
             sample_start += push_size_samples
 
-            MAX_CALCULATIONS = 30
-            for _ in range(MAX_CALCULATIONS):
+            max_calculations = 30
+            for _ in range(max_calculations):
                 calculation_stage = self.out.push(None)
                 done = len(calculation_stage) == 0
                 if done:
@@ -733,6 +755,9 @@ class UniformPieces:
     def __init__(self, out):
         self.out = out
         self.array = np.empty(0, dtype=NUMPY_FLOAT_TYPE)
+        self.stage = None
+        self.total_samples = None
+        self.pushcalulator_next = None
 
     def init(self, stage, dt_s):
         self.stage = stage
@@ -764,8 +789,8 @@ class UniformPieces:
             # Save the remainting part to 'self.array'
             self.array = self.array[push_size_samples:]
 
-            MAX_CALCULATIONS = 30
-            for i in range(MAX_CALCULATIONS):
+            max_calculations = 30
+            for _i in range(max_calculations):
                 calculation_stage = self.out.push(None)
                 assert isinstance(calculation_stage, str)
                 done = len(calculation_stage) == 0
@@ -781,7 +806,7 @@ class SampleProcess:
         self.directory_raw = directory_raw
         o = OutTrash()
 
-        for i in range(config.fir_count - 1):
+        for _i in range(config.fir_count - 1):
             o = Density(o, config=config, directory=self.directory_raw)
             o = FIR(o)
 

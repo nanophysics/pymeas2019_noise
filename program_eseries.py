@@ -1,5 +1,5 @@
-import numpy as np
 import math
+import numpy as np
 
 
 def eseries(series="E12", minimal=0.01, maximal=300, borders=False):
@@ -36,6 +36,7 @@ def eseries(series="E12", minimal=0.01, maximal=300, borders=False):
             750,759,768,777,787,796,806,816,825,835,845,856,866,876,887,898,909,920,931,942,953,965,976,988,
         )
     }
+
     serie = ereihen[series]
     frequencies_Hz = []
     last1 = 0.0

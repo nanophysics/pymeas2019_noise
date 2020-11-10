@@ -37,10 +37,10 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Python: run_measure_syntetic.py",
+            "name": "Python: run_measure_synthetic.py",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/run_measure_syntetic.py",
+            "program": "${workspaceFolder}/run_measure_synthetic.py",
             "console": "integratedTerminal"
         },
         {

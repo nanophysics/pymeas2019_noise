@@ -1,14 +1,14 @@
 import sys
 
+# Hide messages like:
+#   Treat the new Tool classes introduced in v1.5 as experimental for now, the API will likely change in version 2.1 and perhaps the rcParam as well
+import warnings
+
 import matplotlib.backend_tools
 
 import library_topic
 
 matplotlib.use("TkAgg")
-
-# Hide messages like:
-#   Treat the new Tool classes introduced in v1.5 as experimental for now, the API will likely change in version 2.1 and perhaps the rcParam as well
-import warnings
 
 warnings.filterwarnings(action="ignore")
 
@@ -74,7 +74,7 @@ class UserMeasurementStart(matplotlib.backend_tools.ToolBase):
         import tkinter
         import tkinter.ttk
 
-        self.directory_name = None
+        self.directory_name = None  # pylint: disable=attribute-defined-outside-init
         dialog = tkinter.Tk()
 
         dialog.title("Start Measurement")
@@ -86,7 +86,7 @@ class UserMeasurementStart(matplotlib.backend_tools.ToolBase):
         dialog.rowconfigure(3, weight=2)
 
         def clickStart():
-            self.directory_name = f"{library_topic.DIRECTORY_NAME_RAW_PREFIX}{entryColor.get()}-{entryTopic.get()}"
+            self.directory_name = f"{library_topic.DIRECTORY_NAME_RAW_PREFIX}{entryColor.get()}-{entryTopic.get()}"  # pylint: disable=attribute-defined-outside-init
             dialog.quit()
 
         label = tkinter.ttk.Label(dialog, text="Topic name of this measurement")
@@ -109,7 +109,7 @@ class UserMeasurementStart(matplotlib.backend_tools.ToolBase):
 
         return self.directory_name
 
-    def trigger(self, *args, **kwargs):
+    def trigger(self, *args, **kwargs):  # pylint: disable=arguments-differ
         directory_name = self.startDialog()
         if directory_name is None:
             # The dialog has been closed
@@ -144,10 +144,10 @@ class UserSelectPresentation(matplotlib.backend_tools.ToolBase):
         combobox.grid(column=0, row=1, sticky=tkinter.EW)
         combobox.current(0)
 
-        self.selected_presentation = None
+        self.selected_presentation = None  # pylint: disable=attribute-defined-outside-init
 
         def callbackFunc(event):
-            self.selected_presentation = library_topic.PRESENTATIONS.list[combobox.current()]
+            self.selected_presentation = library_topic.PRESENTATIONS.list[combobox.current()]  # pylint: disable=attribute-defined-outside-init
             print(f"Selected:  {self.selected_presentation.tag}")
             dialog.quit()
 
@@ -158,14 +158,14 @@ class UserSelectPresentation(matplotlib.backend_tools.ToolBase):
         dialog.destroy()
         return self.selected_presentation
 
-    def trigger(self, *args, **kwargs):
+    def trigger(self, *args, **kwargs):  # pylint: disable=arguments-differ
         matplotlib.backend_tools.ToolBase.trigger(self, *args, **kwargs)
         presentation = self.selectPresentationDialog()
-        if presentation == None:
+        if presentation is None:
             return
         import library_plot
 
-        library_plot.globals.update_presentation(presentation=presentation)
+        library_plot.GLOBALS.update_presentation(presentation=presentation)
 
 
 class ListTools(matplotlib.backend_tools.ToolBase):
@@ -175,7 +175,7 @@ class ListTools(matplotlib.backend_tools.ToolBase):
     default_keymap = "m"
     description = "List Tools"
 
-    def trigger(self, *args, **kwargs):
+    def trigger(self, *args, **kwargs):  # pylint: disable=arguments-differ
         print("_" * 80)
         print(f"{'Name (id)':12} {'Tool description':45} {'Keymap'}")
         print("-" * 80)
@@ -197,7 +197,7 @@ class UserAutozoom(matplotlib.backend_tools.ToolBase):
     default_keymap = "z"
     description = "Auto Zoom"
 
-    def trigger(self, *args, **kwargs):
+    def trigger(self, *args, **kwargs):  # pylint: disable=arguments-differ
         for ax in self.figure.get_axes():
             ax.relim()
             ax.autoscale()
@@ -208,7 +208,7 @@ class UserAutozoom(matplotlib.backend_tools.ToolBase):
 class UserOpenDirectory(matplotlib.backend_tools.ToolBase):
     description = "Open Directory"
 
-    def trigger(self, *args, **kwargs):
+    def trigger(self, *args, **kwargs):  # pylint: disable=arguments-differ
         import pathlib
         import subprocess
 

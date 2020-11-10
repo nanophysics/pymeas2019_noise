@@ -1,7 +1,4 @@
-import re
 import sys
-import os
-import math
 import time
 import logging
 import numpy as np
@@ -18,12 +15,11 @@ except ImportError as ex:
     print(f"ERROR: Failed to import ({ex}). Try: pip install -r requirements_picoscope.txt")
     sys.exit(0)
 
-import msl.equipment
-import msl.equipment.resources.picotech.picoscope
+import msl.equipment  # pylint: disable=wrong-import-position
+import msl.equipment.resources.picotech.picoscope  # pylint: disable=wrong-import-position
 
-from msl.equipment.resources.picotech.picoscope import callbacks
-from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
-from msl.equipment.resources.picotech.picoscope.enums import PS5000ARatioMode
+from msl.equipment.resources.picotech.picoscope import callbacks  # pylint: disable=wrong-import-position
+
 
 PICSCOPE_MODEL_5442D = "5442D"  # Peter
 # PICSCOPE_MODEL_5442D='5444D' # Andre
@@ -45,6 +41,10 @@ if PICSCOPE_MODEL == PICSCOPE_MODEL_2204A:
 
 class Instrument:
     def __init__(self, configStep):
+        self.streaming_done = False
+        self.actual_sample_count = 0
+        self.scope = None
+
         self.record = msl.equipment.EquipmentRecord(
             manufacturer="Pico Technology",
             model=PICSCOPE_MODEL,
@@ -95,8 +95,8 @@ class Instrument:
             selected1_dt_s = 2.0 / max_sampling_rate
             desired_sample_time_s = 5000 * selected1_dt_s
 
-        MAX_SAMPLES = 67108608  # On Peters 5442D
-        desired_sample_time_max_s = MAX_SAMPLES * selected1_dt_s
+        max_samples = 67108608  # On Peters 5442D
+        desired_sample_time_max_s = max_samples * selected1_dt_s
         if desired_sample_time_s > desired_sample_time_max_s:
             print(f"Avoid buffer getting too big: reducing sample time from {desired_sample_time_s:0.1f} to {desired_sample_time_max_s:0.1f}s!")
             desired_sample_time_s = desired_sample_time_max_s
@@ -115,7 +115,7 @@ class Instrument:
         # total_samples = int(configStep.duration_s/selected_dt_s)
         # print(f'total_samples={total_samples_before}) -> {total_samples}')
 
-    def acquire(self, configStep, stream_output, handlerCtrlC):
+    def acquire(self, configStep, stream_output, handlerCtrlC):  # pylint: disable=too-many-statements
         assert isinstance(configStep, program.ConfigStep)
 
         valid_ranges = set(range.value for range in self.scope.enRange)
@@ -174,7 +174,7 @@ class Instrument:
         if PICSCOPE_MODEL == PICSCOPE_MODEL_2204A:
 
             @callbacks.GetOverviewBuffersMaxMin
-            def my_get_overview_buffer(overviewBuffers, overflow, triggeredAt, triggered, auto_stop, nValues):
+            def my_get_overview_buffer(overviewBuffers, overflow, triggeredAt, triggered, auto_stop, nValues):  # pylint: disable=too-many-arguments
                 if False:
                     print("StreamingReady Callback: overviewBuffers={}, overflow={}, auto_stop={}, nValues={}".format(overviewBuffers, overflow, auto_stop, nValues))
                 if auto_stop:
@@ -185,7 +185,7 @@ class Instrument:
         if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
 
             @callbacks.ps5000aStreamingReady
-            def my_streaming_ready(handle, num_samples, start_index, overflow, trigger_at, triggered, auto_stop, p_parameter):
+            def my_streaming_ready(handle, num_samples, start_index, overflow, trigger_at, triggered, auto_stop, p_parameter):  # pylint: disable=too-many-arguments
                 if False:
                     print("StreamingReady Callback: handle={}, num_samples={}, start_index={}, overflow={}, trigger_at={}, " "triggered={}, auto_stop={}, p_parameter={}".format(handle, num_samples, start_index, overflow, trigger_at, triggered, auto_stop, p_parameter))
 
@@ -212,8 +212,8 @@ class Instrument:
                     print("!!! Overflow !!!  Voltage to big at input of picoscope. Change input range.")
                 # print('.', end='')
 
-                assert auto_stop == False
-                assert triggered == False
+                assert not auto_stop
+                assert not triggered
 
         start_s = time.time()
         self.scope.run_streaming(auto_stop=False)

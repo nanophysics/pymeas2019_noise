@@ -1,8 +1,8 @@
-import enum
 import math
 
 import program_instrument_zhinst
 
+# pylint: disable=invalid-name
 # sample frequencies and fir_counts
 f0_fast_fs_hz = 125e6  # do not change this values as this is the fastest rate with 15 bit
 f1_medium_fs_hz = f0_fast_fs_hz / float(2 ** 1)  # do not change this values as this is the fastest rate with 16 bit

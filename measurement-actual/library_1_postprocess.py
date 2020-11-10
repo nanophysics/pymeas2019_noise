@@ -13,7 +13,7 @@ def postprocess(dir_raw):
     # evaluate flicker noise
     filename = dir_raw.joinpath("result_presentation.txt")
     with filename.open("r") as fin:
-        dict_file = eval(fin.read())
+        dict_file = eval(fin.read())  # pylint: disable=eval-used
 
     PS = dict_file["presentations"]["PS"]
 

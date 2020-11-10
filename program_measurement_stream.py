@@ -3,8 +3,8 @@ import time
 import queue
 import threading
 
-is64bit = sys.maxsize > 2 ** 32
-if is64bit:
+IS64BIT = sys.maxsize > 2 ** 32
+if IS64BIT:
     SIZE_MAX_BYTES = 1e9
 else:
     SIZE_MAX_BYTES = 1e9
@@ -46,7 +46,7 @@ class Progress:
         return f"{days:d}d {hours:2d}h {minutes:2d}m {seconds:2d}s"
 
 
-class InThread:
+class InThread:  # pylint: disable=too-many-instance-attributes
     """
     A Stream Source.
     Given `out`: Stream-Interface to push to.
@@ -64,6 +64,7 @@ class InThread:
         self.dt_s = dt_s
         self.__func_convert = func_convert
         self.list_overflow = []
+        self.thread = None
         self.__samples_processed = 0
         self.__queue = queue.Queue()
         self.__queue_size = 0
@@ -104,7 +105,7 @@ class InThread:
             self.__queue_size += samples
         if self.__queue_size > self.__queue_size_max:
             self.__queue_size_max = min(int(1.5 * self.__queue_size), SIZE_MAX_INT16)
-            print(f"Max queue size: used {100.0*self.__queue_size/SIZE_MAX_INT16:.0f}%")
+            print(f"Size of queue used: {100.0*self.__queue_size/SIZE_MAX_INT16:.0f}%")
         # Return True if queue is full
         return self.__queue_size > SIZE_MAX_INT16
 
@@ -112,26 +113,29 @@ class InThread:
         self.thread.join()
 
 
+def run():
+    import numpy as np
+    import program_fir
+
+    sp = program_fir.SampleProcess(fir_count=3)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+    i = InThread(sp.output, dt_s=0.01)  # pylint: disable=no-value-for-parameter
+    i.start()
+
+    if True:  # pylint: disable=using-constant-test
+        time_total_s = 10.0
+        t = np.arange(0, time_total_s, i.dt_s)
+        # nse = np.random.randn(len(t))
+        r = np.exp(-t / 0.05)  # pylint: disable=unused-variable
+        # cnse = np.convolve(nse, r) * dt_s
+        # cnse = cnse[:len(t)]
+        _s = 1.0 * np.sin(2 * np.pi * t / 2.0)  # + 0 * cnse
+
+        i.put(_s)
+        i.put_EOF()
+
+    i.join()
+    sp.plot()  # pylint: disable=no-member
+
+
 if __name__ == "__main__":
-    if True:
-        import numpy as np
-        import program_fir
-
-        sp = program_fir.SampleProcess(fir_count=3)
-        i = InThread(sp.output, dt_s=0.01)
-        i.start()
-
-        if True:
-            time_total_s = 10.0
-            t = np.arange(0, time_total_s, i.dt_s)
-            # nse = np.random.randn(len(t))
-            r = np.exp(-t / 0.05)
-            # cnse = np.convolve(nse, r) * dt_s
-            # cnse = cnse[:len(t)]
-            s = 1.0 * np.sin(2 * np.pi * t / 2.0)  # + 0 * cnse
-
-            i.put(s)
-            i.put_EOF()
-
-        i.join()
-        sp.plot()
+    run()

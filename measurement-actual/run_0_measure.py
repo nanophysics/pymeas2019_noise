@@ -2,8 +2,8 @@ import library_path
 
 dir_measurement = library_path.find_append_path()
 
-import config_measurement
-import program
+import config_measurement  # pylint: disable=wrong-import-position
+import program  # pylint: disable=wrong-import-position
 
 
 def run():

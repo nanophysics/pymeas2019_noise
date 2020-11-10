@@ -52,20 +52,20 @@ class PickleResultSummary:
         return directory.joinpath("result_summary.pickle")
 
     @classmethod
-    def save(cls, directory, f, d, enbw, dict_stages):
+    def save(cls, directory, f, d, enbw, dict_stages):  # pylint: disable=too-many-arguments
         prs = PickleResultSummary(f, d, enbw, dict_stages)
         filename_summary_pickle = cls.filename(directory)
-        with open(filename_summary_pickle, "wb") as f:
-            pickle.dump(prs, f)
+        with open(filename_summary_pickle, "wb") as fout:
+            pickle.dump(prs, fout)
 
     @classmethod
     def load(cls, directory):
         filename_summary_pickle = cls.filename(directory)
         prs = None
         if filename_summary_pickle.exists():
-            with open(filename_summary_pickle, "rb") as f:
+            with open(filename_summary_pickle, "rb") as fin:
                 try:
-                    prs = pickle.load(f)
+                    prs = pickle.load(fin)
                 except pickle.UnpicklingError as e:
                     print(f"ERROR Unpicking f{filename_summary_pickle.name}: {e}")
             assert isinstance(prs, PickleResultSummary)
@@ -166,8 +166,8 @@ class Topic:
         # stepsize_bins_count = np.ma.masked_equal(stepsize_bins_count, 0)
         stepsize_bins_V = np.ma.masked_where(stepsize_bins_count == 0, stepsize_bins_V)
         stepsize_bins_count = np.ma.masked_where(stepsize_bins_count == 0, stepsize_bins_count)
-        stepsize_bins_V = stepsize_bins_V.compressed()
-        stepsize_bins_count = stepsize_bins_count.compressed()
+        stepsize_bins_V = stepsize_bins_V.compressed()  # pylint: disable=no-member
+        stepsize_bins_count = stepsize_bins_count.compressed()  # pylint: disable=no-member
         return (stepsize_bins_V, stepsize_bins_count)
 
     def get_timeserie(self, stage):
@@ -231,17 +231,17 @@ class Topic:
         def is_border_decade(f):
             return abs(f * 10 ** -(round(np.log10(f))) - 1.0) < 1e-6
 
-        for (f, value) in zip(f, v):
-            if is_border_decade(f):
+        for (_f, value) in zip(f, v):
+            if is_border_decade(_f):
                 if last_value is not None:
-                    f_decade.append(f)
+                    f_decade.append(_f)
                     value_decade.append(np.sqrt(value ** 2 - last_value ** 2))
                 last_value = value
         return f_decade, value_decade
 
 
 class Presentation:
-    def __init__(self, tag, help_text, xy_func, x_label, y_label, logarithmic_scales=True):
+    def __init__(self, tag, help_text, xy_func, x_label, y_label, logarithmic_scales=True):  # pylint: disable=too-many-arguments
         assert isinstance(tag, str)
         assert isinstance(help_text, str)
         assert isinstance(xy_func, types.FunctionType)
@@ -277,64 +277,33 @@ X_LABEL = "Frequency [Hz]"
 class Presentations:
     def __init__(self):
         self.list = (
-      Presentation(
-        tag = "LSD",
-        x_label = X_LABEL,
-        y_label = "linear spectral density [V/Hz^0.5]",
-        help_text = "linear spectral density [V/Hz^0.5] represents the noise density. Useful to describe random noise.",
-        xy_func = lambda topic, stage: (topic.f, topic.scaling_LSD),
-      ),
-      Presentation(
-        tag = "PSD",
-        x_label = X_LABEL,
-        y_label = "power spectral density [V^2/Hz]",
-        help_text = "power spectral density [V^2/Hz] ist just the square of the LSD. This representation of random noise is useful if you want to sum up the signal over a given frequency interval. ",
-        xy_func = lambda topic, stage: (topic.f, topic.scaling_PSD)
-      ),
-      Presentation(
-        tag = "LS",
-        x_label = X_LABEL,
-        y_label = "linear spectrum [V rms]",
-        help_text = "linear spectrum [V rms] represents the voltage in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.",
-        xy_func = lambda topic, stage: (topic.f, topic.scaling_LS)
-      ),
-      Presentation(
-        tag = "PS",
-        x_label = X_LABEL,
-        y_label = "power spectrum [V^2]",
-        help_text = "power spectrum [V^2] represents the square of LS. Useful if you want to measure the amplitude of a sinusoidal signal which is just between two frequency bins. You can now add the two values to get the amplitude of the sinusoidal signal.",
-        xy_func = lambda topic, stage: (topic.f, topic.scaling_PS),
-      ),
-      Presentation(
-        tag = "INTEGRAL",
-        x_label = X_LABEL,
-        y_label = "integral [V rms]",
-        help_text = "integral [V rms] represents the integrated voltage from the lowest measured frequency up to the actual frequency. Example: Value at 1 kHz: is the voltage between 0.01 Hz and 1 kHz.",
-        xy_func = lambda topic, stage: (topic.f, topic.scaling_INTEGRAL),
-      ),
-      Presentation(
-        tag = "DECADE",
-        x_label = X_LABEL,
-        y_label = "decade left of the point [V rms]",
-        help_text = "decade left of the point [V rms] Example: The value at 100 Hz represents the voltage between 100Hz/10 = 10 Hz and 100 Hz.",
-        xy_func = lambda topic, stage: topic.decade_f_d
-      ),
-      Presentation(
-        tag = "STEPSIZE",
-        x_label = "stepsize [V]",
-        y_label = "count samples [samples/s]",
-        help_text = "TODO.",
-        xy_func = lambda topic, stage: topic.get_stepsize(stage)
-      ),
-      Presentation(
-        tag = "TIMESERIE",
-        x_label = "timeserie [s]",
-        y_label = "sample [V]",
-        help_text = "TODO.",
-        xy_func = lambda topic, stage: topic.get_timeserie(stage),
-        logarithmic_scales = False
-      ),
-    )
+            Presentation(
+                tag="LSD",
+                x_label=X_LABEL,
+                y_label="linear spectral density [V/Hz^0.5]",
+                help_text="linear spectral density [V/Hz^0.5] represents the noise density. Useful to describe random noise.",
+                xy_func=lambda topic, stage: (topic.f, topic.scaling_LSD),
+            ),
+            Presentation(tag="PSD", x_label=X_LABEL, y_label="power spectral density [V^2/Hz]", help_text="power spectral density [V^2/Hz] ist just the square of the LSD. This representation of random noise is useful if you want to sum up the signal over a given frequency interval. ", xy_func=lambda topic, stage: (topic.f, topic.scaling_PSD)),
+            Presentation(tag="LS", x_label=X_LABEL, y_label="linear spectrum [V rms]", help_text="linear spectrum [V rms] represents the voltage in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.", xy_func=lambda topic, stage: (topic.f, topic.scaling_LS)),
+            Presentation(
+                tag="PS",
+                x_label=X_LABEL,
+                y_label="power spectrum [V^2]",
+                help_text="power spectrum [V^2] represents the square of LS. Useful if you want to measure the amplitude of a sinusoidal signal which is just between two frequency bins. You can now add the two values to get the amplitude of the sinusoidal signal.",
+                xy_func=lambda topic, stage: (topic.f, topic.scaling_PS),
+            ),
+            Presentation(
+                tag="INTEGRAL",
+                x_label=X_LABEL,
+                y_label="integral [V rms]",
+                help_text="integral [V rms] represents the integrated voltage from the lowest measured frequency up to the actual frequency. Example: Value at 1 kHz: is the voltage between 0.01 Hz and 1 kHz.",
+                xy_func=lambda topic, stage: (topic.f, topic.scaling_INTEGRAL),
+            ),
+            Presentation(tag="DECADE", x_label=X_LABEL, y_label="decade left of the point [V rms]", help_text="decade left of the point [V rms] Example: The value at 100 Hz represents the voltage between 100Hz/10 = 10 Hz and 100 Hz.", xy_func=lambda topic, stage: topic.decade_f_d),
+            Presentation(tag="STEPSIZE", x_label="stepsize [V]", y_label="count samples [samples/s]", help_text="TODO.", xy_func=lambda topic, stage: topic.get_stepsize(stage)),
+            Presentation(tag="TIMESERIE", x_label="timeserie [s]", y_label="sample [V]", help_text="TODO.", xy_func=lambda topic, stage: topic.get_timeserie(stage), logarithmic_scales=False),
+        )
 
         self.tags = [p.tag for p in self.list]
         self.dict = {p.tag: p for p in self.list}

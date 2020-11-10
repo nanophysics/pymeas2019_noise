@@ -1,16 +1,11 @@
 #
 # Make sure that the subrepos are included in the python path
 #
-import gc
-import re
 import os
 import sys
-import math
-import cmath
 import signal
 import logging
 import pathlib
-import itertools
 
 TOPDIR = pathlib.Path(__file__).parent.absolute()
 MSL_EQUIPMENT_PATH = TOPDIR.joinpath("libraries/msl-equipment")
@@ -22,14 +17,13 @@ sys.path.insert(0, str(TOPDIR.joinpath(MEASUREMENT_ACTUAL)))
 
 try:
     import numpy as np
-    import matplotlib.pyplot as plt
 except ImportError as ex:
     print(f"ERROR: Failed to import ({ex}). Try: pip install -r requirements.txt")
     sys.exit(0)
 
-import library_topic
-import library_plot
-import program_fir
+import library_topic  # pylint: disable=wrong-import-position
+import library_plot  # pylint: disable=wrong-import-position
+import program_fir  # pylint: disable=wrong-import-position
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +35,8 @@ DIRECTORY_RESULT = "result"
 DEFINED_BY_SETUP = "DEFINED_BY_SETUP"
 
 
-class ConfigStep:
-    def __init__(self, dict_values={}):
+class ConfigStep:  # pylint: disable=too-many-instance-attributes
+    def __init__(self, dict_values={}):  # pylint: disable=dangerous-default-value
         self.stepname = DEFINED_BY_SETUP
         self.fir_count = DEFINED_BY_SETUP
         self.fir_count_skipped = DEFINED_BY_SETUP
@@ -75,7 +69,7 @@ class HandlerCtrlC:
         self.__ctrl_c_pressed = False
         signal.signal(signal.SIGINT, self.__signal_handler)
 
-    def __signal_handler(self, sig, frame):
+    def __signal_handler(self, sig, frame):  # pylint: disable=unused-argument
         print("You pressed Ctrl+C!")
         self.__ctrl_c_pressed = True
 
@@ -132,7 +126,7 @@ class ConfigSetup:
             dir_raw.mkdir()
 
         for configStep in self.steps:
-            picoscope = self.module_instrument.Instrument(configStep)
+            picoscope = self.module_instrument.Instrument(configStep)  # pylint: disable=no-member
             picoscope.connect()
             sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), str(dir_raw))
             picoscope.acquire(configStep=configStep, stream_output=sample_process.output, handlerCtrlC=handlerCtrlC)
@@ -148,18 +142,9 @@ def get_configSetup_by_filename(dict_config_setup):
     import config_common
 
     config = ConfigSetup()
-    config.update_by_dict(config_common.dict_config_setup_defaults)
+    config.update_by_dict(config_common.DICT_CONFIG_SETUP_DEFAULTS)
     config.update_by_channel_file(dict_config_setup)
     return config
-
-
-def get_configSetups():
-    list_configs = []
-    for filename in os.listdir(DIRECTORY_TOP):
-        match = RE_CONFIG_SETUP.match(os.path.basename(filename))
-        if match:
-            list_configs.append(os.path.join(DIRECTORY_TOP, filename))
-    return list_configs
 
 
 def reload_if_changed(dir_raw):
@@ -252,7 +237,7 @@ def measure(configSetup, dir_measurement):
         # run_condense(dir_measurement) # 20200212 Peter, nicht jedes mal, lieber von Hand
         # import run_1_condense # 20200212 Peter, nicht jedes mal, lieber von Hand
         # run_1_condense.run() # 20200212 Peter, nicht jedes mal, lieber von Hand
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         import traceback
 
         traceback.print_exc()
@@ -264,21 +249,21 @@ class SpecializedPrettyPrint:
     def __init__(self, stream):
         self._stream = stream
 
-    def pprint(self, d):
-        assert isinstance(d, dict)
+    def pprint(self, _dict):
+        assert isinstance(_dict, dict)
         self._stream.write("{\n")
-        self._print(d, "    ")
+        self._print(_dict, "    ")
         self._stream.write("}\n")
 
-    def _print(self, o, indent):
-        if isinstance(o, dict):
-            for k, i in o.items():
+    def _print(self, obj, indent):
+        if isinstance(obj, dict):
+            for k, i in obj.items():
                 assert isinstance(k, str)
                 key_string = indent + repr(k) + ": "
                 if isinstance(i, str):
                     self._stream.write(key_string + repr(i) + ",\n")
                     continue
-                if isinstance(i, list) or isinstance(i, np.ndarray):
+                if isinstance(i, (list, np.ndarray)):
                     self._stream.write(key_string + "[")
 
                     def _repr(v):
@@ -296,4 +281,4 @@ class SpecializedPrettyPrint:
 
                 raise Exception(f'Unknown datatype {type(i)} for object "{i}"')
             return
-        raise Exception(f'Unknown datatype {type(o)} for object "{o}"')
+        raise Exception(f'Unknown datatype {type(obj)} for object "{obj}"')
