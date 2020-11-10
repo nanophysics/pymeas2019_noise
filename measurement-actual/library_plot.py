@@ -87,7 +87,7 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
     import library_tk
     library_tk.initialize(plt)
 
-  fig, ax = plt.subplots()
+  fig, ax = plt.subplots(figsize=(8, 4))
   globals.set(plotData, fig, ax)
 
   if title:
@@ -95,7 +95,7 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
 
   if do_show or do_animate:
     import library_tk
-    library_tk.add_buttons( fig)
+    library_tk.add_buttons(fig)
 
   globals.initialize_plot_lines()
   globals.update_presentation()

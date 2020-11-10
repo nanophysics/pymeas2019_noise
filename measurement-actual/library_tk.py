@@ -1,4 +1,5 @@
 import sys
+
 import matplotlib.backend_tools
 
 import library_topic
@@ -15,6 +16,8 @@ def initialize(plt):
 
 def add_buttons(fig):
   fig.canvas.manager.toolmanager.add_tool('List', ListTools)
+  fig.canvas.manager.toolbar.add_tool('List', 'navigation', 1)
+
   fig.canvas.manager.toolmanager.add_tool('Autozoom', UserAutozoom)
   fig.canvas.manager.toolbar.add_tool('Autozoom', 'navigation', 1)
 
@@ -24,6 +27,8 @@ def add_buttons(fig):
   fig.canvas.manager.toolmanager.add_tool('Start', UserMeasurementStart)
   fig.canvas.manager.toolbar.add_tool('Start', 'navigation', 1)
 
+  fig.canvas.manager.toolmanager.add_tool('Open Directory', UserOpenDirectory)
+  fig.canvas.manager.toolbar.add_tool('Open Directory', 'navigation', 1)
 
 def start_animation(plotData, fig, func_animate):
 
@@ -185,3 +190,12 @@ class UserAutozoom(matplotlib.backend_tools.ToolBase):
       ax.autoscale()
     self.figure.canvas.draw()
     print('Did Autozoom')
+
+class UserOpenDirectory(matplotlib.backend_tools.ToolBase):
+  description = 'Open Directory'
+
+  def trigger(self, *args, **kwargs):
+    import pathlib
+    import subprocess
+    directory = pathlib.Path(__file__).absolute().parent
+    subprocess.Popen(['explorer', str(directory)])
