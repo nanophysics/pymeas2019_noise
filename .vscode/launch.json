@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Lint",
+            "type": "python",
+            "request": "launch",
+            "module": "pylint",
+            "cwd": "${workspaceFolder}",
+            "args": ["--rcfile=${workspaceFolder}/.pylintrc", "--verbose", "*.py", "measurement-actual"],
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Python: Aktuelle Datei",
             "type": "python",
             "request": "launch",

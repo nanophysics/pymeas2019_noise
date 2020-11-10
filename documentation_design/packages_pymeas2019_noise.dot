@@ -1,0 +1,44 @@
+digraph "packages_pymeas2019_noise" {
+charset="utf-8"
+rankdir=BT
+"0" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\config_measurement.py", shape="box"];
+"1" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\library_1_postprocess.py", shape="box"];
+"2" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\library_path.py", shape="box"];
+"3" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\library_plot.py", shape="box"];
+"4" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\library_tk.py", shape="box"];
+"5" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\library_topic.py", shape="box"];
+"6" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\run_0_measure.py", shape="box"];
+"7" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\run_0_plot_interactive.py", shape="box"];
+"8" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\run_1_condense.py", shape="box"];
+"9" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\run_2_composite_plots.py", shape="box"];
+"10" [label="config_common", shape="box"];
+"11" [label="program", shape="box"];
+"12" [label="program_classify", shape="box"];
+"13" [label="program_config_instrument_picoscope", shape="box"];
+"14" [label="program_config_instrument_zhinst", shape="box"];
+"15" [label="program_eseries", shape="box"];
+"16" [label="program_fir", shape="box"];
+"17" [label="program_instrument_picoscope5442D", shape="box"];
+"18" [label="program_instrument_zhinst", shape="box"];
+"19" [label="program_measurement_stream", shape="box"];
+"20" [label="run_measure_syntetic", shape="box"];
+"0" -> "13" [arrowhead="open", arrowtail="none"];
+"6" -> "11" [arrowhead="open", arrowtail="none"];
+"8" -> "11" [arrowhead="open", arrowtail="none"];
+"10" -> "11" [arrowhead="open", arrowtail="none"];
+"11" -> "10" [arrowhead="open", arrowtail="none"];
+"11" -> "16" [arrowhead="open", arrowtail="none"];
+"12" -> "15" [arrowhead="open", arrowtail="none"];
+"13" -> "17" [arrowhead="open", arrowtail="none"];
+"14" -> "18" [arrowhead="open", arrowtail="none"];
+"16" -> "11" [arrowhead="open", arrowtail="none"];
+"16" -> "12" [arrowhead="open", arrowtail="none"];
+"16" -> "15" [arrowhead="open", arrowtail="none"];
+"17" -> "11" [arrowhead="open", arrowtail="none"];
+"17" -> "19" [arrowhead="open", arrowtail="none"];
+"18" -> "11" [arrowhead="open", arrowtail="none"];
+"18" -> "19" [arrowhead="open", arrowtail="none"];
+"19" -> "16" [arrowhead="open", arrowtail="none"];
+"20" -> "11" [arrowhead="open", arrowtail="none"];
+"20" -> "16" [arrowhead="open", arrowtail="none"];
+}
