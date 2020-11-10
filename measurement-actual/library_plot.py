@@ -1,11 +1,11 @@
-'''
+"""
 There are three modes:
 
 do_show=False,do_animate=False: No GUI. Just write the plot into a file.
 do_show=True,do_animate=False: GUI. Show the data, no animation.
 do_show=True,do_animate=True: GUI. Show the data, animation.
 
-'''
+"""
 
 import pathlib
 import matplotlib.pyplot as plt
@@ -14,138 +14,137 @@ import matplotlib.animation
 
 import library_topic
 
+
 class Globals:
-  def __init__(self):
-    self.presentation = None
-    self.plotData = None
-    self.fig = None
-    self.ax = None
+    def __init__(self):
+        self.presentation = None
+        self.plotData = None
+        self.fig = None
+        self.ax = None
 
-  def set(self, plotData, fig, ax):
-    # assert self.plotData is None
-    # assert self.fig is None
-    self.plotData = plotData
-    self.fig = fig
-    self.ax = ax
+    def set(self, plotData, fig, ax):
+        # assert self.plotData is None
+        # assert self.fig is None
+        self.plotData = plotData
+        self.fig = fig
+        self.ax = ax
 
-  def initialize_plot_lines(self):
-    for topic in self.plotData.listTopics:
-      x, y = globals.presentation.get_xy(topic)
-      assert len(x) == len(y)
-      plot_line, = self.ax.plot(
-        x, y,
-        linestyle='none',
-        linewidth=0.1,
-        marker='.',
-        markersize=3, 
-        color=topic.color,
-        label=topic.topic
-      )
-      scale = 'log' if globals.presentation.logarithmic_scales else 'linear'
-      self.ax.set_xscale(scale)
-      self.ax.set_yscale(scale)
-      topic.set_plot_line(plot_line)
+    def initialize_plot_lines(self):
+        for topic in self.plotData.listTopics:
+            x, y = globals.presentation.get_xy(topic)
+            assert len(x) == len(y)
+            (plot_line,) = self.ax.plot(x, y, linestyle="none", linewidth=0.1, marker=".", markersize=3, color=topic.color, label=topic.topic)
+            scale = "log" if globals.presentation.logarithmic_scales else "linear"
+            self.ax.set_xscale(scale)
+            self.ax.set_yscale(scale)
+            topic.set_plot_line(plot_line)
 
-    leg = self.ax.legend(fancybox=True, framealpha=0.5)
-    leg.get_frame().set_linewidth(0.0)
+        leg = self.ax.legend(fancybox=True, framealpha=0.5)
+        leg.get_frame().set_linewidth(0.0)
 
-  def update_presentation(self, presentation=None, update=True):
-    if presentation is not None:
-      self.presentation = presentation
-      if self.plotData is not None:
-        # The presentation changed, update the graph
-        self.plotData.remove_lines(fig=self.fig, ax=self.ax)
-        self.initialize_plot_lines()
+    def update_presentation(self, presentation=None, update=True):
+        if presentation is not None:
+            self.presentation = presentation
+            if self.plotData is not None:
+                # The presentation changed, update the graph
+                self.plotData.remove_lines(fig=self.fig, ax=self.ax)
+                self.initialize_plot_lines()
 
-    if update:
-      assert self.plotData is not None
-      plt.xlabel(self.presentation.x_label)
-      plt.ylabel(f'{self.presentation.tag}: {self.presentation.y_label}')
-      for topic in self.plotData.listTopics:
-        topic.recalculate_data(presentation=self.presentation)
-      for ax in self.fig.get_axes():
-        ax.relim()
-        ax.autoscale()
-        plt.grid(True, which="major", axis="both", linestyle="-", color='gray', linewidth=0.5)
-        plt.grid(True, which="minor", axis="both", linestyle="-", color='silver', linewidth=0.1)
-        if globals.presentation.logarithmic_scales:
-          ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
-          ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
-        # Uncomment to modify figure
-        # self.fig.set_size_inches(13.0, 7.0)
-        # ax.set_xlim(1e-1, 1e4)
-        # ax.set_ylim(1e-9, 1e-5)
-      self.fig.canvas.draw()
+        if update:
+            assert self.plotData is not None
+            plt.xlabel(self.presentation.x_label)
+            plt.ylabel(f"{self.presentation.tag}: {self.presentation.y_label}")
+            for topic in self.plotData.listTopics:
+                topic.recalculate_data(presentation=self.presentation)
+            for ax in self.fig.get_axes():
+                ax.relim()
+                ax.autoscale()
+                plt.grid(True, which="major", axis="both", linestyle="-", color="gray", linewidth=0.5)
+                plt.grid(True, which="minor", axis="both", linestyle="-", color="silver", linewidth=0.1)
+                if globals.presentation.logarithmic_scales:
+                    ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
+                    ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
+                # Uncomment to modify figure
+                # self.fig.set_size_inches(13.0, 7.0)
+                # ax.set_xlim(1e-1, 1e4)
+                # ax.set_ylim(1e-9, 1e-5)
+            self.fig.canvas.draw()
+
 
 globals = Globals()
 
+
 def do_plots(**args):
-  '''
-  Print all presentation (LSD, LS, PS, etc.)
-  '''
-  for tag in library_topic.PRESENTATIONS.tags:
-    do_plot(presentation_tag=tag, **args)
+    """
+    Print all presentation (LSD, LS, PS, etc.)
+    """
+    for tag in library_topic.PRESENTATIONS.tags:
+        do_plot(presentation_tag=tag, **args)
 
 
-def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=('png', 'svg'), write_files_directory=None, presentation_tag='LSD'):
-  globals.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
+def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=("png", "svg"), write_files_directory=None, presentation_tag="LSD"):
+    globals.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
 
-  if do_show or do_animate:
-    import library_tk
-    library_tk.initialize(plt)
+    if do_show or do_animate:
+        import library_tk
 
-  fig, ax = plt.subplots(figsize=(8, 4))
-  globals.set(plotData, fig, ax)
+        library_tk.initialize(plt)
 
-  if title:
-    plt.title(title)
+    fig, ax = plt.subplots(figsize=(8, 4))
+    globals.set(plotData, fig, ax)
 
-  if do_show or do_animate:
-    import library_tk
-    library_tk.add_buttons(fig)
+    if title:
+        plt.title(title)
 
-  globals.initialize_plot_lines()
-  globals.update_presentation()
+    if do_show or do_animate:
+        import library_tk
 
-  if write_files_directory is None:
-    # The current directory
-    write_files_directory = pathlib.Path(__file__).parent
+        library_tk.add_buttons(fig)
 
-  for ext in write_files:
-    filename = write_files_directory.joinpath(f'result_{globals.presentation.tag}.{ext}')
-    print(filename)
-    fig.savefig(filename, dpi=300)
+    globals.initialize_plot_lines()
+    globals.update_presentation()
 
-  if do_show or do_animate:
-    if do_animate:
-      import library_tk
+    if write_files_directory is None:
+        # The current directory
+        write_files_directory = pathlib.Path(__file__).parent
 
-      def animate(i):
-        if plotData.directories_changed():
-          plotData.remove_lines_and_reload_data(fig, ax)
-          globals.initialize_plot_lines()
-          #initialize_grid()
-          return
+    for ext in write_files:
+        filename = write_files_directory.joinpath(f"result_{globals.presentation.tag}.{ext}")
+        print(filename)
+        fig.savefig(filename, dpi=300)
 
-        for topic in plotData.listTopics:
-          topic.reload_if_changed(globals.presentation)
+    if do_show or do_animate:
+        if do_animate:
+            import library_tk
 
-      _animation = library_tk.start_animation(fig=fig, func_animate=animate)
-      # '_animation': This avoids the garbage collector to be called !?
-    plt.show()
+            def animate(i):
+                if plotData.directories_changed():
+                    plotData.remove_lines_and_reload_data(fig, ax)
+                    globals.initialize_plot_lines()
+                    # initialize_grid()
+                    return
 
-  fig.clf()
-  plt.close(fig)
-  plt.clf()
-  plt.close()
+                for topic in plotData.listTopics:
+                    topic.reload_if_changed(globals.presentation)
 
-def do_plot2(plotData, title=None, do_show=False, do_animate=False, write_files=('png', 'svg'), write_files_directory=None, presentation_tag='LSD'):
-  globals.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
+            _animation = library_tk.start_animation(fig=fig, func_animate=animate)
+            # '_animation': This avoids the garbage collector to be called !?
+        plt.show()
 
-  if do_show or do_animate:
-    import library_tk
-    library_tk.initialize(plt)
+    fig.clf()
+    plt.close(fig)
+    plt.clf()
+    plt.close()
 
-  fig, ax = plt.subplots(figsize=(8, 4))
-  globals.set(plotData, fig, ax)
-  return fig
+
+def do_plot2(plotData, title=None, do_show=False, do_animate=False, write_files=("png", "svg"), write_files_directory=None, presentation_tag="LSD"):
+    globals.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
+
+    if do_show or do_animate:
+        import library_tk
+
+        library_tk.initialize(plt)
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+    globals.set(plotData, fig, ax)
+    return fig
