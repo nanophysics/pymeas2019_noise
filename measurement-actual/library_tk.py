@@ -30,7 +30,7 @@ def add_buttons(fig):
   fig.canvas.manager.toolmanager.add_tool('Open Directory', UserOpenDirectory)
   fig.canvas.manager.toolbar.add_tool('Open Directory', 'navigation', 1)
 
-def start_animation(plotData, fig, func_animate):
+def start_animation(fig, func_animate):
 
   def endless_iter():
     while True:

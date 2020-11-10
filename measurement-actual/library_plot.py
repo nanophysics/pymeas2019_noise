@@ -1,12 +1,18 @@
+'''
+There are three modes:
+
+do_show=False,do_animate=False: No GUI. Just write the plot into a file.
+do_show=True,do_animate=False: GUI. Show the data, no animation.
+do_show=True,do_animate=True: GUI. Show the data, animation.
+
+'''
+
 import pathlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker
 import matplotlib.animation
 
 import library_topic
-
-# TODO: Remove
-PickleResultSummary = library_topic.PickleResultSummary
 
 class Globals:
   def __init__(self):
@@ -80,6 +86,7 @@ def do_plots(**args):
   for tag in library_topic.PRESENTATIONS.tags:
     do_plot(presentation_tag=tag, **args)
 
+
 def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=('png', 'svg'), write_files_directory=None, presentation_tag='LSD'):
   globals.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
 
@@ -123,7 +130,7 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
         for topic in plotData.listTopics:
           topic.reload_if_changed(globals.presentation)
 
-      _animation = library_tk.start_animation(plotData=plotData, fig=fig, func_animate=animate)
+      _animation = library_tk.start_animation(fig=fig, func_animate=animate)
       # '_animation': This avoids the garbage collector to be called !?
     plt.show()
 
@@ -131,3 +138,14 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
   plt.close(fig)
   plt.clf()
   plt.close()
+
+def do_plot2(plotData, title=None, do_show=False, do_animate=False, write_files=('png', 'svg'), write_files_directory=None, presentation_tag='LSD'):
+  globals.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
+
+  if do_show or do_animate:
+    import library_tk
+    library_tk.initialize(plt)
+
+  fig, ax = plt.subplots(figsize=(8, 4))
+  globals.set(plotData, fig, ax)
+  return fig
