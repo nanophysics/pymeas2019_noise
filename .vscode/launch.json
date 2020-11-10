@@ -10,6 +10,28 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: run_0_measure.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/measurement-actual/run_0_measure.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: run_measure_syntetic.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/run_measure_syntetic.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: run_0_plot_interactive.py",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "program": "${workspaceFolder}/measurement-actual/run_0_plot_interactive.py",
+            "console": "integratedTerminal"
         }
     ]
 }

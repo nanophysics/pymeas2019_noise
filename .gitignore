@@ -12,3 +12,5 @@
 /obsolete/
 .ipynb_checkpoints
 todo/peter/tests/*
+versuche/*
+.vscode/.ropeproject/*
