@@ -72,6 +72,11 @@ class PickleResultSummary:
       prs = PickleResultSummary(f=[], d=[], enbw=[], dict_stages={})
     prs.x_directory = directory
     prs.x_filename = filename_summary_pickle
+    try:
+      prs.dict_stages
+    except AttributeError:
+      prs.dict_stages = {}
+
     return prs
 
   def reload_if_changed(self):
