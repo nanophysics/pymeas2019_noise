@@ -11,7 +11,7 @@ import pathlib
 def postprocess(dir_raw):
     isinstance(dir_raw, pathlib.Path)
     # evaluate flicker noise
-    filename = dir_raw.joinpath("result_presentation.txt")
+    filename = dir_raw / "result_presentation.txt"
     with filename.open("r") as fin:
         dict_file = eval(fin.read())  # pylint: disable=eval-used
 

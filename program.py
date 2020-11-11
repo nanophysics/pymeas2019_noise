@@ -1,19 +1,18 @@
 #
 # Make sure that the subrepos are included in the python path
 #
-import os
 import sys
 import signal
 import logging
 import pathlib
 
 TOPDIR = pathlib.Path(__file__).parent.absolute()
-MSL_EQUIPMENT_PATH = TOPDIR.joinpath("libraries/msl-equipment")
-assert MSL_EQUIPMENT_PATH.joinpath("README.rst").is_file(), f"Subrepo is missing (did you clone with --recursive?): {MSL_EQUIPMENT_PATH}"
+MSL_EQUIPMENT_PATH = TOPDIR / "libraries" / "msl-equipment"
+assert (MSL_EQUIPMENT_PATH / "README.rst").is_file(), f"Subrepo is missing (did you clone with --recursive?): {MSL_EQUIPMENT_PATH}"
 sys.path.insert(0, str(MSL_EQUIPMENT_PATH))
 
 MEASUREMENT_ACTUAL = "measurement-actual"
-sys.path.insert(0, str(TOPDIR.joinpath(MEASUREMENT_ACTUAL)))
+sys.path.insert(0, str(TOPDIR / MEASUREMENT_ACTUAL))
 
 try:
     import numpy as np
@@ -29,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 logger.setLevel(logging.DEBUG)
 
-DIRECTORY_TOP = os.path.dirname(os.path.abspath(__file__))
+DIRECTORY_TOP = pathlib.Path(__file__).absolute().parent
 DIRECTORY_RESULT = "result"
 
 DEFINED_BY_SETUP = "DEFINED_BY_SETUP"
@@ -101,8 +100,10 @@ class ConfigSetup:
     #         os.makedirs(directory)
 
     def delete_directory_contents(self, directory):
-        for filename in os.listdir(directory):
-            os.remove(os.path.join(directory, filename))
+        assert isinstance(directory, pathlib.Path)
+
+        for filename in directory.glob("*.*"):
+            filename.unlink()
 
     def _update_element(self, key, value):
         assert key in self.__dict__
@@ -119,16 +120,19 @@ class ConfigSetup:
         self.update_by_dict(dict_config_setup)
 
     def measure_for_all_steps(self, dir_measurement, directory_name=None):
-        dir_raw = dir_measurement.joinpath(library_topic.ResultAttributes.result_dir_actual(directory_name))
+        assert isinstance(dir_measurement, pathlib.Path)
+        assert isinstance(directory_name, (type(None), str))
+
+        dir_raw = dir_measurement / library_topic.ResultAttributes.result_dir_actual(directory_name)
         if dir_raw.exists():
-            self.delete_directory_contents(str(dir_raw))
+            self.delete_directory_contents(dir_raw)
         else:
-            dir_raw.mkdir()
+            dir_raw.mkdir(parents=True, exist_ok=True)
 
         for configStep in self.steps:
             picoscope = self.module_instrument.Instrument(configStep)  # pylint: disable=no-member
             picoscope.connect()
-            sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), str(dir_raw))
+            sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), dir_raw)
             picoscope.acquire(configStep=configStep, stream_output=sample_process.output, handlerCtrlC=handlerCtrlC)
             picoscope.close()
 
@@ -176,7 +180,7 @@ def run_condense(dir_measurement):
     #   import sys
     #   sys.exit(0)
 
-    # dir_result = dir_measurement.joinpath(DIRECTORY_RESULT)
+    # dir_result = dir_measurement / DIRECTORY_RESULT
     # if not dir_result.exists():
     #   dir_result.mkdir()
 
@@ -206,7 +210,7 @@ def write_presentation_summary_file(plotData, directory):
     assert len(plotData.listTopics) == 1
     dict_result = plotData.listTopics[0].get_as_dict()
 
-    with open(directory.joinpath("result_presentation.txt"), "w") as f:
+    with (directory / "result_presentation.txt").open("w") as f:
         # pprint.PrettyPrinter(indent=2, width=1024, stream=f).pprint(dict_result)
         SpecializedPrettyPrint(stream=f).pprint(dict_result)
 
@@ -214,7 +218,7 @@ def write_presentation_summary_file(plotData, directory):
 def run_condense_0to1(dir_raw, trace=False, do_plot=True):
     list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
     if len(list_density) == 0:
-        print(f'SKIPPED: No data for directory {dir_raw}')
+        print(f"SKIPPED: No data for directory {dir_raw}")
         return
 
     lsd_summary = program_fir.LsdSummary(list_density, directory=dir_raw, trace=trace)
@@ -228,6 +232,8 @@ def run_condense_0to1(dir_raw, trace=False, do_plot=True):
 
 
 def measure(configSetup, dir_measurement):
+    assert isinstance(dir_measurement, pathlib.Path)
+
     try:
         directory_name = sys.argv[1]
         print(f"command line: directory_name={directory_name}")

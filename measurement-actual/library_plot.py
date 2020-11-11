@@ -107,7 +107,7 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
         write_files_directory = pathlib.Path(__file__).parent
 
     for ext in write_files:
-        filename = write_files_directory.joinpath(f"result_{plot_context.presentation.tag}.{ext}")
+        filename = write_files_directory / f"result_{plot_context.presentation.tag}.{ext}"
         print(filename)
         fig.savefig(filename, dpi=300)
 

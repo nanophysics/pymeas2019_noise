@@ -1,4 +1,3 @@
-import os
 import math
 import time
 import pickle
@@ -184,6 +183,8 @@ class Density:  # pylint: disable=too-many-instance-attributes
     """
 
     def __init__(self, out, config, directory):
+        assert isinstance(directory, pathlib.Path)
+
         self.out = out
         self.__config = config
         self.__directory = directory
@@ -297,6 +298,8 @@ class Density:  # pylint: disable=too-many-instance-attributes
 class DensityPlot:  # pylint: disable=too-many-instance-attributes
     @classmethod
     def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum, stepsize_bins_count, stepsize_bins_V, samples_V):  # pylint: disable=too-many-arguments
+        assert isinstance(directory, pathlib.Path)
+
         skip = stage < config.fir_count_skipped
         skiptext = FILENAME_TAG_SKIP if skip else ""
         filename = f"densitystep_{config.stepname}_{stage:02d}{skiptext}.pickle"
@@ -312,10 +315,9 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
             "stepsize_bins_V": np.array(stepsize_bins_V, dtype=NUMPY_FLOAT_TYPE),
             "samples_V": samples_V,
         }
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        filenameFull = os.path.join(directory, filename)
-        with open(filenameFull, "wb") as f:
+        directory.mkdir(parents=True, exist_ok=True)
+        filenameFull = directory / filename
+        with filenameFull.open("wb") as f:
             pickle.dump(data, f)
 
         return filenameFull
@@ -425,9 +427,10 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         return np.sqrt(self.Pxx)  # V/Hz^0.5
 
     def plot(self, directory):
-        if not os.path.exists(directory):
-            os.mkdir(directory)
-        filenameFull = f"{directory}/densitystep_{self.stepname}_{self.stage:02d}_{self.dt_s:016.12f}.png"
+        assert isinstance(directory, pathlib.Path)
+
+        directory.mkdir(parents=True, exist_ok=True)
+        filenameFull = directory / f"densitystep_{self.stepname}_{self.stage:02d}_{self.dt_s:016.12f}.png"
         if self.Pxx_n is None:
             print(f"No Pxx: skipped {filenameFull}")
             return
@@ -804,6 +807,8 @@ class UniformPieces:
 
 class SampleProcess:
     def __init__(self, config, directory_raw):
+        assert isinstance(directory_raw, pathlib.Path)
+
         self.config = config
         self.directory_raw = directory_raw
         o = OutTrash()

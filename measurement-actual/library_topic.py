@@ -49,7 +49,7 @@ class PickleResultSummary:
 
     @classmethod
     def filename(cls, directory):
-        return directory.joinpath("result_summary.pickle")
+        return directory / "result_summary.pickle"
 
     @classmethod
     def save(cls, directory, f, d, enbw, dict_stages):  # pylint: disable=too-many-arguments
