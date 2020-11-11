@@ -2,17 +2,22 @@ import library_topic
 import library_plot
 import library_gui
 import config_measurement
+import matplotlib.pyplot as plt
+
 
 
 def run():
     plotData = library_topic.PlotDataMultipleDirectories(__file__)
-    # library_plot.do_plot(plotData=plotData, title=config_measurement.TITLE, do_show=True, write_files=(), do_animate=True, presentation_tag='LSD')
-    fig, ax = library_plot.do_plot2(plotData=plotData, title=config_measurement.TITLE, do_show=True, write_files=(), do_animate=True, presentation_tag="LSD")
-    plot_context = library_plot.PlotContext(figure=fig, ax=ax, do_animate=True)
+    presentation_tag="LSD"
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+    plot_context = library_plot.PlotConext(plotData=plotData, fig=fig, ax=ax)
+    plot_context.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
+
     app = library_gui.MyApp(plot_context)
 
-    library_plot.GLOBALS.initialize_plot_lines()
-    library_plot.GLOBALS.update_presentation()
+    # plot_context.initialize_plot_lines()
+    # plot_context.update_presentation()
 
     app.MainLoop()
 

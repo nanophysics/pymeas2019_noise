@@ -15,35 +15,21 @@ import matplotlib.animation
 import library_topic
 
 
-class PlotContext:
-    def __init__(self, figure, ax, do_animate):
-        self.figure = figure
-        self.ax = ax
-        self.do_animate = do_animate
-        self.animation = None
-        self.globals = GLOBALS
-
-
-class Globals:
-    def __init__(self):
+class PlotConext:
+    def __init__(self, plotData, fig, ax):
+        # The currently active presentation
         self.presentation = None
-        self.plotData = None
-        self.fig = None
-        self.ax = None
-
-    def set(self, plotData, fig, ax):
-        # assert self.plotData is None
-        # assert self.fig is None
+        # The data to be displayed
         self.plotData = plotData
         self.fig = fig
         self.ax = ax
 
     def initialize_plot_lines(self):
         for topic in self.plotData.listTopics:
-            x, y = GLOBALS.presentation.get_xy(topic)
+            x, y = self.presentation.get_xy(topic)
             assert len(x) == len(y)
             (plot_line,) = self.ax.plot(x, y, linestyle="none", linewidth=0.1, marker=".", markersize=3, color=topic.color, label=topic.topic)
-            scale = "log" if GLOBALS.presentation.logarithmic_scales else "linear"
+            scale = "log" if self.presentation.logarithmic_scales else "linear"
             self.ax.set_xscale(scale)
             self.ax.set_yscale(scale)
             topic.set_plot_line(plot_line)
@@ -70,7 +56,7 @@ class Globals:
                 ax.autoscale()
                 plt.grid(True, which="major", axis="both", linestyle="-", color="gray", linewidth=0.5)
                 plt.grid(True, which="minor", axis="both", linestyle="-", color="silver", linewidth=0.1)
-                if GLOBALS.presentation.logarithmic_scales:
+                if self.presentation.logarithmic_scales:
                     ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
                     ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
                 # Uncomment to modify figure
@@ -79,8 +65,16 @@ class Globals:
                 # ax.set_ylim(1e-9, 1e-5)
             self.fig.canvas.draw()
 
+    def animate(self):
+        if self.plotData.directories_changed():
+            self.plotData.remove_lines_and_reload_data(self.fig, self.ax)
+            self.initialize_plot_lines()
+            # initialize_grid()
+            return
 
-GLOBALS = Globals()
+        for topic in self.plotData.listTopics:
+            topic.reload_if_changed(self.presentation)
+
 
 
 def do_plots(**args):
@@ -146,14 +140,3 @@ def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=(
     plt.close()
 
 
-def do_plot2(plotData, title=None, do_show=False, do_animate=False, write_files=("png", "svg"), write_files_directory=None, presentation_tag="LSD"):  # pylint: disable=too-many-arguments
-    GLOBALS.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
-
-    if do_show or do_animate:
-        import library_tk
-
-        library_tk.initialize(plt)
-
-    fig, ax = plt.subplots(figsize=(8, 4))
-    GLOBALS.set(plotData, fig, ax)
-    return fig, ax

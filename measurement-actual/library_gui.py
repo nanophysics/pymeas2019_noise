@@ -18,11 +18,11 @@ import matplotlib.animation
 import wx
 import wx.xrc as xrc
 
+import library_topic
+
 # Hide messages like:
 #   Treat the new Tool classes introduced in v1.5 as experimental for now, the API will likely change in version 2.1 and perhaps the rcParam as well
 warnings.filterwarnings(action="ignore")
-
-ERR_TOL = 1e-5  # floating point slop for peak-detection
 
 COLORS = (
     "blue",
@@ -34,25 +34,15 @@ COLORS = (
     "magenta",
 )
 
-TITLES = (
-    "LSD: linear spectral density [V/Hz^0.5]",
-    "PSD: power spectral density [V^2/Hz]",
-    "LS: linear spectrum [V rms]",
-    "PS: power spectrum [V^2]",
-    "INTEGRAL: integral [V rms]",
-    "DECADE: decade left of the point [V rms]",
-    "STEPSIZE: count samples [samples/s]",
-    "TIMESERIE: sample [V]",
-)
-
 
 class PlotPanel(wx.Panel):
-    def __init__(self, parent, plot_context):
-        self._plot_context = plot_context
+    def __init__(self, parent, app):
+        self._app = app
+        self._plot_context = app._plot_context
 
         wx.Panel.__init__(self, parent, -1)
 
-        self.canvas = FigureCanvasWxAgg(self, -1, self._plot_context.figure)
+        self.canvas = FigureCanvasWxAgg(self, -1, self._plot_context.fig)
         self.toolbar = NavigationToolbar2WxAgg(self.canvas)  # matplotlib toolbar
         self.toolbar.Realize()
 
@@ -66,20 +56,21 @@ class PlotPanel(wx.Panel):
         self.Fit()
 
     def init_plot_data(self):
-        # if False:
-        #     ax = self.fig.add_subplot(111)
+        self._plot_context.initialize_plot_lines()
+        self._plot_context.update_presentation()
 
-        #     x = np.arange(120.0) * 2 * np.pi / 60.0
-        #     y = np.arange(100.0) * 2 * np.pi / 50.0
-        #     self.x, self.y = np.meshgrid(x, y)
-        #     z = np.sin(self.x) + np.cos(self.y)
-        #     self.im = ax.imshow(z, cmap=cm.RdBu, origin="lower")
+        if True:
 
-        #     zmax = np.max(z) - ERR_TOL
-        #     ymax_i, xmax_i = np.nonzero(z >= zmax)
-        #     if self.im.origin == "upper":
-        #         ymax_i = z.shape[0] - ymax_i
-        #     self.lines = ax.plot(xmax_i, ymax_i, "ko")
+            self._plot_context.animation = matplotlib.animation.FuncAnimation(
+                fig=self._plot_context.fig,
+                func=self.animate,
+                frames=self.endless_iter(),
+                # Delay between frames in milliseconds
+                interval=2000,
+                # A function used to draw a clear frame. If not given, the results of drawing from the first item in the frames sequence will be used.
+                init_func=None,
+                repeat=False,
+            )
 
         self.toolbar.update()  # Not sure why this is needed - ADS
 
@@ -89,42 +80,31 @@ class PlotPanel(wx.Panel):
         return self.toolbar
 
     def OnStart(self, event):
-        # self.x += np.pi / 15
-        # self.y += np.pi / 20
-        # z = np.sin(self.x) + np.cos(self.y)
-        # self.im.set_array(z)
-
-        # zmax = np.max(z) - ERR_TOL
-        # ymax_i, xmax_i = np.nonzero(z >= zmax)
-        # if self.im.origin == "upper":
-        #     ymax_i = z.shape[0] - ymax_i
-        # self.lines[0].set_data(xmax_i, ymax_i)
-        if self._plot_context.do_animate:
-            self._plot_context.animation = matplotlib.animation.FuncAnimation(
-                fig=self._plot_context.figure,
-                func=self.animate,
-                frames=self.endless_iter(),
-                # Delay between frames in milliseconds
-                interval=1000,
-                # A function used to draw a clear frame. If not given, the results of drawing from the first item in the frames sequence will be used.
-                init_func=None,
-                repeat=False,
-            )
+        self._app.button_start.Enabled = False
+        self._app.button_stop.Enabled = True
 
         self.canvas.draw()
+
+    def OnStop(self, event):
+        # self._plot_context.animation = None
+        self._app.button_start.Enabled = True
+        self._app.button_stop.Enabled = False
+
+    def OnComboBoxPresentation(self, event):
+        combobox = event.EventObject
+        presentation = combobox.GetClientData(combobox.Selection)
+        self._plot_context.update_presentation(presentation=presentation, update=True)
+        print(presentation.title)
 
     def endless_iter(self):
         yield from itertools.count(start=42)
 
     def animate(self, i):
-        if self._plot_context.globals.plotData.directories_changed():
-            self._plot_context.globals.plotData.remove_lines_and_reload_data(self._plot_context.figure, self._plot_context.ax)
-            self._plot_context.globals.initialize_plot_lines()
-            # initialize_grid()
-            return
+        print('animate START')
 
-        for topic in self._plot_context.globals.plotData.listTopics:
-            topic.reload_if_changed(self._plot_context.globals.presentation)
+        self._plot_context.animate()
+
+        print('animate END')
 
 
 class MyApp(wx.App):
@@ -134,6 +114,10 @@ class MyApp(wx.App):
         self.frame = None
         self.panel = None
         self.plotpanel = None
+        self.button_start = None
+        self.button_stop = None
+        self.button_restart = None
+
         wx.App.__init__(self)
 
     def OnInit(self):
@@ -154,27 +138,28 @@ class MyApp(wx.App):
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         # matplotlib panel itself
-        self.plotpanel = PlotPanel(plot_container, self._plot_context)
-        self.plotpanel.init_plot_data()
+        self.plotpanel = PlotPanel(plot_container, self)
 
         # wx boilerplate
         sizer.Add(self.plotpanel, 1, wx.EXPAND)
         plot_container.SetSizer(sizer)
 
-        # start button ------------------
-        button_start = xrc.XRCCTRL(self.frame, "button_measurement_start")
-        button_start.Bind(wx.EVT_BUTTON, self.plotpanel.OnStart)
-
-        # restart button ------------------
-        button_restart = xrc.XRCCTRL(self.frame, "button_measurement_restart")
-        button_restart.Bind(wx.EVT_BUTTON, self.OnRestart)
+        # buttons ------------------
+        self.button_start = xrc.XRCCTRL(self.frame, "button_measurement_start")
+        self.button_start.Bind(wx.EVT_BUTTON, self.plotpanel.OnStart)
+        self.button_stop = xrc.XRCCTRL(self.frame, "button_measurement_stop")
+        self.button_stop.Bind(wx.EVT_BUTTON, self.plotpanel.OnStop)
+        self.button_restart = xrc.XRCCTRL(self.frame, "button_measurement_restart")
+        self.button_restart.Bind(wx.EVT_BUTTON, self.OnRestart)
 
         # presentation combo ------------------
         combo_box_presentation = xrc.XRCCTRL(self.frame, "combo_box_presentation")
-        combo_box_presentation.Bind(wx.EVT_COMBOBOX, self.OnRestart)
-        for title in TITLES:
-            combo_box_presentation.Append(title)
-        combo_box_presentation.Select(0)
+        combo_box_presentation.Bind(wx.EVT_COMBOBOX, self.plotpanel.OnComboBoxPresentation)
+        for presentation in library_topic.PRESENTATIONS.list:
+            combo_box_presentation.Append(presentation.title, presentation)
+
+        idx = combo_box_presentation.FindString(self._plot_context.presentation.title)
+        combo_box_presentation.Select(idx)
 
         combo_box_measurement_color = xrc.XRCCTRL(self.frame, "combo_box_measurement_color")
         combo_box_measurement_color.Bind(wx.EVT_COMBOBOX, self.OnRestart)
@@ -186,6 +171,8 @@ class MyApp(wx.App):
         self.frame.Show()
 
         self.SetTopWindow(self.frame)
+
+        self.plotpanel.init_plot_data()
 
         return True
 

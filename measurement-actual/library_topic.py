@@ -270,6 +270,10 @@ class Presentation:
             y=y,
         )
 
+    @property
+    def title(self):
+        return f"{self.tag}: {self.y_label}"
+
 
 X_LABEL = "Frequency [Hz]"
 
