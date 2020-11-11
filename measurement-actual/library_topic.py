@@ -49,10 +49,14 @@ class PickleResultSummary:
 
     @classmethod
     def filename(cls, directory):
+        assert isinstance(directory, pathlib.Path)
+
         return directory / "result_summary.pickle"
 
     @classmethod
     def save(cls, directory, f, d, enbw, dict_stages):  # pylint: disable=too-many-arguments
+        assert isinstance(directory, pathlib.Path)
+
         prs = PickleResultSummary(f, d, enbw, dict_stages)
         filename_summary_pickle = cls.filename(directory)
         with open(filename_summary_pickle, "wb") as fout:
@@ -60,10 +64,12 @@ class PickleResultSummary:
 
     @classmethod
     def load(cls, directory):
+        assert isinstance(directory, pathlib.Path)
+
         filename_summary_pickle = cls.filename(directory)
         prs = None
         if filename_summary_pickle.exists():
-            with open(filename_summary_pickle, "rb") as fin:
+            with filename_summary_pickle.open("rb") as fin:
                 try:
                     prs = pickle.load(fin)
                 except pickle.UnpicklingError as e:
@@ -72,6 +78,7 @@ class PickleResultSummary:
         if prs is None:
             # The summary file has not been calculated yet.
             prs = PickleResultSummary(f=[], d=[], enbw=[], dict_stages={})
+
         prs.x_directory = directory
         prs.x_filename = filename_summary_pickle
         try:
@@ -143,6 +150,8 @@ class Topic:
 
     @classmethod
     def load(cls, dir_raw):
+        assert isinstance(dir_raw, pathlib.Path)
+
         prs = PickleResultSummary.load(dir_raw)
         ra = ResultAttributes(dir_raw=dir_raw)
         return Topic(ra, prs)
@@ -276,13 +285,13 @@ class Presentation:
 
 
 X_LABEL = "Frequency [Hz]"
-
+DEFAULT_PRESENTATION = "LSD"
 
 class Presentations:
     def __init__(self):
         self.list = (
             Presentation(
-                tag="LSD",
+                tag=DEFAULT_PRESENTATION,
                 x_label=X_LABEL,
                 y_label="linear spectral density [V/Hz^0.5]",
                 help_text="linear spectral density [V/Hz^0.5] represents the noise density. Useful to describe random noise.",
@@ -326,8 +335,10 @@ PRESENTATIONS = Presentations()
 
 
 class PlotDataMultipleDirectories:
-    def __init__(self, filename):
-        self.topdir = pathlib.Path(filename).absolute().parent
+    def __init__(self, topdir):
+        assert isinstance(topdir, pathlib.Path)
+
+        self.topdir = topdir
         self.__load_data()
 
     def __load_data(self):
@@ -365,6 +376,8 @@ class PlotDataMultipleDirectories:
 
 class PlotDataSingleDirectory:
     def __init__(self, dir_raw):
+        assert isinstance(dir_raw, pathlib.Path)
+
         self.listTopics = [Topic.load(dir_raw)]
 
     def remove_lines(self, fig, ax):

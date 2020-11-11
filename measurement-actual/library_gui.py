@@ -73,7 +73,6 @@ class PlotPanel(wx.Panel):
         self.Fit()
 
     def init_plot_data(self):
-        self._plot_context.initialize_plot_lines()
         self._plot_context.update_presentation()
 
         if True:
@@ -97,8 +96,8 @@ class PlotPanel(wx.Panel):
         return self.toolbar
 
     def OnStart(self, event):
-        self._app.button_start.Enabled = False
-        self._app.button_stop.Enabled = True
+        # self._app.button_start.Enabled = False
+        # self._app.button_stop.Enabled = True
 
         dir_raw = f"{library_topic.DIRECTORY_NAME_RAW_PREFIX}{self._app.combo_box_measurement_color.Value}-{self._app.text_ctrl_measurement_topic.Value}"
 
@@ -106,8 +105,9 @@ class PlotPanel(wx.Panel):
 
     def OnStop(self, event):
         # self._plot_context.animation = None
-        self._app.button_start.Enabled = True
-        self._app.button_stop.Enabled = False
+        # self._app.button_start.Enabled = True
+        # self._app.button_stop.Enabled = False
+        pass
 
     def OnComboBoxPresentation(self, event):
         combobox = event.EventObject

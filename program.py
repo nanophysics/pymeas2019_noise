@@ -195,7 +195,8 @@ def run_condense_dir_raw(dir_raw, do_plot=True):
     plotData = library_topic.PlotDataSingleDirectory(dir_raw)
     write_presentation_summary_file(plotData, dir_raw)
     if do_plot:
-        library_plot.do_plots(plotData=plotData, do_show=False, write_files=("png",), write_files_directory=dir_raw)
+        plotFile = library_plot.PlotFile(plotData=plotData)
+        plotFile.plot_presentations()
 
     try:
         import library_1_postprocess

@@ -25,6 +25,9 @@ class PlotConext:
         self.ax = ax
 
     def initialize_plot_lines(self):
+        """
+        Updates the plot: scales and lines
+        """
         for topic in self.plotData.listTopics:
             x, y = self.presentation.get_xy(topic)
             assert len(x) == len(y)
@@ -38,6 +41,10 @@ class PlotConext:
         leg.get_frame().set_linewidth(0.0)
 
     def update_presentation(self, presentation=None, update=True):
+        """
+        If 'presentation' is given. Call 'initialize_plot_lines'.
+        If 'update': Update the data in the graph
+        """
         if presentation is not None:
             self.presentation = presentation
             if self.plotData is not None:
@@ -48,7 +55,7 @@ class PlotConext:
         if update:
             assert self.plotData is not None
             plt.xlabel(self.presentation.x_label)
-            plt.ylabel(f"{self.presentation.tag}: {self.presentation.y_label}")
+            plt.ylabel(self.presentation.title)
             for topic in self.plotData.listTopics:
                 topic.recalculate_data(presentation=self.presentation)
             for ax in self.fig.get_axes():
@@ -83,35 +90,44 @@ class PlotConext:
         subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw])
 
 
-def do_plots(**args):
-    """
-    Print all presentation (LSD, LS, PS, etc.)
-    """
-    for tag in library_topic.PRESENTATIONS.tags:
-        do_plot(presentation_tag=tag, **args)
+class PlotFile:
+    def __init__(self, plotData, title=None, write_files=("png",), write_files_directory=None):
+        """
+        Possible values: write_files=("png", "svg")
+        """
+        self.plotData = plotData
+        self.title = title
+        self.write_files = write_files
+        assert isinstance(write_files_directory, (type(None), pathlib.Path))
+        if write_files_directory is None:
+            # The current directory
+            write_files_directory = pathlib.Path(__file__).absolute().parent
+        self.write_files_directory = write_files_directory
 
+    def plot_presentations(self):
+        """
+        Print all presentation (LSD, LS, PS, etc.)
+        """
+        for tag in library_topic.PRESENTATIONS.tags:
+            self.plot_presentation(presentation_tag=tag)
 
-def do_plot(plotData, title=None, do_show=False, do_animate=False, write_files=("png", "svg"), write_files_directory=None, presentation_tag="LSD"):  # pylint: disable=too-many-arguments
-    fig, ax = plt.subplots(figsize=(8, 4))
-    plot_context = PlotConext(plotData=plotData, fig=fig, ax=ax)
-    plot_context.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
+    def plot_presentation(self, presentation_tag=library_topic.DEFAULT_PRESENTATION):
+        fig, ax = plt.subplots(figsize=(8, 4))
+        plot_context = PlotConext(plotData=self.plotData, fig=fig, ax=ax)
+        plot_context.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
 
-    if title:
-        plt.title(title)
+        if self.title:
+            plt.title(self.title)
 
-    plot_context.initialize_plot_lines()
-    plot_context.update_presentation()
+        plot_context.initialize_plot_lines()
+        plot_context.update_presentation()
 
-    if write_files_directory is None:
-        # The current directory
-        write_files_directory = pathlib.Path(__file__).parent
+        for ext in self.write_files:
+            filename = self.write_files_directory / f"result_{plot_context.presentation.tag}.{ext}"
+            print(filename)
+            fig.savefig(filename, dpi=300)
 
-    for ext in write_files:
-        filename = write_files_directory / f"result_{plot_context.presentation.tag}.{ext}"
-        print(filename)
-        fig.savefig(filename, dpi=300)
-
-    fig.clf()
-    plt.close(fig)
-    plt.clf()
-    plt.close()
+        fig.clf()
+        plt.close(fig)
+        plt.clf()
+        plt.close()
