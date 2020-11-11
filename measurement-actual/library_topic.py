@@ -351,7 +351,9 @@ class PlotDataMultipleDirectories:
     def remove_lines(self, fig, ax):
         for topic in self.listTopics:
             topic.clear_line()
-        ax.legend().remove()
+        # if len(ax.lines) > 0:
+        if ax.has_data() > 0:
+            ax.legend().remove()
 
     def remove_lines_and_reload_data(self, fig, ax):
         self.remove_lines(fig, ax)
@@ -364,3 +366,11 @@ class PlotDataMultipleDirectories:
 class PlotDataSingleDirectory:
     def __init__(self, dir_raw):
         self.listTopics = [Topic.load(dir_raw)]
+
+    def remove_lines(self, fig, ax):
+        # TODO(hans): Merge with other method of the same name
+        for topic in self.listTopics:
+            topic.clear_line()
+        # if len(ax.lines) > 0:
+        if ax.has_data() > 0:
+            ax.legend().remove()

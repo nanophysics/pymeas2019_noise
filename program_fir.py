@@ -355,7 +355,9 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
                 dp = DensityPlot(filename)
                 l.append(dp)
             except pickle.UnpicklingError as e:
-                print(f"ERROR Unpicking f{filename.name}: {e}")
+                print(f"ERROR Unpicking f{filename}: {e}")
+            except Exception as e:  # pylint: disable=broad-except
+                print(f"ERROR Read f{filename}: {e}")
         return l
 
     @classmethod

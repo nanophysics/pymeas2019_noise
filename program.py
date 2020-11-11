@@ -213,6 +213,9 @@ def write_presentation_summary_file(plotData, directory):
 
 def run_condense_0to1(dir_raw, trace=False, do_plot=True):
     list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
+    if len(list_density) == 0:
+        print(f'SKIPPED: No data for directory {dir_raw}')
+        return
 
     lsd_summary = program_fir.LsdSummary(list_density, directory=dir_raw, trace=trace)
     lsd_summary.write_summary_file(trace=trace)
@@ -263,7 +266,7 @@ class SpecializedPrettyPrint:
                 if isinstance(i, str):
                     self._stream.write(key_string + repr(i) + ",\n")
                     continue
-                if isinstance(i, (list, np.ndarray)):
+                if isinstance(i, (list, tuple, np.ndarray)):
                     self._stream.write(key_string + "[")
 
                     def _repr(v):

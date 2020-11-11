@@ -13,7 +13,6 @@ import itertools
 import warnings
 
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, NavigationToolbar2WxAgg
-from matplotlib.figure import Figure
 import matplotlib.animation
 
 import wx
@@ -101,9 +100,9 @@ class PlotPanel(wx.Panel):
         self._app.button_start.Enabled = False
         self._app.button_stop.Enabled = True
 
-        directory_name = f'{library_topic.DIRECTORY_NAME_RAW_PREFIX}{self._app.combo_box_measurement_color.Value}-{self._app.text_ctrl_measurement_topic.Value}'
+        dir_raw = f"{library_topic.DIRECTORY_NAME_RAW_PREFIX}{self._app.combo_box_measurement_color.Value}-{self._app.text_ctrl_measurement_topic.Value}"
 
-        self._plot_context.start_measurement(directory_name)
+        self._plot_context.start_measurement(dir_raw)
 
     def OnStop(self, event):
         # self._plot_context.animation = None
@@ -124,7 +123,7 @@ class PlotPanel(wx.Panel):
             self._plot_context.animate()
 
 
-class MyApp(wx.App):
+class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
     def __init__(self, plot_context):
         self._plot_context = plot_context
         self.res = None
@@ -201,13 +200,3 @@ class MyApp(wx.App):
         bangs = bang_count.GetValue()
         bangs = int(bangs) + 1
         bang_count.SetValue(str(bangs))
-
-
-def main():
-    plot_context = PlotContext(figure=Figure((5, 4), 75))
-    app = MyApp(plot_context)
-    app.MainLoop()
-
-
-if __name__ == "__main__":
-    main()
