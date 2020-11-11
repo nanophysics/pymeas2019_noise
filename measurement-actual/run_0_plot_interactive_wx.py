@@ -16,9 +16,6 @@ def run():
 
     app = library_gui.MyApp(plot_context)
 
-    # plot_context.initialize_plot_lines()
-    # plot_context.update_presentation()
-
     app.MainLoop()
 
 

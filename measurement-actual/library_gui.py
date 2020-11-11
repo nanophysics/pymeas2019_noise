@@ -6,8 +6,9 @@ This code is base on a sample from
   with this source code, and is also available at
   https://docs.python.org/3/license.html
 """
-import itertools
+import time
 import pathlib
+import itertools
 
 import warnings
 
@@ -33,6 +34,23 @@ COLORS = (
     "cyan",
     "magenta",
 )
+
+
+class Duration:
+    def __init__(self, title):
+        self._title = title
+        self._start_s = time.time()
+
+    @property
+    def duration(self):
+        duration_s = time.time() - self._start_s
+        return f"{duration_s:0.2f}s"
+
+    def __enter__(self):
+        print(f"{self._title} START")
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        print(f"{self._title} END {self.duration}")
 
 
 class PlotPanel(wx.Panel):
@@ -83,7 +101,9 @@ class PlotPanel(wx.Panel):
         self._app.button_start.Enabled = False
         self._app.button_stop.Enabled = True
 
-        self.canvas.draw()
+        directory_name = f'{library_topic.DIRECTORY_NAME_RAW_PREFIX}{self._app.combo_box_measurement_color.Value}-{self._app.text_ctrl_measurement_topic.Value}'
+
+        self._plot_context.start_measurement(directory_name)
 
     def OnStop(self, event):
         # self._plot_context.animation = None
@@ -100,11 +120,8 @@ class PlotPanel(wx.Panel):
         yield from itertools.count(start=42)
 
     def animate(self, i):
-        print('animate START')
-
-        self._plot_context.animate()
-
-        print('animate END')
+        with Duration("animate") as elapsed:
+            self._plot_context.animate()
 
 
 class MyApp(wx.App):
@@ -117,6 +134,8 @@ class MyApp(wx.App):
         self.button_start = None
         self.button_stop = None
         self.button_restart = None
+        self.combo_box_measurement_color = None
+        self.text_ctrl_measurement_topic = None
 
         wx.App.__init__(self)
 
@@ -161,11 +180,12 @@ class MyApp(wx.App):
         idx = combo_box_presentation.FindString(self._plot_context.presentation.title)
         combo_box_presentation.Select(idx)
 
-        combo_box_measurement_color = xrc.XRCCTRL(self.frame, "combo_box_measurement_color")
-        combo_box_measurement_color.Bind(wx.EVT_COMBOBOX, self.OnRestart)
-        for color in COLORS:
-            combo_box_measurement_color.Append(color)
-        combo_box_measurement_color.Select(0)
+        self.combo_box_measurement_color = xrc.XRCCTRL(self.frame, "combo_box_measurement_color")
+        self.combo_box_measurement_color.Append(COLORS)
+        self.combo_box_measurement_color.Select(0)
+
+        self.text_ctrl_measurement_topic = xrc.XRCCTRL(self.frame, "text_ctrl_measurement_topic")
+        self.text_ctrl_measurement_topic.Value = library_topic.ResultAttributes.getdatetime()
 
         # final setup ------------------
         self.frame.Show()

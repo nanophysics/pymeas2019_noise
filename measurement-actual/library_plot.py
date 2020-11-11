@@ -6,7 +6,7 @@ do_show=True,do_animate=False: GUI. Show the data, no animation.
 do_show=True,do_animate=True: GUI. Show the data, animation.
 
 """
-
+import sys
 import pathlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker
@@ -74,6 +74,13 @@ class PlotConext:
 
         for topic in self.plotData.listTopics:
             topic.reload_if_changed(self.presentation)
+
+    def start_measurement(self, directory_name):
+        # The start button has been pressed
+        import subprocess
+        import run_0_measure
+
+        subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, directory_name])
 
 
 
