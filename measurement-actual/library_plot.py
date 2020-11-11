@@ -15,6 +15,15 @@ import matplotlib.animation
 import library_topic
 
 
+class PlotContext:
+    def __init__(self, figure, ax, do_animate):
+        self.figure = figure
+        self.ax = ax
+        self.do_animate = do_animate
+        self.animation = None
+        self.globals = GLOBALS
+
+
 class Globals:
     def __init__(self):
         self.presentation = None
@@ -147,4 +156,4 @@ def do_plot2(plotData, title=None, do_show=False, do_animate=False, write_files=
 
     fig, ax = plt.subplots(figsize=(8, 4))
     GLOBALS.set(plotData, fig, ax)
-    return fig
+    return fig, ax

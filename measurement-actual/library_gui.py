@@ -6,31 +6,53 @@ This code is base on a sample from
   with this source code, and is also available at
   https://docs.python.org/3/license.html
 """
-
+import itertools
 import pathlib
+
+import warnings
 
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, NavigationToolbar2WxAgg
 from matplotlib.figure import Figure
+import matplotlib.animation
 
 import wx
 import wx.xrc as xrc
 
+# Hide messages like:
+#   Treat the new Tool classes introduced in v1.5 as experimental for now, the API will likely change in version 2.1 and perhaps the rcParam as well
+warnings.filterwarnings(action="ignore")
+
 ERR_TOL = 1e-5  # floating point slop for peak-detection
 
+COLORS = (
+    "blue",
+    "orange",
+    "black",
+    "green",
+    "red",
+    "cyan",
+    "magenta",
+)
 
-class PlotContext:
-    def __init__(self, figure, do_animate, func_animate=None):
-        self.figure = figure
-        self.do_animate = do_animate
-        self.func_animate = func_animate
+TITLES = (
+    "LSD: linear spectral density [V/Hz^0.5]",
+    "PSD: power spectral density [V^2/Hz]",
+    "LS: linear spectrum [V rms]",
+    "PS: power spectrum [V^2]",
+    "INTEGRAL: integral [V rms]",
+    "DECADE: decade left of the point [V rms]",
+    "STEPSIZE: count samples [samples/s]",
+    "TIMESERIE: sample [V]",
+)
 
 
 class PlotPanel(wx.Panel):
     def __init__(self, parent, plot_context):
-        wx.Panel.__init__(self, parent, -1)
-        self.fig = plot_context.figure
+        self._plot_context = plot_context
 
-        self.canvas = FigureCanvasWxAgg(self, -1, self.fig)
+        wx.Panel.__init__(self, parent, -1)
+
+        self.canvas = FigureCanvasWxAgg(self, -1, self._plot_context.figure)
         self.toolbar = NavigationToolbar2WxAgg(self.canvas)  # matplotlib toolbar
         self.toolbar.Realize()
 
@@ -77,30 +99,32 @@ class PlotPanel(wx.Panel):
         # if self.im.origin == "upper":
         #     ymax_i = z.shape[0] - ymax_i
         # self.lines[0].set_data(xmax_i, ymax_i)
+        if self._plot_context.do_animate:
+            self._plot_context.animation = matplotlib.animation.FuncAnimation(
+                fig=self._plot_context.figure,
+                func=self.animate,
+                frames=self.endless_iter(),
+                # Delay between frames in milliseconds
+                interval=1000,
+                # A function used to draw a clear frame. If not given, the results of drawing from the first item in the frames sequence will be used.
+                init_func=None,
+                repeat=False,
+            )
 
         self.canvas.draw()
 
+    def endless_iter(self):
+        yield from itertools.count(start=42)
 
-COLORS = (
-    "blue",
-    "orange",
-    "black",
-    "green",
-    "red",
-    "cyan",
-    "magenta",
-)
+    def animate(self, i):
+        if self._plot_context.globals.plotData.directories_changed():
+            self._plot_context.globals.plotData.remove_lines_and_reload_data(self._plot_context.figure, self._plot_context.ax)
+            self._plot_context.globals.initialize_plot_lines()
+            # initialize_grid()
+            return
 
-TITLES = (
-    "LSD: linear spectral density [V/Hz^0.5]",
-    "PSD: power spectral density [V^2/Hz]",
-    "LS: linear spectrum [V rms]",
-    "PS: power spectrum [V^2]",
-    "INTEGRAL: integral [V rms]",
-    "DECADE: decade left of the point [V rms]",
-    "STEPSIZE: count samples [samples/s]",
-    "TIMESERIE: sample [V]",
-)
+        for topic in self._plot_context.globals.plotData.listTopics:
+            topic.reload_if_changed(self._plot_context.globals.presentation)
 
 
 class MyApp(wx.App):
@@ -173,7 +197,7 @@ class MyApp(wx.App):
 
 
 def main():
-    plot_context = PlotContext(figure=Figure((5, 4), 75), do_animate=True)
+    plot_context = PlotContext(figure=Figure((5, 4), 75))
     app = MyApp(plot_context)
     app.MainLoop()
 

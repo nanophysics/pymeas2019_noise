@@ -30,6 +30,13 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Python: run_0_plot_interactive_wx.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/measurement-actual/run_0_plot_interactive_wx.py",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Python: run_0_measure.py",
             "type": "python",
             "request": "launch",
