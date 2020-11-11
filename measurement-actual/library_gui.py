@@ -1,30 +1,29 @@
-'''
+"""
 This code is base on a sample from
   Copyright (C) 2003-2004 Andrew Straw, Jeremy O'Donoghue and others
 
   License: This work is licensed under the PSF. A copy should be included
   with this source code, and is also available at
   https://docs.python.org/3/license.html
-'''
+"""
 
 import pathlib
 
-import matplotlib.cm as cm
-import matplotlib.cbook as cbook
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, NavigationToolbar2WxAgg
 from matplotlib.figure import Figure
-import numpy as np
 
 import wx
 import wx.xrc as xrc
 
 ERR_TOL = 1e-5  # floating point slop for peak-detection
 
+
 class PlotContext:
     def __init__(self, figure, do_animate, func_animate=None):
         self.figure = figure
         self.do_animate = do_animate
         self.func_animate = func_animate
+
 
 class PlotPanel(wx.Panel):
     def __init__(self, parent, plot_context):
@@ -45,20 +44,20 @@ class PlotPanel(wx.Panel):
         self.Fit()
 
     def init_plot_data(self):
-        if False:
-            ax = self.fig.add_subplot(111)
+        # if False:
+        #     ax = self.fig.add_subplot(111)
 
-            x = np.arange(120.0) * 2 * np.pi / 60.0
-            y = np.arange(100.0) * 2 * np.pi / 50.0
-            self.x, self.y = np.meshgrid(x, y)
-            z = np.sin(self.x) + np.cos(self.y)
-            self.im = ax.imshow(z, cmap=cm.RdBu, origin='lower')
+        #     x = np.arange(120.0) * 2 * np.pi / 60.0
+        #     y = np.arange(100.0) * 2 * np.pi / 50.0
+        #     self.x, self.y = np.meshgrid(x, y)
+        #     z = np.sin(self.x) + np.cos(self.y)
+        #     self.im = ax.imshow(z, cmap=cm.RdBu, origin="lower")
 
-            zmax = np.max(z) - ERR_TOL
-            ymax_i, xmax_i = np.nonzero(z >= zmax)
-            if self.im.origin == 'upper':
-                ymax_i = z.shape[0] - ymax_i
-            self.lines = ax.plot(xmax_i, ymax_i, 'ko')
+        #     zmax = np.max(z) - ERR_TOL
+        #     ymax_i, xmax_i = np.nonzero(z >= zmax)
+        #     if self.im.origin == "upper":
+        #         ymax_i = z.shape[0] - ymax_i
+        #     self.lines = ax.plot(xmax_i, ymax_i, "ko")
 
         self.toolbar.update()  # Not sure why this is needed - ADS
 
@@ -68,28 +67,54 @@ class PlotPanel(wx.Panel):
         return self.toolbar
 
     def OnStart(self, event):
-        self.x += np.pi / 15
-        self.y += np.pi / 20
-        z = np.sin(self.x) + np.cos(self.y)
-        self.im.set_array(z)
+        # self.x += np.pi / 15
+        # self.y += np.pi / 20
+        # z = np.sin(self.x) + np.cos(self.y)
+        # self.im.set_array(z)
 
-        zmax = np.max(z) - ERR_TOL
-        ymax_i, xmax_i = np.nonzero(z >= zmax)
-        if self.im.origin == 'upper':
-            ymax_i = z.shape[0] - ymax_i
-        self.lines[0].set_data(xmax_i, ymax_i)
+        # zmax = np.max(z) - ERR_TOL
+        # ymax_i, xmax_i = np.nonzero(z >= zmax)
+        # if self.im.origin == "upper":
+        #     ymax_i = z.shape[0] - ymax_i
+        # self.lines[0].set_data(xmax_i, ymax_i)
 
         self.canvas.draw()
+
+
+COLORS = (
+    "blue",
+    "orange",
+    "black",
+    "green",
+    "red",
+    "cyan",
+    "magenta",
+)
+
+TITLES = (
+    "LSD: linear spectral density [V/Hz^0.5]",
+    "PSD: power spectral density [V^2/Hz]",
+    "LS: linear spectrum [V rms]",
+    "PS: power spectrum [V^2]",
+    "INTEGRAL: integral [V rms]",
+    "DECADE: decade left of the point [V rms]",
+    "STEPSIZE: count samples [samples/s]",
+    "TIMESERIE: sample [V]",
+)
+
 
 class MyApp(wx.App):
     def __init__(self, plot_context):
         self._plot_context = plot_context
+        self.res = None
+        self.frame = None
+        self.panel = None
+        self.plotpanel = None
         wx.App.__init__(self)
 
     def OnInit(self):
-        xrcfile = pathlib.Path(__file__).absolute().with_suffix('.xrc')
-        print('loading', xrcfile)
-
+        xrcfile = pathlib.Path(__file__).absolute().with_suffix(".xrc")
+        print("loading", xrcfile)
         self.res = xrc.XmlResource(str(xrcfile))
 
         # main frame and panel ---------
@@ -123,33 +148,15 @@ class MyApp(wx.App):
         # presentation combo ------------------
         combo_box_presentation = xrc.XRCCTRL(self.frame, "combo_box_presentation")
         combo_box_presentation.Bind(wx.EVT_COMBOBOX, self.OnRestart)
-        for title in (
-                'LSD: linear spectral density [V/Hz^0.5]',
-                'PSD: power spectral density [V^2/Hz]',
-                'LS: linear spectrum [V rms]',
-                'PS: power spectrum [V^2]',
-                'INTEGRAL: integral [V rms]',
-                'DECADE: decade left of the point [V rms]',
-                'STEPSIZE: count samples [samples/s]',
-                'TIMESERIE: sample [V]',
-            ):
+        for title in TITLES:
             combo_box_presentation.Append(title)
         combo_box_presentation.Select(0)
 
         combo_box_measurement_color = xrc.XRCCTRL(self.frame, "combo_box_measurement_color")
         combo_box_measurement_color.Bind(wx.EVT_COMBOBOX, self.OnRestart)
-        for color in (
-                'blue',
-                'orange',
-                'black',
-                'green',
-                'red',
-                'cyan',
-                'magenta',
-            ):
+        for color in COLORS:
             combo_box_measurement_color.Append(color)
         combo_box_measurement_color.Select(0)
-
 
         # final setup ------------------
         self.frame.Show()
@@ -165,7 +172,11 @@ class MyApp(wx.App):
         bang_count.SetValue(str(bangs))
 
 
-if __name__ == '__main__':
+def main():
     plot_context = PlotContext(figure=Figure((5, 4), 75), do_animate=True)
     app = MyApp(plot_context)
     app.MainLoop()
+
+
+if __name__ == "__main__":
+    main()
