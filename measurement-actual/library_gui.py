@@ -134,6 +134,7 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.button_stop = None
         self.button_restart = None
         self.button_display_open_directory = None
+        self.button_display_clone = None
         self.combo_box_measurement_color = None
         self.text_ctrl_measurement_topic = None
         self.label_coordinates = None
@@ -172,6 +173,8 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.button_restart.Bind(wx.EVT_BUTTON, self.OnRestart)
         self.button_display_open_directory = xrc.XRCCTRL(self.frame, "button_display_open_directory")
         self.button_display_open_directory.Bind(wx.EVT_BUTTON, self.OnOpenDirectory)
+        self.button_display_clone = xrc.XRCCTRL(self.frame, "button_display_clone")
+        self.button_display_clone.Bind(wx.EVT_BUTTON, self.OnDisplayClone)
 
         # presentation combo ------------------
         combo_box_presentation = xrc.XRCCTRL(self.frame, "combo_box_presentation")
@@ -207,6 +210,9 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
     def OnOpenDirectory(self, event):
         self._plot_context.open_directory_in_explorer()
+
+    def OnDisplayClone(self, event):
+        self._plot_context.open_display_clone()
 
     def OnRestart(self, event):
         bang_count = xrc.XRCCTRL(self.frame, "bang_count")

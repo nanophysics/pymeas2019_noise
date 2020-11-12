@@ -93,6 +93,12 @@ class PlotContext:
         directory = pathlib.Path(run_0_measure.__file__).absolute().parent
         subprocess.Popen(['explorer', str(directory)])
 
+    def open_display_clone(self):
+        directory = pathlib.Path(run_0_measure.__file__).absolute().parent
+        import run_0_plot_interactive
+
+        subprocess.Popen([sys.executable, run_0_plot_interactive.__file__], cwd=directory)
+
 class PlotFile:
     def __init__(self, plotData, title=None, write_files=("png",), write_files_directory=None):
         """
