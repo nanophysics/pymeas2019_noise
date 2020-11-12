@@ -12,7 +12,7 @@ def run():
     plotData = library_topic.PlotDataMultipleDirectories(DIRECTORY_OF_THIS_FILE)
 
     fig, ax = plt.subplots(figsize=(8, 4))
-    plot_context = library_plot.PlotConext(plotData=plotData, fig=fig, ax=ax)
+    plot_context = library_plot.PlotContext(plotData=plotData, fig=fig, ax=ax)
     plot_context.update_presentation(library_topic.PRESENTATIONS.get(library_topic.DEFAULT_PRESENTATION), update=False)
 
     app = library_gui.MyApp(plot_context)

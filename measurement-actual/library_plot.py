@@ -8,14 +8,17 @@ do_show=True,do_animate=True: GUI. Show the data, animation.
 """
 import sys
 import pathlib
+import subprocess
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker
 import matplotlib.animation
 
 import library_topic
+import run_0_measure
 
 
-class PlotConext:
+class PlotContext:
     def __init__(self, plotData, fig, ax):
         # The currently active presentation
         self.presentation = None
@@ -84,11 +87,11 @@ class PlotConext:
 
     def start_measurement(self, dir_raw):
         # The start button has been pressed
-        import subprocess
-        import run_0_measure
-
         subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw])
 
+    def open_directory_in_explorer(self):
+        directory = pathlib.Path(run_0_measure.__file__).absolute().parent
+        subprocess.Popen(['explorer', str(directory)])
 
 class PlotFile:
     def __init__(self, plotData, title=None, write_files=("png",), write_files_directory=None):
@@ -113,7 +116,7 @@ class PlotFile:
 
     def plot_presentation(self, presentation_tag=library_topic.DEFAULT_PRESENTATION):
         fig, ax = plt.subplots(figsize=(8, 4))
-        plot_context = PlotConext(plotData=self.plotData, fig=fig, ax=ax)
+        plot_context = PlotContext(plotData=self.plotData, fig=fig, ax=ax)
         plot_context.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
 
         if self.title:

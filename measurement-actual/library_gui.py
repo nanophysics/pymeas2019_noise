@@ -133,14 +133,15 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.button_start = None
         self.button_stop = None
         self.button_restart = None
+        self.button_display_open_directory = None
         self.combo_box_measurement_color = None
         self.text_ctrl_measurement_topic = None
+        self.label_coordinates = None
 
         wx.App.__init__(self)
 
     def OnInit(self):
         xrcfile = pathlib.Path(__file__).absolute().with_suffix(".xrc")
-        print("loading", xrcfile)
         self.res = xrc.XmlResource(str(xrcfile))
 
         # main frame and panel ---------
@@ -169,6 +170,8 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.button_stop.Bind(wx.EVT_BUTTON, self.plotpanel.OnStop)
         self.button_restart = xrc.XRCCTRL(self.frame, "button_measurement_restart")
         self.button_restart.Bind(wx.EVT_BUTTON, self.OnRestart)
+        self.button_display_open_directory = xrc.XRCCTRL(self.frame, "button_display_open_directory")
+        self.button_display_open_directory.Bind(wx.EVT_BUTTON, self.OnOpenDirectory)
 
         # presentation combo ------------------
         combo_box_presentation = xrc.XRCCTRL(self.frame, "combo_box_presentation")
@@ -186,6 +189,9 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.text_ctrl_measurement_topic = xrc.XRCCTRL(self.frame, "text_ctrl_measurement_topic")
         self.text_ctrl_measurement_topic.Value = library_topic.ResultAttributes.getdatetime()
 
+        self.label_coordinates = xrc.XRCCTRL(self.frame, "label_coordinates")
+        self.plotpanel.canvas.mpl_connect('motion_notify_event', self.UpdateStatusBar)
+
         # final setup ------------------
         self.frame.Show()
 
@@ -194,6 +200,13 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.plotpanel.init_plot_data()
 
         return True
+
+    def UpdateStatusBar(self, event):
+        if event.inaxes:
+            self.label_coordinates.SetLabel(f"x={event.xdata:e}  y={event.ydata:e}")
+
+    def OnOpenDirectory(self, event):
+        self._plot_context.open_directory_in_explorer()
 
     def OnRestart(self, event):
         bang_count = xrc.XRCCTRL(self.frame, "bang_count")
