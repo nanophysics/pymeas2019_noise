@@ -5,14 +5,13 @@ import numpy as np
 import program
 import program_measurement_stream
 
-logger = logging.getLogger(__name__)
-
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger("logger")
 
 try:
     import msl.loadlib
 except ImportError as ex:
-    print(f"ERROR: Failed to import ({ex}). Try: pip install -r requirements_picoscope.txt")
+    logger.error(f"Failed to import ({ex}). Try: pip install -r requirements_picoscope.txt")
+    logger.exception(ex)
     sys.exit(0)
 
 import msl.equipment  # pylint: disable=wrong-import-position
@@ -67,10 +66,10 @@ class Instrument:
             try:
                 self.scope = self.record.connect()  # establish a connection to the PicoScope
                 info = self.scope.get_unit_info()
-                # print(f'picoscope info={info}')
+                # logger.debug(f'picoscope info={info}')
                 break
             except msl.equipment.exceptions.PicoTechError as ex:
-                print(f"ERROR: {ex}")
+                logging.exception(ex)
                 if retry >= 3:
                     raise
 
@@ -98,7 +97,7 @@ class Instrument:
         max_samples = 67108608  # On Peters 5442D
         desired_sample_time_max_s = max_samples * selected1_dt_s
         if desired_sample_time_s > desired_sample_time_max_s:
-            print(f"Avoid buffer getting too big: reducing sample time from {desired_sample_time_s:0.1f} to {desired_sample_time_max_s:0.1f}s!")
+            logger.info(f"Avoid buffer getting too big: reducing sample time from {desired_sample_time_s:0.1f} to {desired_sample_time_max_s:0.1f}s!")
             desired_sample_time_s = desired_sample_time_max_s
 
         selected2_dt_s, _num_samples = self.scope.set_timebase(selected1_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
@@ -109,11 +108,11 @@ class Instrument:
             assert 0.9 < (selected2_dt_s / configStep.dt_s) < 1.1, f"selected2_dt_s {selected2_dt_s} != configStep.dt_s {configStep.dt_s}"
 
         return selected2_dt_s
-        # print(f'configStep.duration_s={configStep.duration_s:.4e}, total_samples={total_samples}, total_samples*selected_dt_s={total_samples*selected_dt_s:.4e}')
-        # print(f'set_timebase({desired_dt_s:.4e}) -> {selected_dt_s:.4e}')
+        # logger.debug(f'configStep.duration_s={configStep.duration_s:.4e}, total_samples={total_samples}, total_samples*selected_dt_s={total_samples*selected_dt_s:.4e}')
+        # logger.debug(f'set_timebase({desired_dt_s:.4e}) -> {selected_dt_s:.4e}')
         # total_samples_before = total_samples
         # total_samples = int(configStep.duration_s/selected_dt_s)
-        # print(f'total_samples={total_samples_before}) -> {total_samples}')
+        # logger.debug(f'total_samples={total_samples_before}) -> {total_samples}')
 
     def acquire(self, configStep, stream_output, handlerCtrlC):  # pylint: disable=too-many-statements
         assert isinstance(configStep, program.ConfigStep)
@@ -134,7 +133,7 @@ class Instrument:
 
         dt_s = self.calculate_dt_s(configStep, max_samples_bytes)
         total_samples = int(configStep.duration_s / dt_s)
-        print(f"Aquisition with dt_s {dt_s:.3E}s, fs {1.0/dt_s:.3E}Hz")
+        logger.info(f"Aquisition with dt_s {dt_s:.3E}s, fs {1.0/dt_s:.3E}Hz")
 
         # PicoScope 6
         # 8ns
@@ -176,18 +175,18 @@ class Instrument:
             @callbacks.GetOverviewBuffersMaxMin
             def my_get_overview_buffer(overviewBuffers, overflow, triggeredAt, triggered, auto_stop, nValues):  # pylint: disable=too-many-arguments
                 if False:
-                    print("StreamingReady Callback: overviewBuffers={}, overflow={}, auto_stop={}, nValues={}".format(overviewBuffers, overflow, auto_stop, nValues))
+                    logger.info(f"StreamingReady Callback: overviewBuffers={overviewBuffers}, overflow={overflow}, auto_stop={auto_stop}, nValues={nValues}")
                 if auto_stop:
                     self.streaming_done = True
                     stream.put_EOF()
-                    print(r"STOP(time over)", end="")
+                    logger.info(r"STOP(time over)", end="")
 
         if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
 
             @callbacks.ps5000aStreamingReady
             def my_streaming_ready(handle, num_samples, start_index, overflow, trigger_at, triggered, auto_stop, p_parameter):  # pylint: disable=too-many-arguments
                 if False:
-                    print("StreamingReady Callback: handle={}, num_samples={}, start_index={}, overflow={}, trigger_at={}, " "triggered={}, auto_stop={}, p_parameter={}".format(handle, num_samples, start_index, overflow, trigger_at, triggered, auto_stop, p_parameter))
+                    logger.info(f"StreamingReady Callback: handle={handle}, num_samples={num_samples}, start_index={start_index}, overflow={overflow}, trigger_at={trigger_at}, " "triggered={triggered}, auto_stop={auto_stop}, p_parameter={p_parameter}")
 
                 # self.stream.put(channel_raw[start_index:start_index+num_samples])
                 # See: def volts(self):
@@ -196,7 +195,7 @@ class Instrument:
                 if queueFull:
                     self.streaming_done = True
                     stream.put_EOF()
-                    print(r"STOP(queue full)", end="")
+                    logger.info("STOP(queue full)")
 
                 if overflow:
                     # logfile.write(f'Overflow: {self.actual_sample_count+start_index}\n')
@@ -206,11 +205,11 @@ class Instrument:
                 if handlerCtrlC.ctrl_c_pressed or (self.actual_sample_count > total_samples):
                     self.streaming_done = True
                     stream.put_EOF()
-                    print(r"STOP(time over)", end="")
+                    logger.info("STOP(time over)")
 
                 if overflow:
-                    print("!!! Overflow !!!  Voltage to big at input of picoscope. Change input range.")
-                # print('.', end='')
+                    logger.warning("!!! Overflow !!!  Voltage to big at input of picoscope. Change input range.")
+                # logger.debug('.', end='')
 
                 assert not auto_stop
                 assert not triggered
@@ -232,12 +231,12 @@ class Instrument:
         self.scope.stop()
         self.close()
 
-        print()
-        print(f"Time spent in aquisition {time.time()-start_s:1.1f}s")
-        print("Waiting for thread to finish calculations...")
+        logger.info("")
+        logger.info(f"Time spent in aquisition {time.time()-start_s:1.1f}s")
+        logger.info("Waiting for thread to finish calculations...")
         stream.join()
 
-        print("Done")
+        logger.info("Done")
 
 
 # if __name__ == '__main__':

@@ -7,6 +7,7 @@ do_show=True,do_animate=True: GUI. Show the data, animation.
 
 """
 import sys
+import logging
 import pathlib
 import subprocess
 
@@ -16,6 +17,8 @@ import matplotlib.animation
 
 import library_topic
 import run_0_measure
+
+logger = logging.getLogger("logger")
 
 
 class PlotContext:
@@ -91,13 +94,14 @@ class PlotContext:
 
     def open_directory_in_explorer(self):
         directory = pathlib.Path(run_0_measure.__file__).absolute().parent
-        subprocess.Popen(['explorer', str(directory)])
+        subprocess.Popen(["explorer", str(directory)])
 
     def open_display_clone(self):
         directory = pathlib.Path(run_0_measure.__file__).absolute().parent
         import run_0_plot_interactive
 
         subprocess.Popen([sys.executable, run_0_plot_interactive.__file__], cwd=directory)
+
 
 class PlotFile:
     def __init__(self, plotData, title=None, write_files=("png",), write_files_directory=None):
@@ -133,7 +137,7 @@ class PlotFile:
 
         for ext in self.write_files:
             filename = self.write_files_directory / f"result_{plot_context.presentation.tag}.{ext}"
-            print(filename)
+            logger.info(filename)
             fig.savefig(filename, dpi=300)
 
         fig.clf()

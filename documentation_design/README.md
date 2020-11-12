@@ -37,3 +37,41 @@ To format a file, right-click and select `Format Document` in the source code.
 
 Before commit, run the `Lint` launch-target in VSCode.
 Before commit, run the `Black` launch-target in VSCode.
+
+## Communication to the measurement process
+
+### Use case - GUI
+
+- The GUI has to stop the measurement
+- The GUI has to restart the measurement
+  - Stop the measurment
+  - Wait till the measurment finished
+  - Start a new measurement
+
+### Use case - Compact measurement
+- compact_measurement:
+  - For each channel
+    - pyboard_compact: Select channels
+    - start measurement, this will create `comm_measurement_lock.txt`
+    - Wait till `comm_measurement_lock.txt` unlocked
+    - Break if `comm_measurement_status.txt` is not `STOPPED_SUCCESS`
+
+
+### Communication mechanisms
+
+- File `comm_measurement_lock.txt`
+  - The measurement creates this files and locks it.
+  - A) The measurement deletes the file at exit
+  - B) The GUI tries to delete the file: If the file may be deleted, the measurment has quit
+- File `comm_measurement_status.txt` (Future - not implemented now)
+  - The measurment creates this file
+  - Content:
+    - `MEASURING`
+    - `STOPPING`
+    - `STOPPED_SUCCESS`
+    - `STOPPED_ERROR`
+- File `comm_measurement_stop_hard.txt`
+- File `comm_measurement_stop_soft.txt`
+  - The measurement creates these files and does NOT lock them.
+  - When the GUI removes this file, the measurment will stop.
+  - The measurement deletes the files at exit.

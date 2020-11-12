@@ -1,7 +1,10 @@
 import sys
 import time
 import queue
+import logging
 import threading
+
+logger = logging.getLogger("logger")
 
 IS64BIT = sys.maxsize > 2 ** 32
 if IS64BIT:
@@ -32,7 +35,7 @@ class Progress:
         str_remaining_s = self.__time(remaining_s)
         str_samples = f"{samples:,d}".replace(",", "'")
         msg = f"Spent: {str_spent_s}, remaining_s: {str_remaining_s}, collected samples {str_samples}, type Ctrl-C to abort"
-        print(msg)
+        logger.info(msg)
 
     def __time(self, s):
         s = int(s)
@@ -84,7 +87,7 @@ class InThread:  # pylint: disable=too-many-instance-attributes
                 self.__queue_size -= samples
             assert self.__queue_size >= 0
             self.__samples_processed += samples
-            # print('push: ', end='')
+            # logger.info('push: ', end='')
             array_in = self.__func_convert(raw_data_in)
             rc = self.out.push(array_in)
             self.__progress.tick(self.__samples_processed)
@@ -105,7 +108,7 @@ class InThread:  # pylint: disable=too-many-instance-attributes
             self.__queue_size += samples
         if self.__queue_size > self.__queue_size_max:
             self.__queue_size_max = min(int(1.5 * self.__queue_size), SIZE_MAX_INT16)
-            print(f"Size of queue used: {100.0*self.__queue_size/SIZE_MAX_INT16:.0f}%")
+            logger.info(f"Size of queue used: {100.0*self.__queue_size/SIZE_MAX_INT16:.0f}%")
         # Return True if queue is full
         return self.__queue_size > SIZE_MAX_INT16
 

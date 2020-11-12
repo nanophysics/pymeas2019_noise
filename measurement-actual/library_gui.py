@@ -7,6 +7,7 @@ This code is base on a sample from
   https://docs.python.org/3/license.html
 """
 import time
+import logging
 import pathlib
 import itertools
 
@@ -23,6 +24,8 @@ import library_topic
 # Hide messages like:
 #   Treat the new Tool classes introduced in v1.5 as experimental for now, the API will likely change in version 2.1 and perhaps the rcParam as well
 warnings.filterwarnings(action="ignore")
+
+logger = logging.getLogger("logger")
 
 COLORS = (
     "blue",
@@ -46,10 +49,10 @@ class Duration:
         return f"{duration_s:0.2f}s"
 
     def __enter__(self):
-        print(f"{self._title} START")
+        logger.debug(f"{self._title} START")
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        print(f"{self._title} END {self.duration}")
+        logger.debug(f"{self._title} END {self.duration}")
 
 
 class PlotPanel(wx.Panel):
@@ -113,7 +116,7 @@ class PlotPanel(wx.Panel):
         combobox = event.EventObject
         presentation = combobox.GetClientData(combobox.Selection)
         self._plot_context.update_presentation(presentation=presentation, update=True)
-        print(presentation.title)
+        logger.debug(presentation.title)
 
     def endless_iter(self):
         yield from itertools.count(start=42)
@@ -193,7 +196,7 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.text_ctrl_measurement_topic.Value = library_topic.ResultAttributes.getdatetime()
 
         self.label_coordinates = xrc.XRCCTRL(self.frame, "label_coordinates")
-        self.plotpanel.canvas.mpl_connect('motion_notify_event', self.UpdateStatusBar)
+        self.plotpanel.canvas.mpl_connect("motion_notify_event", self.UpdateStatusBar)
 
         # final setup ------------------
         self.frame.Show()

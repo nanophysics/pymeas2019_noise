@@ -2,6 +2,7 @@ import math
 import time
 import pickle
 import pathlib
+import logging
 import itertools
 import threading
 
@@ -13,6 +14,7 @@ import program_eseries
 import program_classify
 import library_topic
 
+logger = logging.getLogger("logger")
 
 TIME_INTERVAL_S = 0.9
 SAMPLES_DENSITY = 2 ** 12  # lenght of periodogram
@@ -22,8 +24,6 @@ SAMPLES_SELECT_MAX = 2 ** 23
 
 # NUMPY_FLOAT_TYPE=np.float
 NUMPY_FLOAT_TYPE = np.float32
-
-DEBUG_OUTPUT = False
 
 classify_stepsize = program_classify.Classify()
 
@@ -89,13 +89,11 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         self.TAG_PUSH = f"FIR {self.stage}"
         decimated_dt_s = dt_s * DECIMATE_FACTOR
         self.pushcalulator_next = PushCalculator(decimated_dt_s)
-        if DEBUG_OUTPUT:
-            print(f"stage {self.stage} push_size_samples {self.pushcalulator_next.push_size_samples} time_s {self.pushcalulator_next.dt_s*self.pushcalulator_next.push_size_samples}")
+        logger.debug(f"stage {self.stage} push_size_samples {self.pushcalulator_next.push_size_samples} time_s {self.pushcalulator_next.dt_s*self.pushcalulator_next.push_size_samples}")
         self.out.init(stage=stage + 1, dt_s=decimated_dt_s)
 
     def done(self):
-        if DEBUG_OUTPUT:
-            print(f"Statistics {self.stage}: count {self.statistics_count}, samples in {self.statistics_samples_in*self.__dt_s:0.3f}s, samples out {self.statistics_samples_out*self.__dt_s*DECIMATE_FACTOR:0.3f}s")
+        logger.debug(f"Statistics {self.stage}: count {self.statistics_count}, samples in {self.statistics_samples_in*self.__dt_s:0.3f}s, samples out {self.statistics_samples_out*self.__dt_s*DECIMATE_FACTOR:0.3f}s")
         self.out.done()
 
     def push(self, array_in):  # pylint: disable=too-many-return-statements
@@ -151,8 +149,7 @@ class FIR:  # pylint: disable=too-many-instance-attributes
     def decimate(self, array_decimate):
         self.statistics_count += 1
 
-        if DEBUG_OUTPUT:
-            print(f"{self.stage},", end="")
+        logger.debug(f"{self.stage},")
         assert len(array_decimate) > SAMPLES_LEFT_RIGHT
         assert len(array_decimate) % DECIMATE_FACTOR == 0
 
@@ -237,9 +234,9 @@ class Density:  # pylint: disable=too-many-instance-attributes
             # Time is over. Calculate density
             assert len(self.__fifo) == SAMPLES_DENSITY
             # if len(self.array) != SAMPLES_DENSITY:
-            #   print('Density not calculated')
+            #   logger.debug('Density not calculated')
             # if self.stage >= 4:
-            #   print(f'self.density {self.stage}')
+            #   logger.debug(f'self.density {self.stage}')
             self.density(self.__fifo)
             if self.__mode_fifo:
                 self.__fifo = self.__fifo[self.__pushcalulator.push_size_samples :]
@@ -258,16 +255,12 @@ class Density:  # pylint: disable=too-many-instance-attributes
 
         assert len(array_in) >= SAMPLES_DENSITY
         self.__fifo = array_in[:SAMPLES_DENSITY]
-        if DEBUG_OUTPUT:
-            print("")
-            print(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array_in)={len(array_in)}")
+        logger.debug(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array_in)={len(array_in)}")
 
         return None
 
     def density(self, array):
-        if DEBUG_OUTPUT:
-            print("")
-            print(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array)={len(array)} calculation")
+        logger.debug(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array)={len(array)} calculation")
 
         self.frequencies, Pxx = scipy.signal.periodogram(array, 1 / self.__dt_s, window="hamming", detrend="linear")  # Hz, V^2/Hz
 
@@ -292,7 +285,7 @@ class Density:  # pylint: disable=too-many-instance-attributes
         _filenameFull = DensityPlot.save(config=self.__config, directory=self.__directory, stage=self.__stage, dt_s=self.__dt_s, frequencies=self.frequencies, Pxx_n=self.__Pxx_n, Pxx_sum=self.__Pxx_sum, stepsize_bins_count=self.__stepsize_bins.count, stepsize_bins_V=self.__stepsize_bins.V, samples_V=array)
 
         # if self.stage > 8:
-        #   print(f'{self.stage} ')
+        #   logger.debug(f'{self.stage} ')
 
 
 class DensityPlot:  # pylint: disable=too-many-instance-attributes
@@ -357,9 +350,11 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
                 dp = DensityPlot(filename)
                 l.append(dp)
             except pickle.UnpicklingError as e:
-                print(f"ERROR Unpicking f{filename}: {e}")
+                logger.error(f"Unpicking f{filename}: {e}")
+                logger.exception(e)
             except Exception as e:  # pylint: disable=broad-except
-                print(f"ERROR Read f{filename}: {e}")
+                logger.error(f"Read f{filename}: {e}")
+                logger.exception(e)
         return l
 
     @classmethod
@@ -408,7 +403,7 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         self.stepsize_bins_count = data["stepsize_bins_count"]
         self.stepsize_bins_V = data["stepsize_bins_V"]
         self.samples_V = data["samples_V"]
-        # print(f'DensityPlot {self.stage} {self.dt_s} {filename}')
+        # logger.debug(f'DensityPlot {self.stage} {self.dt_s} {filename}')
 
     @property
     def Pxx_n(self):
@@ -432,7 +427,7 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         directory.mkdir(parents=True, exist_ok=True)
         filenameFull = directory / f"densitystep_{self.stepname}_{self.stage:02d}_{self.dt_s:016.12f}.png"
         if self.Pxx_n is None:
-            print(f"No Pxx: skipped {filenameFull}")
+            logger.info(f"No Pxx: skipped {filenameFull}")
             return
 
         # If we have averaged values, use it
@@ -681,7 +676,7 @@ class LsdSummary:
         plt.grid(True, which="minor", axis="both", linestyle="-", color="silver", linewidth=0.1)
         ax.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=30))
         filebase = f"{self.__directory}/result_summary_LSD{file_tag}"
-        print(f" Summary LSD {filebase}")
+        logger.info(f" Summary LSD {filebase}")
         fig.savefig(filebase + ".png", dpi=300)
         # fig.savefig(filebase+'.svg')
         # plt.show()
@@ -801,7 +796,7 @@ class UniformPieces:
                 done = len(calculation_stage) == 0
                 if done:
                     return None
-            # print('m', end='')
+            # logger.debug('m', end='')
         return None
 
 

@@ -1,3 +1,5 @@
+**/logger_measurement.txt
+**/logger_gui.txt
 **/data_*.npz
 **/data_*.txt
 **/data_*.png

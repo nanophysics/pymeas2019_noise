@@ -1,6 +1,9 @@
 import math
+import logging
 
 import program_instrument_zhinst
+
+logger = logging.getLogger("logger")
 
 # pylint: disable=invalid-name
 # sample frequencies and fir_counts
@@ -9,23 +12,23 @@ f1_medium_fs_hz = f0_fast_fs_hz / float(2 ** 1)  # do not change this values as 
 exponent_slow = 5  # free to change. Peter has choosen 5 on his laptop
 f2_slow_fs_hz = f0_fast_fs_hz / float(2 ** exponent_slow)
 f1_medium_useful_hz = 20e6 / 3.0  # 3 dB frequency is 20 Mhz
-# print(f'f1_medium_useful_hz wanted  : {f1_medium_useful_hz:.0f} Hz')
+# logger.debug(f'f1_medium_useful_hz wanted  : {f1_medium_useful_hz:.0f} Hz')
 temp = int(round(math.log(f0_fast_fs_hz / f1_medium_useful_hz, 2)))
 f1_medium_useful_hz = f0_fast_fs_hz / 2 ** temp
-# print(f'f1_medium_useful_hz selected: {f1_medium_useful_hz:.0f} Hz')
+# logger.debug(f'f1_medium_useful_hz selected: {f1_medium_useful_hz:.0f} Hz')
 f0_fast_fir_count_skipped = 0  # fixed: we do not want to skip any. Due to nyquist criterion we could see some spurious signals for frequencies above.
 f0_fast_fir_count = int(round(math.log(f0_fast_fs_hz / f1_medium_useful_hz, 2)))
 # input B filter
 R_filter_input_B_ohm = 10000.0
 C_filter_input_B_farad = 1e-9
 fg_filter_input_B = 1.0 / (2.0 * math.pi * R_filter_input_B_ohm * C_filter_input_B_farad)
-# print(f'fg_filter_input_B: {fg_filter_input_B:.0f} Hz')
+# logger.debug(f'fg_filter_input_B: {fg_filter_input_B:.0f} Hz')
 f2_slow_useful_hz = fg_filter_input_B / 3.0
-# print(f'f2_slow_useful_hz wanted  : {f2_slow_useful_hz:.0f} Hz')
+# logger.debug(f'f2_slow_useful_hz wanted  : {f2_slow_useful_hz:.0f} Hz')
 f1_medium_fir_count = int(round(math.log(f1_medium_fs_hz / f2_slow_useful_hz, 2)))
 f2_slow_useful_hz = f1_medium_fs_hz / 2 ** f1_medium_fir_count
 f1_medium_fir_count_skipped = int(round(math.log(f1_medium_fs_hz / f1_medium_useful_hz, 2)))
-# print(f'f2_slow_useful_hz selected  : {f2_slow_useful_hz:.0f} Hz')
+# logger.debug(f'f2_slow_useful_hz selected  : {f2_slow_useful_hz:.0f} Hz')
 f2_slow_fir_count_skipped = int(round(math.log(f2_slow_fs_hz / f2_slow_useful_hz, 2)))
 fir_count_2_slow = f2_slow_fir_count_skipped + 27  # free to choose
 

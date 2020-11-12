@@ -2,8 +2,11 @@ import re
 import time
 import types
 import pickle
+import logging
 import pathlib
 import numpy as np
+
+logger = logging.getLogger("logger")
 
 DIRECTORY_NAME_RAW_PREFIX = "raw-"
 
@@ -73,7 +76,8 @@ class PickleResultSummary:
                 try:
                     prs = pickle.load(fin)
                 except pickle.UnpicklingError as e:
-                    print(f"ERROR Unpicking f{filename_summary_pickle.name}: {e}")
+                    logger.error(f"ERROR Unpicking f{filename_summary_pickle.name}: {e}")
+                    logger.exception(e)
             assert isinstance(prs, PickleResultSummary)
         if prs is None:
             # The summary file has not been calculated yet.
@@ -132,8 +136,8 @@ class Topic:
         changed = self.__prs.reload_if_changed()
         if changed:
             self.recalculate_data(presentation)
-            # print(f'changed {time.time()-start:0.2f}s "{self.__ra.topic}"')
-            print(f'plot: reload changed data: "{self.__ra.topic}"')
+            # logger.info(f'changed {time.time()-start:0.2f}s "{self.__ra.topic}"')
+            logger.info(f'plot: reload changed data: "{self.__ra.topic}"')
         return changed
 
     def recalculate_data(self, presentation):
@@ -286,6 +290,7 @@ class Presentation:
 
 X_LABEL = "Frequency [Hz]"
 DEFAULT_PRESENTATION = "LSD"
+
 
 class Presentations:
     def __init__(self):

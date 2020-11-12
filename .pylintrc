@@ -56,7 +56,7 @@ disable=
         # W0621, # redefined-outer-name
         # W0107, # unnecessary-pass
         # W0703, # broad-except
-        # W1202, # logging-format-interpolation
+        W1202, # logging-format-interpolation
 
 [REPORTS]
 # The following line displays the '\' - which is wrong, but I did not find out a way how to avoid id

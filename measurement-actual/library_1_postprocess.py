@@ -5,7 +5,10 @@
 # Just start run_0_measure.bat and observe the result
 
 import math
+import logging
 import pathlib
+
+logger = logging.getLogger("logger")
 
 
 def postprocess(dir_raw):
@@ -28,15 +31,15 @@ def postprocess(dir_raw):
             if f > f_high - 1e-3:
                 break
     if n != 24:
-        print(f"Flickernoise: not enough values to calculate.")
+        logger.warning("Flickernoise: not enough values to calculate.")
         return
     flicker_noise_Vrms = math.sqrt(P_sum)
     flicker_noise_limit_Vrms = 1.0e-6
-    print("")
-    print(f"Flickernoise: 0.1 Hz to 10 Hz is {flicker_noise_Vrms:0.3E} Vrms")
+    logger.info("")
+    logger.info(f"Flickernoise: 0.1 Hz to 10 Hz is {flicker_noise_Vrms:0.3E} Vrms")
     if flicker_noise_Vrms < flicker_noise_limit_Vrms:
-        print(f"This flickernoise is below the limit of {flicker_noise_limit_Vrms:0.3E} Vrms")
-        print(f"Good component")
+        logger.info(f"This flickernoise is below the limit of {flicker_noise_limit_Vrms:0.3E} Vrms")
+        logger.info("Good component")
     else:
-        print(f"This flickernoise is above the limit of {flicker_noise_limit_Vrms:0.3E} Vrms")
-        print(f"Bad component")
+        logger.warning(f"This flickernoise is above the limit of {flicker_noise_limit_Vrms:0.3E} Vrms")
+        logger.warning(f"Bad component")

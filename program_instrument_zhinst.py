@@ -1,4 +1,5 @@
 import time
+import logging
 import numpy as np
 
 import zhinst
@@ -7,6 +8,8 @@ import zhinst.ziPython
 
 import program
 import program_measurement_stream
+
+logger = logging.getLogger("logger")
 
 NUM_SAMPLES_PERIOD = 16
 SCOPE_INPUT_SELECT = 0  # Signal input 1
@@ -36,7 +39,7 @@ class Instrument:
             device_props = discovery.get(self.device_id)
             serveraddress = device_props["serveraddress"]
             serverport = device_props["serverport"]
-            print(f"Connecting to {self.dev} at {serveraddress}:{serverport}")
+            logger.info(f"Connecting to {self.dev} at {serveraddress}:{serverport}")
             self.daq = zhinst.ziPython.ziDAQServer(serveraddress, serverport, device_props["apilevel"])
         except Exception as e:
             raise Exception(f"Device {self.dev} not found: {e}")
@@ -49,7 +52,7 @@ class Instrument:
             raise Exception(f'Device {self.dev}: Could nt read "{_path}": {e}')
 
     def warning(self, msg):
-        print(f"WARNING: {msg}")
+        logger.warning(msg)
 
     def connect(self):
         # ...\zhinst\examples\common\example_autoranging_impedance.py
@@ -136,8 +139,8 @@ class Instrument:
         # The value of the instrument's ADC sampling rate.
         self.clockbase_s = self.daq.getInt(f"/{self.dev}/clockbase")
         self.rate_s = self.clockbase_s / 2 ** SCOPE_STREAM_RATE
-        print(f"self.clockbase_s: {self.clockbase_s}")
-        print(f"self.rate_s: {self.rate_s}")
+        logger.info(f"self.clockbase_s: {self.clockbase_s}")
+        logger.info(f"self.rate_s: {self.rate_s}")
 
         # Now configure the instrument for this experiment.
         ####################################################################################################################
@@ -230,11 +233,11 @@ class Instrument:
             poll_count += 1
             if stream_nodepath not in data:
                 # Could be the case for very slow streaming rates and fast poll frequencies.
-                print("Poll did not return any subscribed data.")
+                logger.info("Poll did not return any subscribed data.")
                 continue
             num_blocks_poll = len(data[stream_nodepath])
             num_blocks += num_blocks_poll
-            print(f"Poll #{poll_count} returned {num_blocks_poll} blocks of streamed scope data. " f"blocks processed {num_blocks} samples acquired {n}.", sep="", end="\r")
+            logger.info(f"Poll #{poll_count} returned {num_blocks_poll} blocks of streamed scope data. " f"blocks processed {num_blocks} samples acquired {n}.", sep="", end="\r")
             for b, block in enumerate(data[stream_nodepath]):
                 flags = block["flags"]
                 if flags & 1:
@@ -262,25 +265,25 @@ class Instrument:
                 queueFull = stream.put(adu_values)
                 if queueFull:
                     stream.put_EOF()
-                    print(r"STOP(queue full)", end="")
+                    logger.info("STOP(queue full)")
                     break
 
                 if handlerCtrlC.ctrl_c_pressed:
                     stream.put_EOF()
-                    print(r"STOP(ctrl-C pressed)", end="")
+                    logger.info("STOP(ctrl-C pressed)")
 
                 n += num_samples_block
 
         if handlerCtrlC.ctrl_c_pressed:
             stream.put_EOF()
-            print(r"STOP(time over)", end="")
+            logger.info("STOP(time over)")
 
         self.daq.sync()
         self.daq.setInt(f"/{self.dev}/scopes/*/stream/enable", 0)
         self.daq.unsubscribe("*")
 
-        print()
-        print("Total blocks processed ", num_blocks, ", samples acquired ", n, ".", sep="")
+        logger.info()
+        logger.info(f"Total blocks processed {num_blocks}, samples acquired {n}.")
 
         expected_ts_delta = 2 ** SCOPE_STREAM_RATE
 
@@ -305,7 +308,7 @@ class Instrument:
             self.warning(f"Scope channel {SCOPE_INPUT_SELECT} timestamps have a max_diff {max_ts_delta} (first discrepenacy at pos: {index[0]}). " f"Expected {expected_ts_delta}.")
             ts_delta_mismatch = True
         dt = (scope_samples_timestamp[-1] - scope_samples_timestamp[0]) / float(self.clockbase_s)
-        print(f"Samples in channel {SCOPE_INPUT_SELECT} span {dt}s at a rate of {self.rate_s/1e3}kHz.")
+        logger.info(f"Samples in channel {SCOPE_INPUT_SELECT} span {dt}s at a rate of {self.rate_s/1e3}kHz.")
         assert not nan_count, "Detected NAN in the array of scope samples."
         assert not ts_delta_mismatch, "Detected an unexpected timestamp delta in the scope data."
 

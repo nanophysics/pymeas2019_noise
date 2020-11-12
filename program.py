@@ -6,27 +6,25 @@ import signal
 import logging
 import pathlib
 
+logger = logging.getLogger("logger")
+
 TOPDIR = pathlib.Path(__file__).parent.absolute()
 MSL_EQUIPMENT_PATH = TOPDIR / "libraries" / "msl-equipment"
 assert (MSL_EQUIPMENT_PATH / "README.rst").is_file(), f"Subrepo is missing (did you clone with --recursive?): {MSL_EQUIPMENT_PATH}"
 sys.path.insert(0, str(MSL_EQUIPMENT_PATH))
 
-MEASUREMENT_ACTUAL = "measurement-actual"
-sys.path.insert(0, str(TOPDIR / MEASUREMENT_ACTUAL))
+MEASUREMENT_ACTUAL = TOPDIR / "measurement-actual"
+sys.path.insert(0, str(MEASUREMENT_ACTUAL))
 
 try:
     import numpy as np
 except ImportError as ex:
-    print(f"ERROR: Failed to import ({ex}). Try: pip install -r requirements.txt")
+    logger.error(f"ERROR: Failed to import ({ex}). Try: pip install -r requirements.txt")
     sys.exit(0)
 
 import library_topic  # pylint: disable=wrong-import-position
 import library_plot  # pylint: disable=wrong-import-position
 import program_fir  # pylint: disable=wrong-import-position
-
-logger = logging.getLogger(__name__)
-
-logger.setLevel(logging.DEBUG)
 
 DIRECTORY_TOP = pathlib.Path(__file__).absolute().parent
 DIRECTORY_RESULT = "result"
@@ -69,7 +67,7 @@ class HandlerCtrlC:
         signal.signal(signal.SIGINT, self.__signal_handler)
 
     def __signal_handler(self, sig, frame):  # pylint: disable=unused-argument
-        print("You pressed Ctrl+C!")
+        logger.info("You pressed Ctrl+C!")
         self.__ctrl_c_pressed = True
 
     @property
@@ -201,9 +199,9 @@ def run_condense_dir_raw(dir_raw, do_plot=True):
     try:
         import library_1_postprocess
     except ModuleNotFoundError:
-        print("No library_1_postprocess...")
+        logger.error("No library_1_postprocess...")
         return
-    print(f"library_1_postprocess.postprocess({dir_raw})")
+    logger.info(f"library_1_postprocess.postprocess({dir_raw})")
     library_1_postprocess.postprocess(dir_raw)
 
 
@@ -219,7 +217,7 @@ def write_presentation_summary_file(plotData, directory):
 def run_condense_0to1(dir_raw, trace=False, do_plot=True):
     list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
     if len(list_density) == 0:
-        print(f"SKIPPED: No data for directory {dir_raw}")
+        logger.info(f"SKIPPED: No data for directory {dir_raw}")
         return
 
     lsd_summary = program_fir.LsdSummary(list_density, directory=dir_raw, trace=trace)
@@ -237,7 +235,7 @@ def measure(configSetup, dir_measurement):
 
     try:
         directory_name = sys.argv[1]
-        print(f"command line: directory_name={directory_name}")
+        logger.info(f"command line: directory_name={directory_name}")
     except IndexError:
         directory_name = None
 
@@ -251,7 +249,7 @@ def measure(configSetup, dir_measurement):
         import traceback
 
         traceback.print_exc()
-        print("Hit any key to terminate")
+        logger.info("Hit any key to terminate")
         sys.stdin.read()
 
 
