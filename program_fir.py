@@ -333,7 +333,10 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         """
         Return all plot (.pickle-files) from directory.
         """
-        for filename in pathlib.Path(dir_input).glob("densitystep_*.pickle"):
+        assert isinstance(dir_input, pathlib.Path)
+        assert isinstance(skip, bool)
+
+        for filename in dir_input.glob("densitystep_*.pickle"):
             if skip and (FILENAME_TAG_SKIP in filename.name):
                 continue
             yield filename
@@ -343,6 +346,9 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         """
         Return all plot (.pickle-files) from directory.
         """
+        assert isinstance(dir_input, pathlib.Path)
+        assert isinstance(skip, bool)
+
         # return [DensityPlot(filename) for filename in cls.pickle_files_from_directory(dir_input, skip)]
         l = []
         for filename in cls.pickle_files_from_directory(dir_input, skip):

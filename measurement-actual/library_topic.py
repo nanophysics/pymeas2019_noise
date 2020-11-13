@@ -29,11 +29,11 @@ class ResultAttributes:
         return time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
 
     @classmethod
-    def result_dir_actual(cls, directory_name=None):
-        if directory_name is None:
+    def result_dir_actual(cls, dir_arg=None):
+        if dir_arg is None:
             return f"{DIRECTORY_NAME_RAW_PREFIX}red-{cls.getdatetime()}"
-        assert directory_name.startswith(DIRECTORY_NAME_RAW_PREFIX)
-        return directory_name
+        assert dir_arg.startswith(DIRECTORY_NAME_RAW_PREFIX)
+        return dir_arg
 
 
 class PickleResultSummary:

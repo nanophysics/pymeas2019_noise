@@ -95,7 +95,7 @@ class FilelockMeasurement:
     def requested_stop(cls):
         FilelockMeasurement.__check_files()
         if FilelockMeasurement.REQUESTED_STOP:
-            logger.info(f"requested_stop returned True!")
+            logger.info(f"requested_stop() returned True!")
             return True
         return False
 
@@ -103,7 +103,7 @@ class FilelockMeasurement:
     def requested_stop_soft(cls):
         FilelockMeasurement.__check_files()
         if FilelockMeasurement.REQUESTED_STOP_SOFT:
-            logger.info(f"requested_stop_soft returned True!")
+            logger.info(f"requested_stop_soft() returned True!")
             return True
         return False
 

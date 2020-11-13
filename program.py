@@ -78,12 +78,6 @@ class ConfigSetup:
     #       if not os.path.exists(directory):
     #         os.makedirs(directory)
 
-    def delete_directory_contents(self, directory):
-        assert isinstance(directory, pathlib.Path)
-
-        for filename in directory.glob("*.*"):
-            filename.unlink()
-
     def _update_element(self, key, value):
         assert key in self.__dict__
         if key == "steps":
@@ -98,15 +92,9 @@ class ConfigSetup:
     def update_by_channel_file(self, dict_config_setup):
         self.update_by_dict(dict_config_setup)
 
-    def measure_for_all_steps(self, dir_measurement, directory_name=None):
+    def measure_for_all_steps(self, dir_measurement, dir_raw):
         assert isinstance(dir_measurement, pathlib.Path)
-        assert isinstance(directory_name, (type(None), str))
-
-        dir_raw = dir_measurement / library_topic.ResultAttributes.result_dir_actual(directory_name)
-        if dir_raw.exists():
-            self.delete_directory_contents(dir_raw)
-        else:
-            dir_raw.mkdir(parents=True, exist_ok=True)
+        assert isinstance(dir_raw, pathlib.Path)
 
         for configStep in self.steps:
             picoscope = self.module_instrument.Instrument(configStep)  # pylint: disable=no-member
@@ -118,7 +106,31 @@ class ConfigSetup:
             if self._filelock_measurement.requested_stop_soft():
                 break
 
-        return dir_raw
+
+def examine_dir_raw(dir_measurement):
+    "Returns the directory with the raw-results"
+    assert isinstance(dir_measurement, pathlib.Path)
+
+    dir_arg = None
+    if len(sys.argv) > 1:
+        dir_arg = sys.argv[1]
+        logger.info(f"command line: directory_name={dir_arg}")
+
+    dir_raw = dir_measurement / library_topic.ResultAttributes.result_dir_actual(dir_arg)
+
+    if dir_raw.exists():
+        def delete_directory_contents(directory):
+            assert isinstance(directory, pathlib.Path)
+
+            for filename in directory.glob("*.*"):
+                filename.unlink()
+
+
+        delete_directory_contents(dir_raw)
+    else:
+        dir_raw.mkdir(parents=True, exist_ok=True)
+
+    return dir_raw
 
 
 def get_configSetup_by_filename(dict_config_setup):
@@ -168,6 +180,8 @@ def run_condense(dir_measurement):
 
 
 def run_condense_dir_raw(dir_raw, do_plot=True):
+    assert isinstance(dir_raw, pathlib.Path)
+
     run_condense_0to1(dir_raw=dir_raw, do_plot=do_plot, trace=False)
     run_condense_0to1(dir_raw=dir_raw, do_plot=do_plot, trace=True)
 
@@ -196,6 +210,8 @@ def write_presentation_summary_file(plotData, directory):
 
 
 def run_condense_0to1(dir_raw, trace=False, do_plot=True):
+    assert isinstance(dir_raw, pathlib.Path)
+
     list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
     if len(list_density) == 0:
         logger.info(f"SKIPPED: No data for directory {dir_raw}")
@@ -211,18 +227,13 @@ def run_condense_0to1(dir_raw, trace=False, do_plot=True):
         lsd_summary.plot(file_tag=file_tag)
 
 
-def measure(configSetup, dir_measurement):
+def measure(configSetup, dir_measurement, dir_raw):
+    assert isinstance(configSetup, ConfigSetup)
     assert isinstance(dir_measurement, pathlib.Path)
+    assert isinstance(dir_raw, pathlib.Path)
 
     try:
-        directory_name = sys.argv[1]
-        logger.info(f"command line: directory_name={directory_name}")
-    except IndexError:
-        directory_name = None
-
-    try:
-        dir_raw = configSetup.measure_for_all_steps(dir_measurement, directory_name=directory_name)
-        return dir_raw
+        configSetup.measure_for_all_steps(dir_measurement=dir_measurement, dir_raw=dir_raw)
         # run_condense(dir_measurement) # 20200212 Peter, nicht jedes mal, lieber von Hand
         # import run_1_condense # 20200212 Peter, nicht jedes mal, lieber von Hand
         # run_1_condense.run() # 20200212 Peter, nicht jedes mal, lieber von Hand

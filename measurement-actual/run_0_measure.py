@@ -11,12 +11,14 @@ logger = logging.getLogger("logger")
 
 
 def run():
-    library_path.init_logger_measurement()
+    dir_raw = program.examine_dir_raw(dir_measurement=dir_measurement)
+
+    library_path.init_logger_measurement(directory=dir_raw)
 
     dict_config_setup = config_measurement.get_dict_config_setup()
     logger.info(dict_config_setup)
     configSetup = program.get_configSetup_by_filename(dict_config_setup)
-    dir_raw = program.measure(configSetup, dir_measurement)
+    program.measure(configSetup, dir_measurement=dir_measurement, dir_raw=dir_raw)
 
     program.run_condense_dir_raw(dir_raw=dir_raw, do_plot=False)
 

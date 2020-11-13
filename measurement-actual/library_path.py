@@ -25,8 +25,11 @@ def init_logger_gui():
     init_logger(DIRECTORY_OF_THIS_FILE / "logger_gui.txt")
 
 
-def init_logger_measurement():
-    init_logger(DIRECTORY_OF_THIS_FILE / "logger_measurement.txt")
+def init_logger_measurement(directory=None):
+    assert isinstance(directory, (type(None), pathlib.Path))
+    if directory is None:
+        directory = DIRECTORY_OF_THIS_FILE
+    init_logger(directory / "logger_measurement.txt")
 
 
 def init_logger(filename):
