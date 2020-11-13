@@ -1,6 +1,7 @@
 **/logger_measurement.txt
-**/logger_gui.txt
+**/logger_gui*.txt
 **/comm_measurement_*.txt
+**/tmp_filelock_*.txt
 **/data_*.npz
 **/data_*.txt
 **/data_*.png

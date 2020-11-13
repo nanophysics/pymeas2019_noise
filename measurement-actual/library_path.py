@@ -22,26 +22,37 @@ class Dummy:
 
 
 def init_logger_gui():
-    init_logger(DIRECTORY_OF_THIS_FILE / "logger_gui.txt")
+    init_logger(DIRECTORY_OF_THIS_FILE, ("logger_gui.txt", "logger_gui_clone1.txt", "logger_gui_clone2.txt"))
 
 
 def init_logger_measurement(directory=None):
     assert isinstance(directory, (type(None), pathlib.Path))
     if directory is None:
         directory = DIRECTORY_OF_THIS_FILE
-    init_logger(directory / "logger_measurement.txt")
+    init_logger(directory, ("logger_measurement.txt",))
 
 
-def init_logger(filename):
-    assert isinstance(filename, pathlib.Path)
+def init_logger(directory, filenames):
+    assert isinstance(directory, pathlib.Path)
+    assert isinstance(filenames, (list, tuple))
 
     if Dummy.INITIALIZED:
         logger.warning("Logger already initialized")
         return
     Dummy.INITIALIZED = True
 
-    if filename.exists():
-        filename.unlink()
+    for _filename in filenames:
+        filename = directory / _filename
+        if filename.exists():
+            try:
+                filename.unlink()
+                break
+            except PermissionError:
+                # The file is already locked, try the next one
+                continue
+        break
+    else:
+        raise Exception(f"All log-files locked: {filenames}")
 
     logger.setLevel(logging.DEBUG)
     # create file handler which logs even debug messages

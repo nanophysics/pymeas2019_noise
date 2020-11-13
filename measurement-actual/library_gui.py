@@ -62,6 +62,7 @@ class PlotPanel(wx.Panel):
     def __init__(self, parent, app):
         self._app = app
         self._plot_context = app._plot_context
+        self.animation = None
 
         wx.Panel.__init__(self, parent, -1)
 
@@ -79,22 +80,22 @@ class PlotPanel(wx.Panel):
         self.Fit()
 
     def init_plot_data(self):
-        self._plot_context.update_presentation()
-
-        if True:
-
-            self._plot_context.animation = matplotlib.animation.FuncAnimation(
-                fig=self._plot_context.fig,
-                func=self.animate,
-                frames=self.endless_iter(),
-                # Delay between frames in milliseconds
-                interval=2000,
-                # A function used to draw a clear frame. If not given, the results of drawing from the first item in the frames sequence will be used.
-                init_func=None,
-                repeat=False,
-            )
-
         self.toolbar.update()  # Not sure why this is needed - ADS
+
+        self.animation = matplotlib.animation.FuncAnimation(
+            fig=self._plot_context.fig,
+            func=self.animate,
+            frames=self.endless_iter(),
+            # Delay between frames in milliseconds
+            interval=1000,
+            # A function used to draw a clear frame. If not given, the results of drawing from the first item in the frames sequence will be used.
+            init_func=None,
+            repeat=False,
+        )
+
+        # Important: If this statement is BEFORE 'FuncAnimation', the animation sometimes does not start!
+        with Duration("update_presentation") as elapsed:
+            self._plot_context.update_presentation()
 
     def GetToolBar(self):
         # You will need to override GetToolBar if you are using an
@@ -102,17 +103,11 @@ class PlotPanel(wx.Panel):
         return self.toolbar
 
     def OnStart(self, event):
-        # self._app.button_start.Enabled = False
-        # self._app.button_stop.Enabled = True
-
         dir_raw = f"{library_topic.DIRECTORY_NAME_RAW_PREFIX}{self._app.combo_box_measurement_color.Value}-{self._app.text_ctrl_measurement_topic.Value}"
 
         self._plot_context.start_measurement(dir_raw)
 
     def OnStop(self, event):
-        # self._plot_context.animation = None
-        # self._app.button_start.Enabled = True
-        # self._app.button_stop.Enabled = False
         FILELOCK_GUI.stop_measurement_soft()
 
     def OnComboBoxPresentation(self, event):
@@ -138,7 +133,6 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.plotpanel = None
         self.button_start = None
         self.button_stop = None
-        self.button_restart = None
         self.button_display_open_directory = None
         self.button_display_clone = None
         self.combo_box_measurement_color = None
@@ -150,7 +144,7 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
     def OnInit(self):
         xrcfile = pathlib.Path(__file__).absolute().with_suffix(".xrc")
-        logger.debug(f'Load {xrcfile}')
+        logger.debug(f"Load {xrcfile}")
         self.res = xrc.XmlResource(str(xrcfile))
 
         # main frame and panel ---------
@@ -177,8 +171,6 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.button_start.Bind(wx.EVT_BUTTON, self.plotpanel.OnStart)
         self.button_stop = xrc.XRCCTRL(self.frame, "button_measurement_stop")
         self.button_stop.Bind(wx.EVT_BUTTON, self.plotpanel.OnStop)
-        self.button_restart = xrc.XRCCTRL(self.frame, "button_measurement_restart")
-        self.button_restart.Bind(wx.EVT_BUTTON, self.OnRestart)
         self.button_display_open_directory = xrc.XRCCTRL(self.frame, "button_display_open_directory")
         self.button_display_open_directory.Bind(wx.EVT_BUTTON, self.OnOpenDirectory)
         self.button_display_clone = xrc.XRCCTRL(self.frame, "button_display_clone")
@@ -212,7 +204,7 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnTimer)
-        self.timer.Start(1000)    # 1 second interval
+        self.timer.Start(1000)  # 1 second interval
 
         return True
 
@@ -220,7 +212,7 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         # do whatever you want to do every second here
 
         is_measurment_running = FILELOCK_GUI.is_measurment_running()
-        logger.debug(f'OnTimer() is_measurment_running={is_measurment_running}')
+        logger.debug(f"OnTimer() is_measurment_running={is_measurment_running}")
         self.button_start.Enabled = not is_measurment_running
         self.button_stop.Enabled = is_measurment_running
 
@@ -233,6 +225,3 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
     def OnDisplayClone(self, event):
         self._plot_context.open_display_clone()
-
-    def OnRestart(self, event):
-        pass

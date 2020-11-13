@@ -76,7 +76,9 @@ class PlotContext:
                 # self.fig.set_size_inches(13.0, 7.0)
                 # ax.set_xlim(1e-1, 1e4)
                 # ax.set_ylim(1e-9, 1e-5)
-            self.fig.canvas.draw()
+
+            # The following line will take up to 5s. Why?
+            # self.fig.canvas.draw()
 
     def animate(self):
         if self.plotData.directories_changed():
