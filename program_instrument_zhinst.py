@@ -201,7 +201,7 @@ class Instrument:
         # Ensure buffers are flushed before subscribing.
         self.daq.sync()
 
-    def acquire(self, configStep, stream_output, handlerCtrlC):  # pylint: disable=too-many-statements,too-many-branches
+    def acquire(self, configStep, stream_output, com_measurment):  # pylint: disable=too-many-statements,too-many-branches
         assert isinstance(configStep, program.ConfigStep)
 
         def convert(adu_values):
@@ -268,13 +268,13 @@ class Instrument:
                     logger.info("STOP(queue full)")
                     break
 
-                if handlerCtrlC.ctrl_c_pressed:
+                if com_measurment.requested_stop_soft():
                     stream.put_EOF()
                     logger.info("STOP(ctrl-C pressed)")
 
                 n += num_samples_block
 
-        if handlerCtrlC.ctrl_c_pressed:
+        if com_measurment.requested_stop_soft():
             stream.put_EOF()
             logger.info("STOP(time over)")
 

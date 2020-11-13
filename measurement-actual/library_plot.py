@@ -90,7 +90,9 @@ class PlotContext:
 
     def start_measurement(self, dir_raw):
         # The start button has been pressed
-        subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw])
+        # proc = subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw])
+        proc = subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw], start_new_session=True)
+        logger.info(f"Started measurement in folder '{dir_raw}' with pid={proc.pid}.")
 
     def open_directory_in_explorer(self):
         directory = pathlib.Path(run_0_measure.__file__).absolute().parent

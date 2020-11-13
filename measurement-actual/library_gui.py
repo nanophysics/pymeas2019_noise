@@ -19,6 +19,7 @@ import matplotlib.animation
 import wx
 import wx.xrc as xrc
 
+import library_filelock
 import library_topic
 
 # Hide messages like:
@@ -26,6 +27,8 @@ import library_topic
 warnings.filterwarnings(action="ignore")
 
 logger = logging.getLogger("logger")
+
+FILELOCK_GUI = library_filelock.FilelockGui()
 
 COLORS = (
     "blue",
@@ -110,7 +113,7 @@ class PlotPanel(wx.Panel):
         # self._plot_context.animation = None
         # self._app.button_start.Enabled = True
         # self._app.button_stop.Enabled = False
-        pass
+        FILELOCK_GUI.stop_measurement_soft()
 
     def OnComboBoxPresentation(self, event):
         combobox = event.EventObject
@@ -141,11 +144,13 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.combo_box_measurement_color = None
         self.text_ctrl_measurement_topic = None
         self.label_coordinates = None
+        self.timer = None
 
         wx.App.__init__(self)
 
     def OnInit(self):
         xrcfile = pathlib.Path(__file__).absolute().with_suffix(".xrc")
+        logger.debug(f'Load {xrcfile}')
         self.res = xrc.XmlResource(str(xrcfile))
 
         # main frame and panel ---------
@@ -205,7 +210,19 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
         self.plotpanel.init_plot_data()
 
+        self.timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.OnTimer)
+        self.timer.Start(1000)    # 1 second interval
+
         return True
+
+    def OnTimer(self, event):
+        # do whatever you want to do every second here
+
+        is_measurment_running = FILELOCK_GUI.is_measurment_running()
+        logger.debug(f'OnTimer() is_measurment_running={is_measurment_running}')
+        self.button_start.Enabled = not is_measurment_running
+        self.button_stop.Enabled = is_measurment_running
 
     def UpdateStatusBar(self, event):
         if event.inaxes:
@@ -218,7 +235,4 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self._plot_context.open_display_clone()
 
     def OnRestart(self, event):
-        bang_count = xrc.XRCCTRL(self.frame, "bang_count")
-        bangs = bang_count.GetValue()
-        bangs = int(bangs) + 1
-        bang_count.SetValue(str(bangs))
+        pass

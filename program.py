@@ -2,7 +2,6 @@
 # Make sure that the subrepos are included in the python path
 #
 import sys
-import signal
 import logging
 import pathlib
 
@@ -22,6 +21,7 @@ except ImportError as ex:
     logger.error(f"ERROR: Failed to import ({ex}). Try: pip install -r requirements.txt")
     sys.exit(0)
 
+import library_filelock  # pylint: disable=wrong-import-position
 import library_topic  # pylint: disable=wrong-import-position
 import library_plot  # pylint: disable=wrong-import-position
 import program_fir  # pylint: disable=wrong-import-position
@@ -61,32 +61,13 @@ class ConfigStep:  # pylint: disable=too-many-instance-attributes
             self._update_element(key, value)
 
 
-class HandlerCtrlC:
-    def __init__(self):
-        self.__ctrl_c_pressed = False
-        signal.signal(signal.SIGINT, self.__signal_handler)
-
-    def __signal_handler(self, sig, frame):  # pylint: disable=unused-argument
-        logger.info("You pressed Ctrl+C!")
-        self.__ctrl_c_pressed = True
-
-    @property
-    def ctrl_c_pressed(self):
-        if self.__ctrl_c_pressed:
-            # Reset the handler
-            signal.signal(signal.SIGINT, signal.SIG_DFL)
-        return self.__ctrl_c_pressed
-
-
-handlerCtrlC = HandlerCtrlC()
-
-
 class ConfigSetup:
     def __init__(self):
         self.diagram_legend = DEFINED_BY_SETUP
         self.setup_name = DEFINED_BY_SETUP
         self.module_instrument = DEFINED_BY_SETUP
         self.steps = DEFINED_BY_SETUP
+        self._filelock_measurement = library_filelock.FilelockMeasurement()
 
     # def get_filename_data(self, extension, directory=DIRECTORY_0_RAW):
     #   filename = f'data_{self.setup_name}'
@@ -131,10 +112,10 @@ class ConfigSetup:
             picoscope = self.module_instrument.Instrument(configStep)  # pylint: disable=no-member
             picoscope.connect()
             sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), dir_raw)
-            picoscope.acquire(configStep=configStep, stream_output=sample_process.output, handlerCtrlC=handlerCtrlC)
+            picoscope.acquire(configStep=configStep, stream_output=sample_process.output, com_measurment=self._filelock_measurement)
             picoscope.close()
 
-            if handlerCtrlC.ctrl_c_pressed:
+            if self._filelock_measurement.requested_stop_soft():
                 break
 
         return dir_raw

@@ -52,26 +52,26 @@ Before commit, run the `Black` launch-target in VSCode.
 - compact_measurement:
   - For each channel
     - pyboard_compact: Select channels
-    - start measurement, this will create `comm_measurement_lock.txt`
-    - Wait till `comm_measurement_lock.txt` unlocked
+    - start measurement, this will create `tmp_filelock_lock.txt`
+    - Wait till `tmp_filelock_lock.txt` unlocked
     - Break if `comm_measurement_status.txt` is not `STOPPED_SUCCESS`
 
 
 ### Communication mechanisms
 
-- File `comm_measurement_lock.txt`
+- File `tmp_filelock_lock.txt`
   - The measurement creates this files and locks it.
   - A) The measurement deletes the file at exit
   - B) The GUI tries to delete the file: If the file may be deleted, the measurment has quit
-- File `comm_measurement_status.txt` (Future - not implemented now)
+- File `tmp_filelock_status.txt` (Future - not implemented now)
   - The measurment creates this file
   - Content:
     - `MEASURING`
     - `STOPPING`
     - `STOPPED_SUCCESS`
     - `STOPPED_ERROR`
-- File `comm_measurement_stop_hard.txt`
-- File `comm_measurement_stop_soft.txt`
+- File `tmp_filelock_stop_hard.txt`
+- File `tmp_filelock_stop_soft.txt`
   - The measurement creates these files and does NOT lock them.
   - When the GUI removes this file, the measurment will stop.
   - The measurement deletes the files at exit.

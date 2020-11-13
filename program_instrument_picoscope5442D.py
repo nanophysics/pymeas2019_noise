@@ -114,7 +114,7 @@ class Instrument:
         # total_samples = int(configStep.duration_s/selected_dt_s)
         # logger.debug(f'total_samples={total_samples_before}) -> {total_samples}')
 
-    def acquire(self, configStep, stream_output, handlerCtrlC):  # pylint: disable=too-many-statements
+    def acquire(self, configStep, stream_output, com_measurment):  # pylint: disable=too-many-statements
         assert isinstance(configStep, program.ConfigStep)
 
         valid_ranges = set(range.value for range in self.scope.enRange)
@@ -202,7 +202,7 @@ class Instrument:
                     stream.list_overflow.append(self.actual_sample_count + start_index)
 
                 self.actual_sample_count += num_samples
-                if handlerCtrlC.ctrl_c_pressed or (self.actual_sample_count > total_samples):
+                if com_measurment.requested_stop_soft() or (self.actual_sample_count > total_samples):
                     self.streaming_done = True
                     stream.put_EOF()
                     logger.info("STOP(time over)")
