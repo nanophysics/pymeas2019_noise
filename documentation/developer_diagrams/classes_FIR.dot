@@ -3,14 +3,14 @@ charset="utf-8"
 rankdir=BT
 "0" [label="{Classify|V\lbin_count\leseries : list\l|bins_factory()\lfind_bin_index(value)\l}", shape="record"];
 "1" [label="{ClassifyBins|V\lcount : ndarray\l|add(value)\l}", shape="record"];
-"2" [label="{Density|frequencies : ndarray, NoneType\lout\l|density(array)\ldone()\linit(stage, dt_s)\lpush(array_in)\l}", shape="record"];
+"2" [label="{Density|frequencies : NoneType, ndarray\lout\l|density(array)\ldone()\linit(stage, dt_s)\lpush(array_in)\l}", shape="record"];
 "3" [label="{FIR|TAG_PUSH : NoneType\larray : tuple, list, NoneType\lfake_left_right : bool\lout\lpushcalulator_next : NoneType\lstage : NoneType\lstatistics_count : int, NoneType\lstatistics_samples_in : int, NoneType\lstatistics_samples_out : int, NoneType\l|decimate(array_decimate)\ldone()\linit(stage, dt_s)\lpush(array_in)\l}", shape="record"];
 "4" [label="{InSynthetic|dt_s\lout\lpushcalulator_next\lsignal\ltotal_samples\l|process()\l}", shape="record"];
 "5" [label="{OutTrash|array : ndarray\ldt_s : NoneType\lstage : NoneType\l|done()\linit(stage, dt_s)\lpush(array_in)\l}", shape="record"];
 "6" [label="{PushCalculator|dt_s\lprevious_fir_samples_input\lprevious_fir_samples_select\lpush_size_samples\l|}", shape="record"];
 "7" [label="{SampleProcess|config\ldirectory_raw\loutput\l|}", shape="record"];
 "8" [label="{SampleProcessConfig|fir_count\lfir_count_skipped\lstepname\l|}", shape="record"];
-"9" [label="{UniformPieces|array : tuple, list, ndarray\lout\lpushcalulator_next : NoneType\lstage : NoneType\ltotal_samples : NoneType, int\l|done()\linit(stage, dt_s)\lpush(array_in)\l}", shape="record"];
+"9" [label="{UniformPieces|array : tuple, ndarray, list\lout\lpushcalulator_next : NoneType\lstage : NoneType\ltotal_samples : int, NoneType\l|done()\linit(stage, dt_s)\lpush(array_in)\l}", shape="record"];
 "1" -> "2" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="__stepsize_bins", style="solid"];
 "6" -> "2" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="__pushcalulator", style="solid"];
 "6" -> "3" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="pushcalulator_next", style="solid"];
