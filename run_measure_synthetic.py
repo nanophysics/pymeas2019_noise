@@ -54,7 +54,7 @@ def main():
 
     config = SampleProcessConfig()
     sp = program_fir.SampleProcess(config=config, directory_raw=program.MEASUREMENT_ACTUAL / "raw-green-syntetic")
-    i = program_fir.InSyntetic(sp.output, signal=signal, dt_s=DT_S, time_total_s=10.0)
+    i = program_fir.InSynthetic(sp.output, signal=signal, dt_s=DT_S, time_total_s=10.0)
     i.process()
     logger.info("Done")
 

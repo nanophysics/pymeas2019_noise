@@ -24,18 +24,18 @@ class Classify:
 
 
 class ClassifyBins:
-    def __init__(self, classify):
+    def __init__(self, classify: Classify):
         assert isinstance(classify, Classify)
-        self.classify = classify
+        self.__classify: Classify = classify
         self.count = np.zeros(classify.bin_count, dtype=np.int32)
 
     def add(self, value):
-        idx = self.classify.find_bin_index(value)
+        idx = self.__classify.find_bin_index(value)
         self.count[idx] += 1
 
     @property
     def V(self):
-        return self.classify.V
+        return self.__classify.V
 
 
 def test():

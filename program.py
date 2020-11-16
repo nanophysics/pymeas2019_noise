@@ -25,6 +25,7 @@ import library_filelock  # pylint: disable=wrong-import-position
 import library_topic  # pylint: disable=wrong-import-position
 import library_plot  # pylint: disable=wrong-import-position
 import program_fir  # pylint: disable=wrong-import-position
+import program_fir_plot  # pylint: disable=wrong-import-position
 
 DIRECTORY_TOP = pathlib.Path(__file__).absolute().parent
 DIRECTORY_RESULT = "result"
@@ -96,6 +97,7 @@ class ConfigSetup:
         assert isinstance(dir_measurement, pathlib.Path)
         assert isinstance(dir_raw, pathlib.Path)
 
+
         for configStep in self.steps:
             library_filelock.FilelockMeasurement.update_status(f"Measuring: {dir_raw.name} / {configStep.stepname}")
             picoscope = self.module_instrument.Instrument(configStep)  # pylint: disable=no-member
@@ -144,15 +146,15 @@ def get_configSetup_by_filename(dict_config_setup):
 
 
 def reload_if_changed(dir_raw):
-    if program_fir.DensityPlot.file_changed(dir_input=dir_raw):
+    if program_fir_plot.DensityPlot.file_changed(dir_input=dir_raw):
         try:
-            list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=True)
+            list_density = program_fir_plot.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=True)
         except EOFError:
             # File "c:\Projekte\ETH-Fir\pymeas2019_noise\program_fir.py", line 321, in __init__
             # data = pickle.load(f)
             # EOFError: Ran out of input
             return False
-        lsd_summary = program_fir.LsdSummary(list_density, directory=dir_raw, trace=False)
+        lsd_summary = program_fir_plot.LsdSummary(list_density, directory=dir_raw, trace=False)
         lsd_summary.write_summary_pickle()
         return True
     return False
@@ -213,12 +215,12 @@ def write_presentation_summary_file(plotData, directory):
 def run_condense_0to1(dir_raw, trace=False, do_plot=True):
     assert isinstance(dir_raw, pathlib.Path)
 
-    list_density = program_fir.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
+    list_density = program_fir_plot.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
     if len(list_density) == 0:
         logger.info(f"SKIPPED: No data for directory {dir_raw}")
         return
 
-    lsd_summary = program_fir.LsdSummary(list_density, directory=dir_raw, trace=trace)
+    lsd_summary = program_fir_plot.LsdSummary(list_density, directory=dir_raw, trace=trace)
     lsd_summary.write_summary_file(trace=trace)
     if not trace:
         lsd_summary.write_summary_pickle()

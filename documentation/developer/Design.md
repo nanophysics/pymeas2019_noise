@@ -15,10 +15,10 @@
 ### These classes are Stream-Sources - tyeh drive a Stream-Interface
 
 - class InThread
-- class InSyntetic
+- class InSynthetic
 - class InFile
 
 ### Example pipelines
 
-- InSyntetic -> FIR -> Density -> FIR -> Density -> OutTrash
+- InSynthetic -> FIR -> Density -> FIR -> Density -> OutTrash
 - Picosope -> InThread -> FIR -> Density -> FIR -> Density -> OutTrash
