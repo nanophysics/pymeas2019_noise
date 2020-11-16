@@ -179,7 +179,7 @@ class Instrument:
                 if auto_stop:
                     self.streaming_done = True
                     stream.put_EOF()
-                    logger.info(r"STOP(time over)", end="")
+                    logger.info(r"STOP(time over)")
 
         if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
 
@@ -202,10 +202,17 @@ class Instrument:
                     stream.list_overflow.append(self.actual_sample_count + start_index)
 
                 self.actual_sample_count += num_samples
-                if com_measurment.requested_stop_soft() or (self.actual_sample_count > total_samples):
+
+                def stop(reason):
                     self.streaming_done = True
                     stream.put_EOF()
-                    logger.info("STOP(time over)")
+                    logger.info(f"STOP({reason})")
+
+                if com_measurment.requested_stop_soft():
+                    stop("<ctrl-c> or softstop")
+
+                if self.actual_sample_count > total_samples:
+                    stop("time over")
 
                 if overflow:
                     logger.warning("!!! Overflow !!!  Voltage to big at input of picoscope. Change input range.")

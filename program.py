@@ -97,7 +97,6 @@ class ConfigSetup:
         assert isinstance(dir_measurement, pathlib.Path)
         assert isinstance(dir_raw, pathlib.Path)
 
-
         for configStep in self.steps:
             library_filelock.FilelockMeasurement.update_status(f"Measuring: {dir_raw.name} / {configStep.stepname}")
             picoscope = self.module_instrument.Instrument(configStep)  # pylint: disable=no-member

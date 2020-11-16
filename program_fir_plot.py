@@ -1,3 +1,4 @@
+import re
 import math
 import time
 import pickle
@@ -14,6 +15,33 @@ import program_fir
 import library_topic
 
 logger = logging.getLogger("logger")
+
+
+STEP_SETTLE = "0_settle"
+
+
+class FilenameDensityStepMatcher:
+    FILENAME_TAG_SKIP = "_SKIP"
+    GLOB_PATTERN = "densitystep_*.pickle"
+    PATTERN = fr"^densitystep_(?P<stepname>.*?)_(\d+)(?P<skiptext>{FILENAME_TAG_SKIP})?.pickle$"
+    RE = re.compile(PATTERN)
+
+    @classmethod
+    def filename_from_stepname_stage(cls, stepname: str, stage: int, skip: bool):
+        assert isinstance(stepname, str)
+        assert isinstance(stage, int)
+        assert isinstance(skip, bool)
+        skiptext = cls.FILENAME_TAG_SKIP if skip else ""
+        return f"densitystep_{stepname}_{stage:02d}{skiptext}.pickle"
+
+    def __init__(self, filename):
+        assert isinstance(filename, str)
+        _match = FilenameDensityStepMatcher.RE.match(filename)
+        self.match = _match is not None
+        if self.match:
+            self.stepname = _match.group("stepname")
+            skiptext = _match.group("skiptext")
+            self.skip = skiptext == FilenameDensityStepMatcher.FILENAME_TAG_SKIP
 
 
 class Average:
@@ -45,8 +73,7 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         assert isinstance(directory, pathlib.Path)
 
         skip = stage < config.fir_count_skipped
-        skiptext = program_fir.FILENAME_TAG_SKIP if skip else ""
-        filename = f"densitystep_{config.stepname}_{stage:02d}{skiptext}.pickle"
+        filename = FilenameDensityStepMatcher.filename_from_stepname_stage(stepname=config.stepname, stage=stage, skip=skip)
         data = {
             "stepname": config.stepname,
             "stage": stage,
@@ -87,8 +114,12 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         assert isinstance(dir_input, pathlib.Path)
         assert isinstance(skip, bool)
 
-        for filename in dir_input.glob("densitystep_*.pickle"):
-            if skip and (program_fir.FILENAME_TAG_SKIP in filename.name):
+        for filename in dir_input.glob(FilenameDensityStepMatcher.GLOB_PATTERN):
+            m = FilenameDensityStepMatcher(filename.name)
+            if m.stepname == STEP_SETTLE:
+                logger.debug(f'Skip file "{filename.name}": The settle-step is not part of the calculation')
+                continue
+            if skip and m.skip:
                 continue
             yield filename
 

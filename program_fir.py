@@ -51,9 +51,6 @@ class PushCalculator:
         return push_size
 
 
-FILENAME_TAG_SKIP = "_SKIP"
-
-
 class FIR:  # pylint: disable=too-many-instance-attributes
     """
     Stream-Sink: Implements a Stream-Interface
