@@ -1,5 +1,4 @@
-**/logger_measurement.txt
-**/logger_gui*.txt
+**/logger_*.txt
 **/comm_measurement_*.txt
 **/tmp_filelock_*.txt
 **/data_*.npz
@@ -18,3 +17,4 @@
 todo/peter/tests/*
 versuche/*
 .vscode/.ropeproject/*
+measurement-actual/logger_condense.txt

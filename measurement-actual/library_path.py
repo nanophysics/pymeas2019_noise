@@ -25,6 +25,10 @@ def init_logger_gui():
     init_logger(DIRECTORY_OF_THIS_FILE, ("logger_gui.txt", "logger_gui_clone1.txt", "logger_gui_clone2.txt"))
 
 
+def init_logger_condense(directory=None):
+    init_logger(DIRECTORY_OF_THIS_FILE, ("logger_condense.txt", "logger_condense_1.txt", "logger_condense_2.txt"))
+
+
 def init_logger_measurement(directory=None):
     assert isinstance(directory, (type(None), pathlib.Path))
     if directory is None:
@@ -54,6 +58,7 @@ def init_logger(directory, filenames):
     else:
         raise Exception(f"All log-files locked: {filenames}")
 
+    print(f"logging to {str(filename)}")
     logger.setLevel(logging.DEBUG)
     # create file handler which logs even debug messages
     fh = logging.FileHandler(filename=filename)

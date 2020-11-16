@@ -46,17 +46,18 @@ class Duration:
         self._title = title
         self._start_s = time.time()
 
-    @property
-    def duration(self):
-        duration_s = time.time() - self._start_s
-        return f"{duration_s:0.2f}s"
-
     def __enter__(self):
-        logger.debug(f"{self._title} START")
+        pass
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        logger.debug(f"{self._title} END {self.duration}")
+        logger.debug(f"{self._title} {time.time() - self._start_s:0.3f}s")
 
+def log_duration(f):
+    def new_f(*args, **vargs):
+        start_s = time.time()
+        f(*args, **vargs)
+        logger.debug(f"{f.__name__}(): {time.time() - start_s:0.3f}s")
+    return new_f
 
 class PlotPanel(wx.Panel):
     def __init__(self, parent, app):
@@ -94,7 +95,7 @@ class PlotPanel(wx.Panel):
         )
 
         # Important: If this statement is BEFORE 'FuncAnimation', the animation sometimes does not start!
-        with Duration("update_presentation") as elapsed:
+        with Duration("update_presentation():") as elapsed:
             self._plot_context.update_presentation()
 
     def GetToolBar(self):
@@ -119,9 +120,9 @@ class PlotPanel(wx.Panel):
     def endless_iter(self):
         yield from itertools.count(start=42)
 
+    @log_duration
     def animate(self, i):
-        with Duration("animate") as elapsed:
-            self._plot_context.animate()
+        self._plot_context.animate()
 
 
 class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
@@ -137,6 +138,7 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.button_display_clone = None
         self.combo_box_measurement_color = None
         self.text_ctrl_measurement_topic = None
+        self.label_status_text = None
         self.label_coordinates = None
         self.timer = None
 
@@ -192,6 +194,11 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.text_ctrl_measurement_topic = xrc.XRCCTRL(self.frame, "text_ctrl_measurement_topic")
         self.text_ctrl_measurement_topic.Value = library_topic.ResultAttributes.getdatetime()
 
+        self.label_status_text = xrc.XRCCTRL(self.frame, "label_status_text")
+        font = self.label_status_text.GetFont()
+        font.Weight = wx.BOLD  # pylint: disable=no-member
+        self.label_status_text.SetFont(font)
+
         self.label_coordinates = xrc.XRCCTRL(self.frame, "label_coordinates")
         self.plotpanel.canvas.mpl_connect("motion_notify_event", self.UpdateStatusBar)
 
@@ -215,6 +222,9 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         logger.debug(f"OnTimer() is_measurment_running={is_measurment_running}")
         self.button_start.Enabled = not is_measurment_running
         self.button_stop.Enabled = is_measurment_running
+
+        self.label_status_text.SetLabel(FILELOCK_GUI.get_status())
+
 
     def UpdateStatusBar(self, event):
         if event.inaxes:

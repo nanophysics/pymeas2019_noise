@@ -11,7 +11,7 @@ def reload_if_changed(dir_raw):
 
 
 def run():
-    library_path.init_logger_measurement()
+    library_path.init_logger_condense()
 
     program.run_condense(dir_measurement)
     run_2_composite_plots.run()

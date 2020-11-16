@@ -97,6 +97,7 @@ class ConfigSetup:
         assert isinstance(dir_raw, pathlib.Path)
 
         for configStep in self.steps:
+            library_filelock.FilelockMeasurement.update_status(f"Measuring: {dir_raw.name} / {configStep.stepname}")
             picoscope = self.module_instrument.Instrument(configStep)  # pylint: disable=no-member
             picoscope.connect()
             sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), dir_raw)
@@ -119,12 +120,12 @@ def examine_dir_raw(dir_measurement):
     dir_raw = dir_measurement / library_topic.ResultAttributes.result_dir_actual(dir_arg)
 
     if dir_raw.exists():
+
         def delete_directory_contents(directory):
             assert isinstance(directory, pathlib.Path)
 
             for filename in directory.glob("*.*"):
                 filename.unlink()
-
 
         delete_directory_contents(dir_raw)
     else:

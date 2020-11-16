@@ -11,6 +11,7 @@ logger = logging.getLogger("logger")
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 
 FILENAME_LOCK = DIRECTORY_OF_THIS_FILE / "tmp_filelock_lock.txt"
+FILENAME_STATUS = DIRECTORY_OF_THIS_FILE / "tmp_filelock_status.txt"
 FILENAME_STOP_HARD = DIRECTORY_OF_THIS_FILE / "tmp_filelock_stop_hard.txt"
 FILENAME_STOP_SOFT = DIRECTORY_OF_THIS_FILE / "tmp_filelock_stop_soft.txt"
 
@@ -24,47 +25,53 @@ class FilelockMeasurement:
     """
 
     FILE_LOCK = None
+    # Some caching of the status of the file
     REQUESTED_STOP = False
     REQUESTED_STOP_HARD = False
     REQUESTED_STOP_SOFT = False
     REQUESTED_STOP_NEXT_S = time.time() + REQUEST_CHECKINTERVAL_S
 
     def __init__(self):
-        if FilelockMeasurement.FILE_LOCK is None:
-            FilelockMeasurement.FILE_LOCK = FILENAME_LOCK.open("w")
+        if FilelockMeasurement.FILE_LOCK is not None:
+            # Singleton-pattern: We may be instantiated multiple times and still refer to the same data
+            return
 
-            for filename in (FILENAME_STOP_HARD, FILENAME_STOP_SOFT):
-                with filename.open("w") as f:
-                    f.write("Delete this file to stop the measurement")
+        FilelockMeasurement.FILE_LOCK = FILENAME_LOCK.open("w")
 
-            def remove_lock():
-                assert FilelockMeasurement.FILE_LOCK is not None
-                try:
-                    FilelockMeasurement.FILE_LOCK.close()
-                except:  # pylint: disable=bare-except
-                    pass
-                FilelockMeasurement.cleanup_all_files()
+        for filename in (FILENAME_STOP_HARD, FILENAME_STOP_SOFT):
+            with filename.open("w") as f:
+                f.write("Delete this file to stop the measurement")
 
-            atexit.register(remove_lock)
+        FilelockMeasurement.update_status("-")
 
-            def signal_handler(sig, frame):  # pylint: disable=unused-argument
-                msg = "You pressed Ctrl+C!"
-                if not FilelockMeasurement.REQUESTED_STOP_SOFT:
-                    # First time: Request a soft stop
-                    FilelockMeasurement.REQUESTED_STOP_SOFT = True
-                    logger.info(f"{msg} - request soft stop.")
-                    return
-                # Second time: Request a hard stop
-                FilelockMeasurement.REQUESTED_STOP_HARD = True
-                logger.info(f"{msg} - request hard stop. Next <ctrl-c> will be handled by the operating system")
-                # Reset the handler. Next time <ctrl-c> will kill the process by the operating system
-                signal.signal(signal.SIGINT, signal.SIG_DFL)
+        def remove_lock():
+            assert FilelockMeasurement.FILE_LOCK is not None
+            try:
+                FilelockMeasurement.FILE_LOCK.close()
+            except:  # pylint: disable=bare-except
+                pass
+            FilelockMeasurement.cleanup_all_files()
 
-            signal.signal(signal.SIGINT, signal_handler)
+        atexit.register(remove_lock)
+
+        def signal_handler(sig, frame):  # pylint: disable=unused-argument
+            msg = "You pressed Ctrl+C!"
+            if not FilelockMeasurement.REQUESTED_STOP_SOFT:
+                # First time: Request a soft stop
+                FilelockMeasurement.REQUESTED_STOP_SOFT = True
+                logger.info(f"{msg} - request soft stop.")
+                return
+            # Second time: Request a hard stop
+            FilelockMeasurement.REQUESTED_STOP_HARD = True
+            logger.info(f"{msg} - request hard stop. Next <ctrl-c> will be handled by the operating system")
+            # Reset the handler. Next time <ctrl-c> will kill the process by the operating system
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+        signal.signal(signal.SIGINT, signal_handler)
 
     @classmethod
     def cleanup_all_files(cls):
-        for filename in (FILENAME_LOCK, FILENAME_STOP_SOFT, FILENAME_STOP_HARD):
+        for filename in (FILENAME_LOCK, FILENAME_STATUS, FILENAME_STOP_SOFT, FILENAME_STOP_HARD):
             try:
                 filename.unlink()
             except:  # pylint: disable=bare-except
@@ -115,6 +122,12 @@ class FilelockMeasurement:
             return True
         return False
 
+    @classmethod
+    def update_status(cls, status: str):
+        assert isinstance(status, str)
+        logger.info(f"update_status: {status}")
+        FILENAME_STATUS.write_text(status)
+
 
 class FilelockGui:
     @classmethod
@@ -153,6 +166,13 @@ class FilelockGui:
             logger.info(f"successfully removed {FILENAME_STOP_HARD.name}")
         except:  # pylint: disable=bare-except
             pass
+
+    @classmethod
+    def get_status(cls) -> str:
+        try:
+            return FILENAME_STATUS.read_text()
+        except FileNotFoundError:
+            return "-"
 
 
 def main():
