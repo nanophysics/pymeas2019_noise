@@ -368,6 +368,10 @@ class ColorRotator:
 
 class LsdSummary:
     def __init__(self, list_density, directory, trace=False):
+        assert isinstance(list_density, list)
+        assert isinstance(directory, pathlib.Path)
+        assert isinstance(trace, bool)
+
         self.__directory = directory
         self.__trace = trace
         self.__list_density_points = []

@@ -257,5 +257,11 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         step = self.text_ctrl_display_step.Value
         td = self.text_ctrl_display_td.Value
 
+        if step == '':
+            only_stage = None
+        else:
+            only_stage = int(step)
+
+        self._plot_context.set_stage(only_stage=only_stage)
         self.__update_presentation()
-        logger.debug(presentation.title)
+        # logger.debug(presentation.title)

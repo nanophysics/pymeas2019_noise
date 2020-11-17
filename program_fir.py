@@ -159,6 +159,69 @@ class SampleProcessConfig:
         self.stepname = configStep.stepname
 
 
+class Settle:  # pylint: disable=too-many-instance-attributes
+    """
+    Stream-Sink: Implements a Stream-Interface
+    Stream-Source: Drives a output of Stream-Interface
+    """
+
+    CALCULATION_INTERVAL_S = 1.0  # Calculate every second
+    INVALID_BIG_V = 1000000.0
+
+    def __init__(self, out, config):
+        self.out = out
+        self.__config = config
+        self.__stage = None
+        self.__dt_s = None
+        self.__TAG_PUSH = None
+        self.__calculation_interval_samples = None
+        self.__samples = 0
+        self.__max_V = -Settle.INVALID_BIG_V
+        self.__min_V = +Settle.INVALID_BIG_V
+        self.__history_ok = [
+            True,
+        ] * 10  # 10 Times CALCULATION_INTERVAL_S
+
+    def init(self, stage, dt_s):
+        self.__stage = stage
+        self.__dt_s = dt_s
+        self.__TAG_PUSH = f"Settle {self.__stage}"
+        self.__calculation_interval_samples = int(Settle.CALCULATION_INTERVAL_S / self.__dt_s)
+
+        self.out.init(stage=stage, dt_s=dt_s)
+
+    def done(self):
+        self.out.done()
+
+    def push(self, array_in):
+        """
+        If calculation: Return a string explaining which stage calculated.
+        Else: Pass to the next stage.
+        The last stage will return ''.
+        if array_in is not None:
+          Return: None
+        """
+        if array_in is not None:
+            self.__max_V = max(self.__max_V, array_in.max())
+            self.__min_V = min(self.__min_V, array_in.min())
+
+            self.__samples += len(array_in)
+
+            if self.__samples > self.__calculation_interval_samples:
+                self.__samples = 0
+                self.calculate()
+        return self.out.push(array_in)
+
+    def calculate(self):
+        LIMIT_V = 2e-07
+        ok = self.__max_V < LIMIT_V
+        self.__history_ok = [
+            ok,
+        ] + self.__history_ok[:-1]
+        in_limit = max(self.__history_ok)
+        logger.info(f"in_limit={in_limit}, history={self.__history_ok}")
+
+
 class Density:  # pylint: disable=too-many-instance-attributes
     """
     Stream-Sink: Implements a Stream-Interface
@@ -240,7 +303,7 @@ class Density:  # pylint: disable=too-many-instance-attributes
         if self.__mode_fifo:
             assert len(array_in) == self.__pushcalulator.push_size_samples
             self.__fifo = np.append(self.__fifo, array_in)
-            return False
+            return None
 
         assert len(array_in) >= SAMPLES_DENSITY
         self.__fifo = array_in[:SAMPLES_DENSITY]
@@ -398,6 +461,8 @@ class SampleProcess:
         self.config = config
         self.directory_raw = directory_raw
         o = OutTrash()
+
+        # o = Settle(o, config=config)
 
         for _i in range(config.fir_count - 1):
             o = Density(o, config=config, directory=self.directory_raw)

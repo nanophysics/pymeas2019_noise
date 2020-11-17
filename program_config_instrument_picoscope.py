@@ -51,7 +51,7 @@ f1_medium_fir_count_skipped = int(round(math.log(f1_medium_fs_hz / f1_medium_use
 f2_slow_fir_count_skipped = int(round(math.log(f2_slow_fs_hz / f2_slow_useful_hz, 2)))
 fir_count_2_slow = f2_slow_fir_count_skipped + 27  # free to choose
 
-exponent_settle = 17  # free to change.
+exponent_settle = 16  # free to change.
 f2_settle_fs_hz = f0_fast_fs_hz / float(2 ** exponent_settle)
 
 
@@ -65,11 +65,11 @@ def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):
         module_instrument=program_instrument_picoscope5442D,
         steps=(
             dict(
-                stepname=program_fir_plot.STEP_SETTLE,
+                stepname='0_xy', # program_fir_plot.STEP_SETTLE,
                 # External
                 skalierungsfaktor=skalierungsfaktor,
                 # Processing
-                fir_count=0,
+                fir_count=8,
                 fir_count_skipped=0,
                 # Picoscope
                 input_channel="A",  # channel A is connected without filter to the amplifier out
@@ -77,58 +77,58 @@ def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):
                 bandwitdth="BW_20MHZ",
                 offset=0.0,
                 resolution="16bit",
-                duration_s = 10.0,
+                duration_s = 120.0,
                 dt_s=1 / f2_settle_fs_hz
             ),
-            dict(
-                stepname="1_fast",
-                # External
-                skalierungsfaktor=skalierungsfaktor,
-                # Processing
-                fir_count=f0_fast_fir_count,
-                fir_count_skipped=f0_fast_fir_count_skipped,  # highest frequencies get skipped
-                # Picoscope
-                input_channel="A",  # channel A is connected without filter to the amplifier out
-                input_Vp=inputRange,
-                bandwitdth="BW_20MHZ",
-                offset=0.0,
-                resolution="15bit",
-                duration_s=0.6,  #  Memory will limit time (7s). After about 0.5s the usb transfer starts and adds additional noise
-                dt_s=1.0 / f0_fast_fs_hz,
-            ),
-            dict(
-                stepname="2_medium",
-                # External
-                skalierungsfaktor=skalierungsfaktor,
-                # Processing
-                fir_count=f1_medium_fir_count,
-                fir_count_skipped=f1_medium_fir_count_skipped,
-                # Picoscope
-                input_channel="A",  # channel A is connected without filter to the amplifier out
-                input_Vp=inputRange,
-                bandwitdth="BW_20MHZ",
-                offset=0.0,
-                resolution="16bit",
-                duration_s=3.0,  #  Memory will limit time (9.7s)
-                dt_s=1.0 / f1_medium_fs_hz,
-            ),
-            dict(
-                stepname="3_slow",
-                # External
-                skalierungsfaktor=skalierungsfaktor,
-                # Processing
-                fir_count=fir_count_2_slow,
-                fir_count_skipped=f2_slow_fir_count_skipped,
-                # Picoscope
-                input_channel="B",  # channel B is connected with filter low pass 100 kHz ??? to the amplifier out
-                input_Vp=inputRange,
-                bandwitdth="BW_20MHZ",
-                offset=0.0,
-                resolution="16bit",
-                # duration_s = 60.0,
-                duration_s=duration_slow_s,
-                dt_s=1 / f2_slow_fs_hz,
-            ),
+            # dict(
+            #     stepname="1_fast",
+            #     # External
+            #     skalierungsfaktor=skalierungsfaktor,
+            #     # Processing
+            #     fir_count=f0_fast_fir_count,
+            #     fir_count_skipped=f0_fast_fir_count_skipped,  # highest frequencies get skipped
+            #     # Picoscope
+            #     input_channel="A",  # channel A is connected without filter to the amplifier out
+            #     input_Vp=inputRange,
+            #     bandwitdth="BW_20MHZ",
+            #     offset=0.0,
+            #     resolution="15bit",
+            #     duration_s=0.6,  #  Memory will limit time (7s). After about 0.5s the usb transfer starts and adds additional noise
+            #     dt_s=1.0 / f0_fast_fs_hz,
+            # ),
+            # dict(
+            #     stepname="2_medium",
+            #     # External
+            #     skalierungsfaktor=skalierungsfaktor,
+            #     # Processing
+            #     fir_count=f1_medium_fir_count,
+            #     fir_count_skipped=f1_medium_fir_count_skipped,
+            #     # Picoscope
+            #     input_channel="A",  # channel A is connected without filter to the amplifier out
+            #     input_Vp=inputRange,
+            #     bandwitdth="BW_20MHZ",
+            #     offset=0.0,
+            #     resolution="16bit",
+            #     duration_s=3.0,  #  Memory will limit time (9.7s)
+            #     dt_s=1.0 / f1_medium_fs_hz,
+            # ),
+            # dict(
+            #     stepname="3_slow",
+            #     # External
+            #     skalierungsfaktor=skalierungsfaktor,
+            #     # Processing
+            #     fir_count=fir_count_2_slow,
+            #     fir_count_skipped=f2_slow_fir_count_skipped,
+            #     # Picoscope
+            #     input_channel="B",  # channel B is connected with filter low pass 100 kHz ??? to the amplifier out
+            #     input_Vp=inputRange,
+            #     bandwitdth="BW_20MHZ",
+            #     offset=0.0,
+            #     resolution="16bit",
+            #     # duration_s = 60.0,
+            #     duration_s=duration_slow_s,
+            #     dt_s=1 / f2_slow_fs_hz,
+            # ),
         ),
     )
 
