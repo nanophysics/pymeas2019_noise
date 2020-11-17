@@ -29,13 +29,14 @@ class PlotContext:
         self.plotData = plotData
         self.fig = fig
         self.ax = ax
+        self.__stage = 0
 
     def initialize_plot_lines(self):
         """
         Updates the plot: scales and lines
         """
         for topic in self.plotData.listTopics:
-            x, y = self.presentation.get_xy(topic)
+            x, y = self.presentation.get_xy(topic=topic, stage=self.__stage)
             assert len(x) == len(y)
             (plot_line,) = self.ax.plot(x, y, linestyle="none", linewidth=0.1, marker=".", markersize=3, color=topic.color, label=topic.topic)
             scale = "log" if self.presentation.logarithmic_scales else "linear"
@@ -45,6 +46,10 @@ class PlotContext:
 
         leg = self.ax.legend(fancybox=True, framealpha=0.5)
         leg.get_frame().set_linewidth(0.0)
+
+    def set_stage(self, only_stage):
+        assert isinstance(only_stage, (type(None), int))
+        self.__stage = only_stage
 
     def update_presentation(self, presentation=None, update=True):
         """
@@ -63,7 +68,7 @@ class PlotContext:
             plt.xlabel(self.presentation.x_label)
             plt.ylabel(self.presentation.title)
             for topic in self.plotData.listTopics:
-                topic.recalculate_data(presentation=self.presentation)
+                topic.recalculate_data(presentation=self.presentation, stage=self.__stage)
             for ax in self.fig.get_axes():
                 ax.relim()
                 ax.autoscale()
@@ -88,7 +93,7 @@ class PlotContext:
             return
 
         for topic in self.plotData.listTopics:
-            topic.reload_if_changed(self.presentation)
+            topic.reload_if_changed(presentation=self.presentation, stage=self.__stage)
 
     def start_measurement(self, dir_raw):
         # The start button has been pressed

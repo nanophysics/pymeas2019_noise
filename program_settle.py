@@ -1,4 +1,5 @@
 import sys
+import socket
 import pathlib
 import logging
 
@@ -14,12 +15,17 @@ logger = logging.getLogger("logger")
 INPUT_PART = 0.5  # part of the input range.
 TIME_OK_S = 100.0
 
+IS_COMPUTER_DEVELOPMENT = socket.gethostname() in ("maerki-lenovo",)
+if IS_COMPUTER_DEVELOPMENT:
+    TIME_OK_S = 5.0
+
 
 class Settle:  # pylint: disable=too-many-instance-attributes
     """
     Stream-Sink: Implements a Stream-Interface
     Stream-Source: Drives a output of Stream-Interface
     """
+
     def __init__(self, config, directory):
         assert isinstance(directory, pathlib.Path)
 

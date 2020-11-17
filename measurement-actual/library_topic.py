@@ -95,7 +95,7 @@ class PickleResultSummary:
     def reload_if_changed(self):
         import run_1_condense
 
-        changed = run_1_condense.reload_if_changed(self.x_directory)
+        changed = run_1_condense.reload_if_changed(dir_raw=self.x_directory)
         if changed:
             # File has changed
             prs = PickleResultSummary.load(self.x_directory)
@@ -130,18 +130,18 @@ class Topic:
     def set_plot_line(self, plot_line):
         self.__plot_line = plot_line
 
-    def reload_if_changed(self, presentation):
+    def reload_if_changed(self, presentation, stage):
         assert self.__plot_line is not None
         # start = time.time()
         changed = self.__prs.reload_if_changed()
         if changed:
-            self.recalculate_data(presentation)
+            self.recalculate_data(presentation=presentation, stage=stage)
             # logger.info(f'changed {time.time()-start:0.2f}s "{self.__ra.topic}"')
             logger.info(f'plot: reload changed data: "{self.__ra.topic}"')
         return changed
 
-    def recalculate_data(self, presentation):
-        x, y = presentation.get_xy(self)
+    def recalculate_data(self, presentation, stage):
+        x, y = presentation.get_xy(topic=self, stage=stage)
         assert len(x) == len(y)
         self.__plot_line.set_data(x, y)
 
@@ -168,11 +168,19 @@ class Topic:
     def color(self):
         return self.__ra.color
 
-    def get_stepsize(self, stage):
+    def __get_stage_data(self, stage):
         assert isinstance(stage, int)
         dict_stage = self.__prs.dict_stages.get(stage, None)
         if dict_stage is None:
-            return ((0.0, 1.0), (0.0, 1.0))
+            stages = ",".join([str(s) for s in sorted(self.__prs.dict_stages.keys())])
+            logger.debug(f"No data for topic '{self.topic}' and stage {stage}! Valid stages are {stages}.")
+        return dict_stage
+
+    def get_stepsize(self, stage):
+        assert isinstance(stage, int)
+        dict_stage = self.__get_stage_data(stage)
+        if dict_stage is None:
+            return ((), ())
         stepsize_bins_count = dict_stage["stepsize_bins_count"]
         stepsize_bins_V = dict_stage["stepsize_bins_V"]
         # Mask all array-elements with bins_count == 0
@@ -185,12 +193,13 @@ class Topic:
 
     def get_timeserie(self, stage):
         assert isinstance(stage, int)
-        dict_stage = self.__prs.dict_stages.get(stage, None)
+        dict_stage = self.__get_stage_data(stage)
+        # TODO(Hans): should never be zero
         if dict_stage is None:
-            return ((0.0, 1.0), (0.0, 1.0))
+            return ((), ())
         samples_V = dict_stage["samples_V"]
         dt_s = dict_stage["dt_s"]
-        # TODO(Hans): Cash this array
+        # TODO(Hans): Cache this array
         x = np.linspace(start=0.0, stop=dt_s * len(samples_V), num=len(samples_V))
         return (x, samples_V)
 
@@ -268,12 +277,17 @@ class Presentation:
         self.y_label = y_label
         self.logarithmic_scales = logarithmic_scales
 
-    def get_xy(self, topic):
-        stage = 2
+    def get_xy(self, topic, stage=None):
+        assert isinstance(topic, Topic)
+        if stage is None:
+            # TODO(Hans): Remove hardcoded value
+            stage = 0
+        assert isinstance(stage, int)
         return self.__xy_func(topic, stage)
 
     def get_as_dict(self, topic):
-        x, y = self.get_xy(topic)
+        # TODO(Hans): Remove None below
+        x, y = self.get_xy(topic=topic, stage=None)
         return dict(
             tag=self.tag,
             help_text=self.help_text,

@@ -35,6 +35,8 @@ class FilenameDensityStepMatcher:
         assert isinstance(filename, str)
         _match = FilenameDensityStepMatcher.RE.match(filename)
         self.match = _match is not None
+        self.stepname = None
+        self.skip = None
         if self.match:
             self.stepname = _match.group("stepname")
             skiptext = _match.group("skiptext")
@@ -68,6 +70,14 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
     @classmethod
     def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum, stepsize_bins_count, stepsize_bins_V, samples_V):  # pylint: disable=too-many-arguments
         assert isinstance(directory, pathlib.Path)
+        assert isinstance(stage, int)
+        assert isinstance(dt_s, float)
+        assert isinstance(frequencies, np.ndarray)
+        assert isinstance(Pxx_n, int)
+        assert isinstance(Pxx_sum, np.ndarray)
+        assert isinstance(stepsize_bins_count, np.ndarray)
+        assert isinstance(stepsize_bins_V, list)
+        assert isinstance(samples_V, np.ndarray)
 
         skip = stage < config.fir_count_skipped
         filename = FilenameDensityStepMatcher.filename_from_stepname_stage(stepname=config.stepname, stage=stage, skip=skip)
@@ -140,7 +150,7 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         return l
 
     @classmethod
-    def directory_plot(cls, directory_in, dir_plot):
+    def directory_plot_obsolete(cls, directory_in, dir_plot):
         """
         Loop for all densitystage-files in directory and plot.
         """
@@ -148,7 +158,7 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
             densityPeriodogram.plot(dir_plot)
 
     @classmethod
-    def directory_plot_thread(cls, dir_input, dir_plot):
+    def directory_plot_thread_obsolete(cls, dir_input, dir_plot):
         class WorkerThread(threading.Thread):
             def __init__(self, *args, **keywords):
                 threading.Thread.__init__(self, *args, **keywords)
@@ -158,7 +168,7 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
             def run(self):
                 while True:
                     time.sleep(2.0)
-                    cls.directory_plot(dir_input, dir_plot)
+                    cls.directory_plot_obsolete(dir_input, dir_plot)
                     if self.__stop:
                         return
 
@@ -347,6 +357,10 @@ class ColorRotator:
 
 class LsdSummary:
     def __init__(self, list_density, directory, trace=False):
+        assert isinstance(list_density, list)
+        assert isinstance(directory, pathlib.Path)
+        assert isinstance(trace, bool)
+
         self.__directory = directory
         self.__trace = trace
         self.__list_density_points = []
