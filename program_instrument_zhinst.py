@@ -27,7 +27,7 @@ DEV = "dev3883"
 
 
 class Instrument:
-    def __init__(self, configStep):
+    def __init__(self, configstep):
         """Perform the operation of opening the instrument connection"""
         self.dev = DEV
         self.clockbase_s = None
@@ -201,14 +201,14 @@ class Instrument:
         # Ensure buffers are flushed before subscribing.
         self.daq.sync()
 
-    def acquire(self, configStep, stream_output, com_measurment):  # pylint: disable=too-many-statements,too-many-branches
-        assert isinstance(configStep, program.ConfigStep)
+    def acquire(self, configstep, stream_output, filelock_measurement):  # pylint: disable=too-many-statements,too-many-branches
+        assert isinstance(configstep, program.ConfigStep)
 
         def convert(adu_values):
             return adu_values
 
         dt_s = 0.0001  # TODO
-        stream = program_measurement_stream.InThread(stream_output, dt_s=dt_s, duration_s=configStep.duration_s, func_convert=convert)
+        stream = program_measurement_stream.InThread(stream_output, dt_s=dt_s, duration_s=configstep.duration_s, func_convert=convert)
         stream.start()
 
         # Subscribe to the scope's streaming samples in the ziDAQServer session.
@@ -268,13 +268,13 @@ class Instrument:
                     logger.info("STOP(queue full)")
                     break
 
-                if com_measurment.requested_stop_soft():
+                if filelock_measurement.requested_stop_soft():
                     stream.put_EOF()
                     logger.info("STOP(ctrl-C pressed)")
 
                 n += num_samples_block
 
-        if com_measurment.requested_stop_soft():
+        if filelock_measurement.requested_stop_soft():
             stream.put_EOF()
             logger.info("STOP(time over)")
 

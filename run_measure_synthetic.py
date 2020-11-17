@@ -4,6 +4,7 @@ import numpy as np
 
 import program
 import program_fir
+import program_configsetup
 
 import library_path
 
@@ -44,16 +45,14 @@ class TestSignal:
 def main():
     library_path.init_logger_measurement()
 
-    class SampleProcessConfig:
-        def __init__(self):
-            self.fir_count = 20
-            self.fir_count_skipped = 0
-            self.stepname = "slow"
-
     signal = TestSignal(sine_amp_V_rms=1e-4, noise_density_V_sqrtHz=1e-7)
 
-    config = SampleProcessConfig()
-    sp = program_fir.SampleProcess(config=config, directory_raw=program.MEASUREMENT_ACTUAL / "raw-green-syntetic")
+    config = program_configsetup.SamplingProcessConfig()
+    config.fir_count = 20
+    config.stepname = "slow"
+    config.validate()
+
+    sp = program_fir.SamplingProcess(config=config, directory_raw=program.MEASUREMENT_ACTUAL / "raw-green-syntetic")
     i = program_fir.InSynthetic(sp.output, signal=signal, dt_s=DT_S, time_total_s=10.0)
     i.process()
     logger.info("Done")

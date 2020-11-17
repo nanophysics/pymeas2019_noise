@@ -2,10 +2,10 @@ import enum
 import math
 import logging
 
-import program_fir_plot
-import program_instrument_picoscope5442D
-
 from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
+
+import program_instrument_picoscope5442D
+from program_configsetup import ConfigSetup, ConfigStep
 
 logger = logging.getLogger("logger")
 
@@ -23,6 +23,20 @@ class InputRange(enum.IntEnum):
     R_10V = PS5000ARange.R_10V
     R_20V = PS5000ARange.R_20V
     R_50V = PS5000ARange.R_50V
+
+    @property
+    def V(self):
+        return {
+            InputRange.R_100mV: 0.1,
+            InputRange.R_200mV: 0.2,
+            InputRange.R_500mV: 0.5,
+            InputRange.R_1V: 1.0,
+            InputRange.R_2V: 2.0,
+            InputRange.R_5V: 5.0,
+            InputRange.R_10V: 10.0,
+            InputRange.R_20V: 20.0,
+            InputRange.R_50V: 50.0,
+        }[self.value]
 
 
 # sample frequencies and fir_counts
@@ -54,82 +68,86 @@ fir_count_2_slow = f2_slow_fir_count_skipped + 27  # free to choose
 exponent_settle = 17  # free to change.
 f2_settle_fs_hz = f0_fast_fs_hz / float(2 ** exponent_settle)
 
+exponent_settle = 21  # 59 Hz
+exponent_settle = 19  # 238 Hz
+f2_settle_fs_hz = f0_fast_fs_hz / float(2 ** exponent_settle)
 
-def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):
+
+def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):  # pylint: disable=too-many-statements
     assert isinstance(inputRange, InputRange)
     assert isinstance(duration_slow_s, float)
     assert isinstance(skalierungsfaktor, float)
 
-    dict_config_setup = dict(
-        setup_name="Measure",
-        module_instrument=program_instrument_picoscope5442D,
-        steps=(
-            dict(
-                stepname=program_fir_plot.STEP_SETTLE,
-                # External
-                skalierungsfaktor=skalierungsfaktor,
-                # Processing
-                fir_count=0,
-                fir_count_skipped=0,
-                # Picoscope
-                input_channel="A",  # channel A is connected without filter to the amplifier out
-                input_Vp=inputRange,
-                bandwitdth="BW_20MHZ",
-                offset=0.0,
-                resolution="16bit",
-                duration_s = 10.0,
-                dt_s=1 / f2_settle_fs_hz
-            ),
-            dict(
-                stepname="1_fast",
-                # External
-                skalierungsfaktor=skalierungsfaktor,
-                # Processing
-                fir_count=f0_fast_fir_count,
-                fir_count_skipped=f0_fast_fir_count_skipped,  # highest frequencies get skipped
-                # Picoscope
-                input_channel="A",  # channel A is connected without filter to the amplifier out
-                input_Vp=inputRange,
-                bandwitdth="BW_20MHZ",
-                offset=0.0,
-                resolution="15bit",
-                duration_s=0.6,  #  Memory will limit time (7s). After about 0.5s the usb transfer starts and adds additional noise
-                dt_s=1.0 / f0_fast_fs_hz,
-            ),
-            dict(
-                stepname="2_medium",
-                # External
-                skalierungsfaktor=skalierungsfaktor,
-                # Processing
-                fir_count=f1_medium_fir_count,
-                fir_count_skipped=f1_medium_fir_count_skipped,
-                # Picoscope
-                input_channel="A",  # channel A is connected without filter to the amplifier out
-                input_Vp=inputRange,
-                bandwitdth="BW_20MHZ",
-                offset=0.0,
-                resolution="16bit",
-                duration_s=3.0,  #  Memory will limit time (9.7s)
-                dt_s=1.0 / f1_medium_fs_hz,
-            ),
-            dict(
-                stepname="3_slow",
-                # External
-                skalierungsfaktor=skalierungsfaktor,
-                # Processing
-                fir_count=fir_count_2_slow,
-                fir_count_skipped=f2_slow_fir_count_skipped,
-                # Picoscope
-                input_channel="B",  # channel B is connected with filter low pass 100 kHz ??? to the amplifier out
-                input_Vp=inputRange,
-                bandwitdth="BW_20MHZ",
-                offset=0.0,
-                resolution="16bit",
-                # duration_s = 60.0,
-                duration_s=duration_slow_s,
-                dt_s=1 / f2_slow_fs_hz,
-            ),
-        ),
-    )
+    steps = ConfigSetup()
+    steps.setup_name = "Measure"
+    steps.module_instrument = program_instrument_picoscope5442D
+    steps.configsteps = []
 
-    return dict_config_setup
+    step = ConfigStep()
+    step.stepname = "0_settle"
+    step.settle = True
+    # External
+    step.skalierungsfaktor = skalierungsfaktor
+    # Picoscope
+    step.input_channel = "A"  # channel A is connected without filter to the amplifier out
+    step.input_Vp = inputRange
+    step.bandwitdth = "BW_20MHZ"
+    step.offset = 0.0
+    step.resolution = "16bit"
+    step.duration_s = 200.0
+    step.dt_s = 1 / f2_settle_fs_hz
+    steps.configsteps.append(step)
+
+    step = ConfigStep()
+    step.stepname = "1_fast"
+    # External
+    step.skalierungsfaktor = skalierungsfaktor
+    # Processing
+    step.fir_count = f0_fast_fir_count
+    step.fir_count_skipped = f0_fast_fir_count_skipped  # highest frequencies get skipped
+    # Picoscope
+    step.input_channel = "A"  # channel A is connected without filter to the amplifier out
+    step.input_Vp = inputRange
+    step.bandwitdth = "BW_20MHZ"
+    step.offset = 0.0
+    step.resolution = "15bit"
+    step.duration_s = 0.6  #  Memory will limit time (7s). After about 0.5s the usb transfer starts and adds additional noise
+    step.dt_s = 1.0 / f0_fast_fs_hz
+    steps.configsteps.append(step)
+
+    step = ConfigStep()
+    step.stepname = "2_medium"
+    # External
+    step.skalierungsfaktor = skalierungsfaktor
+    # Processing
+    step.fir_count = f1_medium_fir_count
+    step.fir_count_skipped = f1_medium_fir_count_skipped
+    # Picoscope
+    step.input_channel = "A"  # channel A is connected without filter to the amplifier out
+    step.input_Vp = inputRange
+    step.bandwitdth = "BW_20MHZ"
+    step.offset = 0.0
+    step.resolution = "16bit"
+    step.duration_s = 3.0  #  Memory will limit time (9.7s)
+    step.dt_s = 1.0 / f1_medium_fs_hz
+    steps.configsteps.append(step)
+
+    step = ConfigStep()
+    step.stepname = "3_slow"
+    # External
+    step.skalierungsfaktor = skalierungsfaktor
+    # Processing
+    step.fir_count = fir_count_2_slow
+    step.fir_count_skipped = f2_slow_fir_count_skipped
+    # Picoscope
+    step.input_channel = "B"  # channel B is connected with filter low pass 100 kHz ??? to the amplifier out
+    step.input_Vp = inputRange
+    step.bandwitdth = "BW_20MHZ"
+    step.offset = 0.0
+    step.resolution = "16bit"
+    # duration_s = 60.0
+    step.duration_s = duration_slow_s
+    step.dt_s = 1 / f2_slow_fs_hz
+    steps.configsteps.append(step)
+
+    return steps

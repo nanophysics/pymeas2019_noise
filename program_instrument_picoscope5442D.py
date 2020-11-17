@@ -1,8 +1,10 @@
 import sys
 import time
 import logging
+
 import numpy as np
-import program
+
+import program_configsetup
 import program_measurement_stream
 
 logger = logging.getLogger("logger")
@@ -39,7 +41,7 @@ if PICSCOPE_MODEL == PICSCOPE_MODEL_2204A:
 
 
 class Instrument:
-    def __init__(self, configStep):
+    def __init__(self, configstep):
         self.streaming_done = False
         self.actual_sample_count = 0
         self.scope = None
@@ -53,7 +55,7 @@ class Instrument:
                 address=PICSCOPE_ADDRESS,
                 # properties={'open_async': True},  # opening in async mode is done in the properties
                 properties=dict(
-                    resolution=configStep.resolution,
+                    resolution=configstep.resolution,
                     # resolution='15bit',
                     # resolution='16bit',  # only used for ps5000a series PicoScope's
                     auto_select_power=False,  # for PicoScopes that can be powered by an AC adaptor or by a USB cable
@@ -74,18 +76,18 @@ class Instrument:
                     raise
 
     def close(self):
-        # self.scope.set_data_buffer(configStep.input_channel)
+        # self.scope.set_data_buffer(configstep.input_channel)
         self.scope.disconnect()
 
-    def calculate_dt_s(self, configStep, max_samples_bytes):
-        # Given: configStep.duration_s
+    def calculate_dt_s(self, configstep, max_samples_bytes):
+        # Given: configstep.duration_s
         # Required: selected_dt_s
         # Limited by: self.scope.set_timebase
         # Limited by: Maximum filesize
 
         # Programmers Guide "3.6 Timebases", only one channel_raw
-        assert configStep.dt_s is not None
-        selected1_dt_s = configStep.dt_s
+        assert configstep.dt_s is not None
+        selected1_dt_s = configstep.dt_s
         if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
             max_sampling_rate = 62.5e6
             desired_sample_time_s = max_samples_bytes * selected1_dt_s
@@ -102,37 +104,37 @@ class Instrument:
 
         selected2_dt_s, _num_samples = self.scope.set_timebase(selected1_dt_s, desired_sample_time_s)  # sample the voltage on Channel A every 1 us, for 100 us
 
-        assert configStep.dt_s is not None
+        assert configstep.dt_s is not None
         if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
-            # assert math.isclose(selected2_dt_s, configStep.dt_s), f'selected2_dt_s {selected2_dt_s} != configStep.dt_s {configStep.dt_s}'
-            assert 0.9 < (selected2_dt_s / configStep.dt_s) < 1.1, f"selected2_dt_s {selected2_dt_s} != configStep.dt_s {configStep.dt_s}"
+            # assert math.isclose(selected2_dt_s, configstep.dt_s), f'selected2_dt_s {selected2_dt_s} != configstep.dt_s {configstep.dt_s}'
+            assert 0.9 < (selected2_dt_s / configstep.dt_s) < 1.1, f"selected2_dt_s {selected2_dt_s} != configstep.dt_s {configstep.dt_s}"
 
         return selected2_dt_s
-        # logger.debug(f'configStep.duration_s={configStep.duration_s:.4e}, total_samples={total_samples}, total_samples*selected_dt_s={total_samples*selected_dt_s:.4e}')
+        # logger.debug(f'configstep.duration_s={configstep.duration_s:.4e}, total_samples={total_samples}, total_samples*selected_dt_s={total_samples*selected_dt_s:.4e}')
         # logger.debug(f'set_timebase({desired_dt_s:.4e}) -> {selected_dt_s:.4e}')
         # total_samples_before = total_samples
-        # total_samples = int(configStep.duration_s/selected_dt_s)
+        # total_samples = int(configstep.duration_s/selected_dt_s)
         # logger.debug(f'total_samples={total_samples_before}) -> {total_samples}')
 
-    def acquire(self, configStep, stream_output, com_measurment):  # pylint: disable=too-many-statements
-        assert isinstance(configStep, program.ConfigStep)
+    def acquire(self, configstep, stream_output, filelock_measurement):  # pylint: disable=too-many-statements
+        assert isinstance(configstep, program_configsetup.ConfigStep)
 
         valid_ranges = set(range.value for range in self.scope.enRange)
-        assert configStep.input_Vp.value in valid_ranges
+        assert configstep.input_Vp.value in valid_ranges
 
-        assert configStep.input_channel in ALL_CHANNELS
+        assert configstep.input_channel in ALL_CHANNELS
 
         for channel_raw in ALL_CHANNELS:
-            enabled = channel_raw in configStep.input_channel
-            self.scope.set_channel(channel_raw, coupling="dc", bandwidth=configStep.bandwitdth, offset=configStep.offset, scale=configStep.input_Vp, enabled=enabled)
+            enabled = channel_raw in configstep.input_channel
+            self.scope.set_channel(channel_raw, coupling="dc", bandwidth=configstep.bandwitdth, offset=configstep.offset, scale=configstep.input_Vp, enabled=enabled)
 
         if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
             max_samples_bytes = self.scope.memory_segments(num_segments=1)
         else:
             max_samples_bytes = 1024 * 1024
 
-        dt_s = self.calculate_dt_s(configStep, max_samples_bytes)
-        total_samples = int(configStep.duration_s / dt_s)
+        dt_s = self.calculate_dt_s(configstep, max_samples_bytes)
+        total_samples = int(configstep.duration_s / dt_s)
         logger.info(f"Aquisition with dt_s {dt_s:.3E}s, fs {1.0/dt_s:.3E}Hz")
 
         # PicoScope 6
@@ -154,17 +156,17 @@ class Instrument:
         # # timebaseA_=4, time_interval_nanosecondsA_=1.6e-09
 
         if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
-            # self.scope.set_data_buffer(configStep.input_channel, mode=PS5000ARatioMode.AVERAGE)
-            self.scope.set_data_buffer(configStep.input_channel)
-        channel = self.scope.channel[configStep.input_channel]
+            # self.scope.set_data_buffer(configstep.input_channel, mode=PS5000ARatioMode.AVERAGE)
+            self.scope.set_data_buffer(configstep.input_channel)
+        channel = self.scope.channel[configstep.input_channel]
 
-        channel_gain = configStep.skalierungsfaktor * channel._volts_per_adu
+        channel_gain = configstep.skalierungsfaktor * channel._volts_per_adu
 
         def convert(adu_values):
             volts = np.multiply(channel_gain, adu_values, dtype=np.float32)  # NUMPY_FLOAT_TYPE
             return volts
 
-        stream = program_measurement_stream.InThread(stream_output, dt_s=dt_s, duration_s=configStep.duration_s, func_convert=convert)
+        stream = program_measurement_stream.InThread(stream_output, dt_s=dt_s, duration_s=configstep.duration_s, func_convert=convert)
         stream.start()
 
         self.actual_sample_count = 0
@@ -208,7 +210,7 @@ class Instrument:
                     stream.put_EOF()
                     logger.info(f"STOP({reason})")
 
-                if com_measurment.requested_stop_soft():
+                if filelock_measurement.requested_stop_soft():
                     stop("<ctrl-c> or softstop")
 
                 if self.actual_sample_count > total_samples:
@@ -224,6 +226,8 @@ class Instrument:
         start_s = time.time()
         self.scope.run_streaming(auto_stop=False)
         while not self.streaming_done:
+            if stream.done:
+                break
             # wait until the latest streaming values are ready
             self.scope.wait_until_ready()
             if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:

@@ -21,10 +21,8 @@ except ImportError as ex:
     logger.error(f"ERROR: Failed to import ({ex}). Try: pip install -r requirements.txt")
     sys.exit(0)
 
-import library_filelock  # pylint: disable=wrong-import-position
 import library_topic  # pylint: disable=wrong-import-position
 import library_plot  # pylint: disable=wrong-import-position
-import program_fir  # pylint: disable=wrong-import-position
 import program_fir_plot  # pylint: disable=wrong-import-position
 
 DIRECTORY_TOP = pathlib.Path(__file__).absolute().parent
@@ -62,53 +60,6 @@ class ConfigStep:  # pylint: disable=too-many-instance-attributes
             self._update_element(key, value)
 
 
-class ConfigSetup:
-    def __init__(self):
-        self.diagram_legend = DEFINED_BY_SETUP
-        self.setup_name = DEFINED_BY_SETUP
-        self.module_instrument = DEFINED_BY_SETUP
-        self.steps = DEFINED_BY_SETUP
-        self._filelock_measurement = library_filelock.FilelockMeasurement()
-
-    # def get_filename_data(self, extension, directory=DIRECTORY_0_RAW):
-    #   filename = f'data_{self.setup_name}'
-    #   return os.path.join(directory, f'{filename}.{extension}')
-
-    # def create_directories(self):
-    #   for directory in (DIRECTORY_0_RAW, DIRECTORY_1_CONDENSED, DIRECTORY_2_RESULT):
-    #       if not os.path.exists(directory):
-    #         os.makedirs(directory)
-
-    def _update_element(self, key, value):
-        assert key in self.__dict__
-        if key == "steps":
-            self.__dict__[key] = [ConfigStep(v) for v in value]
-            return
-        self.__dict__[key] = value
-
-    def update_by_dict(self, dict_config_setup):
-        for key, value in dict_config_setup.items():
-            self._update_element(key, value)
-
-    def update_by_channel_file(self, dict_config_setup):
-        self.update_by_dict(dict_config_setup)
-
-    def measure_for_all_steps(self, dir_measurement, dir_raw):
-        assert isinstance(dir_measurement, pathlib.Path)
-        assert isinstance(dir_raw, pathlib.Path)
-
-        for configStep in self.steps:
-            library_filelock.FilelockMeasurement.update_status(f"Measuring: {dir_raw.name} / {configStep.stepname}")
-            picoscope = self.module_instrument.Instrument(configStep)  # pylint: disable=no-member
-            picoscope.connect()
-            sample_process = program_fir.SampleProcess(program_fir.SampleProcessConfig(configStep), dir_raw)
-            picoscope.acquire(configStep=configStep, stream_output=sample_process.output, com_measurment=self._filelock_measurement)
-            picoscope.close()
-
-            if self._filelock_measurement.requested_stop_soft():
-                break
-
-
 def examine_dir_raw(dir_measurement):
     "Returns the directory with the raw-results"
     assert isinstance(dir_measurement, pathlib.Path)
@@ -133,15 +84,6 @@ def examine_dir_raw(dir_measurement):
         dir_raw.mkdir(parents=True, exist_ok=True)
 
     return dir_raw
-
-
-def get_configSetup_by_filename(dict_config_setup):
-    import config_common
-
-    config = ConfigSetup()
-    config.update_by_dict(config_common.DICT_CONFIG_SETUP_DEFAULTS)
-    config.update_by_channel_file(dict_config_setup)
-    return config
 
 
 def reload_if_changed(dir_raw):
@@ -227,24 +169,6 @@ def run_condense_0to1(dir_raw, trace=False, do_plot=True):
     if do_plot:
         file_tag = "_trace" if trace else ""
         lsd_summary.plot(file_tag=file_tag)
-
-
-def measure(configSetup, dir_measurement, dir_raw):
-    assert isinstance(configSetup, ConfigSetup)
-    assert isinstance(dir_measurement, pathlib.Path)
-    assert isinstance(dir_raw, pathlib.Path)
-
-    try:
-        configSetup.measure_for_all_steps(dir_measurement=dir_measurement, dir_raw=dir_raw)
-        # run_condense(dir_measurement) # 20200212 Peter, nicht jedes mal, lieber von Hand
-        # import run_1_condense # 20200212 Peter, nicht jedes mal, lieber von Hand
-        # run_1_condense.run() # 20200212 Peter, nicht jedes mal, lieber von Hand
-    except Exception:  # pylint: disable=broad-except
-        import traceback
-
-        traceback.print_exc()
-        logger.info("Hit any key to terminate")
-        sys.stdin.read()
 
 
 class SpecializedPrettyPrint:

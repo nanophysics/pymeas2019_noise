@@ -16,10 +16,10 @@ def run():
 
     library_path.init_logger_measurement(directory=dir_raw)
 
-    dict_config_setup = config_measurement.get_dict_config_setup()
-    logger.info(dict_config_setup)
-    configSetup = program.get_configSetup_by_filename(dict_config_setup)
-    program.measure(configSetup, dir_measurement=dir_measurement, dir_raw=dir_raw)
+    configsetup = config_measurement.get_configsetup()
+    configsetup.validate()
+    logger.info(configsetup.__dict__)
+    configsetup.measure(dir_measurement=dir_measurement, dir_raw=dir_raw)
 
     library_filelock.FilelockMeasurement.update_status(f"Condense data: {dir_raw.name}")
 

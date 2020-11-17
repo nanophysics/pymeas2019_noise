@@ -17,9 +17,6 @@ import library_topic
 logger = logging.getLogger("logger")
 
 
-STEP_SETTLE = "0_settle"
-
-
 class FilenameDensityStepMatcher:
     FILENAME_TAG_SKIP = "_SKIP"
     GLOB_PATTERN = "densitystep_*.pickle"
@@ -116,9 +113,6 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
 
         for filename in dir_input.glob(FilenameDensityStepMatcher.GLOB_PATTERN):
             m = FilenameDensityStepMatcher(filename.name)
-            if m.stepname == STEP_SETTLE:
-                logger.debug(f'Skip file "{filename.name}": The settle-step is not part of the calculation')
-                continue
             if skip and m.skip:
                 continue
             yield filename
@@ -267,19 +261,6 @@ class DensityPoint:
         l = (self.stepname, str(self.stage), bool(self.skip), self.f, self.d)
         l = [str(e) for e in l]
         return DensityPoint.DELIMITER.join(l)
-
-    # @classmethod
-    # def factory(cls, line):
-    #   class DensityPointRead:
-    #     def __init__(self, line):
-    #       l = line.split(cls.DELIMITER)
-    #       self.stepname = l[0]
-    #       self.stage = int(l[1])
-    #       self.skip = bool(l[2])
-    #       self.f = float(l[3])
-    #       self.d = float(l[4])
-
-    #   return DensityPointRead(line)
 
 
 class Selector:

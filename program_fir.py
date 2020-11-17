@@ -4,15 +4,16 @@ import logging
 import numpy as np
 import scipy.signal
 import program_classify
+import program_settle
 import program_fir_plot
+import program_configsetup
 
 logger = logging.getLogger("logger")
 
-TIME_INTERVAL_S = 0.9
-SAMPLES_DENSITY = 2 ** 12  # lenght of periodogram
-PERIODOGRAM_OVERLAP = 2 ** 4  # number of overlaps
+SAMPLES_DENSITY = 2 ** 12  # length of periodogram (2**12=4096)
+PERIODOGRAM_OVERLAP = 2 ** 4  # number of overlaps (2**4=16)
 assert SAMPLES_DENSITY % PERIODOGRAM_OVERLAP == 0
-SAMPLES_SELECT_MAX = 2 ** 23
+SAMPLES_SELECT_MAX = 2 ** 23  # (2**23=8388608)
 
 # NUMPY_FLOAT_TYPE=np.float
 NUMPY_FLOAT_TYPE = np.float32
@@ -152,13 +153,6 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         return array_decimated
 
 
-class SampleProcessConfig:
-    def __init__(self, configStep):
-        self.fir_count = configStep.fir_count
-        self.fir_count_skipped = configStep.fir_count_skipped
-        self.stepname = configStep.stepname
-
-
 class Density:  # pylint: disable=too-many-instance-attributes
     """
     Stream-Sink: Implements a Stream-Interface
@@ -240,7 +234,7 @@ class Density:  # pylint: disable=too-many-instance-attributes
         if self.__mode_fifo:
             assert len(array_in) == self.__pushcalulator.push_size_samples
             self.__fifo = np.append(self.__fifo, array_in)
-            return False
+            return None
 
         assert len(array_in) >= SAMPLES_DENSITY
         self.__fifo = array_in[:SAMPLES_DENSITY]
@@ -391,12 +385,18 @@ class UniformPieces:
         return None
 
 
-class SampleProcess:
+class SamplingProcess:
     def __init__(self, config, directory_raw):
+        assert isinstance(config, program_configsetup.SamplingProcessConfig)
         assert isinstance(directory_raw, pathlib.Path)
 
         self.config = config
         self.directory_raw = directory_raw
+
+        if config.settle:
+            self.output = program_settle.Settle(config=config, directory=self.directory_raw)
+            return
+
         o = OutTrash()
 
         for _i in range(config.fir_count - 1):

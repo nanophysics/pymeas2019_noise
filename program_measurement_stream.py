@@ -65,6 +65,7 @@ class InThread:  # pylint: disable=too-many-instance-attributes
     def __init__(self, out, dt_s, func_convert, duration_s=None):
         self.out = out
         self.dt_s = dt_s
+        self.done = False
         self.__func_convert = func_convert
         self.list_overflow = []
         self.thread = None
@@ -77,21 +78,27 @@ class InThread:  # pylint: disable=too-many-instance-attributes
         self.__lock = threading.Lock()
 
     def worker(self):
-        while True:
-            raw_data_in = self.__queue.get()
-            if raw_data_in is None:
-                self.out.done()
-                break
-            samples = len(raw_data_in)
-            with self.__lock:
-                self.__queue_size -= samples
-            assert self.__queue_size >= 0
-            self.__samples_processed += samples
-            # logger.info('push: ', end='')
-            array_in = self.__func_convert(raw_data_in)
-            rc = self.out.push(array_in)
-            self.__progress.tick(self.__samples_processed)
-            assert rc is None
+        try:
+            while True:
+                raw_data_in = self.__queue.get()
+                if raw_data_in is None:
+                    self.out.done()
+                    break
+                samples = len(raw_data_in)
+                with self.__lock:
+                    self.__queue_size -= samples
+                assert self.__queue_size >= 0
+                self.__samples_processed += samples
+                # logger.info('push: ', end='')
+                array_in = self.__func_convert(raw_data_in)
+                rc = self.out.push(array_in)
+                self.__progress.tick(self.__samples_processed)
+                assert rc is None
+        except StopIteration as ex:
+            logger.info(f"worker: StopIteration received: {ex}")
+            self.done = True
+        except Exception as ex:  # pylint: disable=broad-except
+            logger.exception(ex)
 
     def start(self):
         self.thread = threading.Thread(target=self.worker)
@@ -120,7 +127,7 @@ def run():
     import numpy as np
     import program_fir
 
-    sp = program_fir.SampleProcess(fir_count=3)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+    sp = program_fir.SamplingProcess(fir_count=3)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
     i = InThread(sp.output, dt_s=0.01)  # pylint: disable=no-value-for-parameter
     i.start()
 
