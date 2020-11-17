@@ -281,7 +281,7 @@ class Presentation:
         assert isinstance(topic, Topic)
         if stage is None:
             # TODO(Hans): Remove hardcoded value
-            stage = 2
+            stage = 0
         assert isinstance(stage, int)
         return self.__xy_func(topic, stage)
 

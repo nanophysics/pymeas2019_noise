@@ -9,10 +9,10 @@ import program_fir_plot
 logger = logging.getLogger("logger")
 
 TIME_INTERVAL_S = 0.9
-SAMPLES_DENSITY = 2 ** 12  # lenght of periodogram
-PERIODOGRAM_OVERLAP = 2 ** 4  # number of overlaps
+SAMPLES_DENSITY = 2 ** 12  # lenght of periodogram (2**12=4096)
+PERIODOGRAM_OVERLAP = 2 ** 4  # number of overlaps (2**4=16)
 assert SAMPLES_DENSITY % PERIODOGRAM_OVERLAP == 0
-SAMPLES_SELECT_MAX = 2 ** 23
+SAMPLES_SELECT_MAX = 2 ** 23  # (2**23=8388608)
 
 # NUMPY_FLOAT_TYPE=np.float
 NUMPY_FLOAT_TYPE = np.float32
@@ -168,9 +168,11 @@ class Settle:  # pylint: disable=too-many-instance-attributes
     CALCULATION_INTERVAL_S = 1.0  # Calculate every second
     INVALID_BIG_V = 1000000.0
 
-    def __init__(self, out, config):
-        self.out = out
+    def __init__(self, config, directory):
+        assert isinstance(directory, pathlib.Path)
+
         self.__config = config
+        self.__directory = directory
         self.__stage = None
         self.__dt_s = None
         self.__TAG_PUSH = None
@@ -181,6 +183,8 @@ class Settle:  # pylint: disable=too-many-instance-attributes
         self.__history_ok = [
             True,
         ] * 10  # 10 Times CALCULATION_INTERVAL_S
+        self.__fifo = np.empty(0, dtype=NUMPY_FLOAT_TYPE)
+
 
     def init(self, stage, dt_s):
         self.__stage = stage
@@ -188,10 +192,8 @@ class Settle:  # pylint: disable=too-many-instance-attributes
         self.__TAG_PUSH = f"Settle {self.__stage}"
         self.__calculation_interval_samples = int(Settle.CALCULATION_INTERVAL_S / self.__dt_s)
 
-        self.out.init(stage=stage, dt_s=dt_s)
-
     def done(self):
-        self.out.done()
+        pass
 
     def push(self, array_in):
         """
@@ -202,6 +204,11 @@ class Settle:  # pylint: disable=too-many-instance-attributes
           Return: None
         """
         if array_in is not None:
+            if True:
+                self.__fifo = np.append(self.__fifo, array_in)
+                _empty = np.empty(0, dtype=NUMPY_FLOAT_TYPE)
+                _filenameFull = program_fir_plot.DensityPlot.save(config=self.__config, directory=self.__directory, stage=42, dt_s=self.__dt_s, frequencies=_empty, Pxx_n=0, Pxx_sum=_empty, stepsize_bins_count=_empty, stepsize_bins_V=[], samples_V=self.__fifo)
+
             self.__max_V = max(self.__max_V, array_in.max())
             self.__min_V = min(self.__min_V, array_in.min())
 
@@ -210,7 +217,7 @@ class Settle:  # pylint: disable=too-many-instance-attributes
             if self.__samples > self.__calculation_interval_samples:
                 self.__samples = 0
                 self.calculate()
-        return self.out.push(array_in)
+        return None
 
     def calculate(self):
         LIMIT_V = 2e-07
@@ -298,6 +305,12 @@ class Density:  # pylint: disable=too-many-instance-attributes
 
         assert array_in is not None
         self.out.push(array_in)
+
+        # TODO(Hans): Hack
+        if False:
+            if self.__fifo is not None:
+                _empty = np.empty(0, dtype=NUMPY_FLOAT_TYPE)
+                _filenameFull = program_fir_plot.DensityPlot.save(config=self.__config, directory=self.__directory, stage=42, dt_s=self.__dt_s, frequencies=_empty, Pxx_n=0, Pxx_sum=_empty, stepsize_bins_count=self.__stepsize_bins.count, stepsize_bins_V=self.__stepsize_bins.V, samples_V=self.__fifo)
 
         # Add to 'self.array'
         if self.__mode_fifo:
@@ -462,7 +475,9 @@ class SampleProcess:
         self.directory_raw = directory_raw
         o = OutTrash()
 
-        # o = Settle(o, config=config)
+        if True:
+            self.output = Settle(config=config, directory=self.directory_raw)
+            return
 
         for _i in range(config.fir_count - 1):
             o = Density(o, config=config, directory=self.directory_raw)

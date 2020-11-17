@@ -51,7 +51,8 @@ f1_medium_fir_count_skipped = int(round(math.log(f1_medium_fs_hz / f1_medium_use
 f2_slow_fir_count_skipped = int(round(math.log(f2_slow_fs_hz / f2_slow_useful_hz, 2)))
 fir_count_2_slow = f2_slow_fir_count_skipped + 27  # free to choose
 
-exponent_settle = 16  # free to change.
+exponent_settle = 21  # 59 Hz
+exponent_settle = 19  # 238 Hz
 f2_settle_fs_hz = f0_fast_fs_hz / float(2 ** exponent_settle)
 
 
@@ -69,7 +70,7 @@ def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):
                 # External
                 skalierungsfaktor=skalierungsfaktor,
                 # Processing
-                fir_count=8,
+                fir_count=1,
                 fir_count_skipped=0,
                 # Picoscope
                 input_channel="A",  # channel A is connected without filter to the amplifier out

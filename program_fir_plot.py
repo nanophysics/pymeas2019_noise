@@ -73,6 +73,14 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
     @classmethod
     def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum, stepsize_bins_count, stepsize_bins_V, samples_V):  # pylint: disable=too-many-arguments
         assert isinstance(directory, pathlib.Path)
+        assert isinstance(stage, int)
+        assert isinstance(dt_s, float)
+        assert isinstance(frequencies, np.ndarray)
+        assert isinstance(Pxx_n, int)
+        assert isinstance(Pxx_sum, np.ndarray)
+        assert isinstance(stepsize_bins_count, np.ndarray)
+        assert isinstance(stepsize_bins_V, list)
+        assert isinstance(samples_V, np.ndarray)
 
         skip = stage < config.fir_count_skipped
         filename = FilenameDensityStepMatcher.filename_from_stepname_stage(stepname=config.stepname, stage=stage, skip=skip)
