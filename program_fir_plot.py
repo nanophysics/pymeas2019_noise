@@ -38,6 +38,8 @@ class FilenameDensityStepMatcher:
         assert isinstance(filename, str)
         _match = FilenameDensityStepMatcher.RE.match(filename)
         self.match = _match is not None
+        self.stepname = None
+        self.skip = None
         if self.match:
             self.stepname = _match.group("stepname")
             skiptext = _match.group("skiptext")
@@ -146,7 +148,7 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         return l
 
     @classmethod
-    def directory_plot(cls, directory_in, dir_plot):
+    def directory_plot_obsolete(cls, directory_in, dir_plot):
         """
         Loop for all densitystage-files in directory and plot.
         """
@@ -154,7 +156,7 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
             densityPeriodogram.plot(dir_plot)
 
     @classmethod
-    def directory_plot_thread(cls, dir_input, dir_plot):
+    def directory_plot_thread_obsolete(cls, dir_input, dir_plot):
         class WorkerThread(threading.Thread):
             def __init__(self, *args, **keywords):
                 threading.Thread.__init__(self, *args, **keywords)
@@ -164,7 +166,7 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
             def run(self):
                 while True:
                     time.sleep(2.0)
-                    cls.directory_plot(dir_input, dir_plot)
+                    cls.directory_plot_obsolete(dir_input, dir_plot)
                     if self.__stop:
                         return
 

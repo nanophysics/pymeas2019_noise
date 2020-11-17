@@ -52,12 +52,15 @@ class Duration:
     def __exit__(self, exc_type, exc_value, exc_traceback):
         logger.debug(f"{self._title} {time.time() - self._start_s:0.3f}s")
 
+
 def log_duration(f):
     def new_f(*args, **vargs):
         start_s = time.time()
         f(*args, **vargs)
         logger.debug(f"{f.__name__}(): {time.time() - start_s:0.3f}s")
+
     return new_f
+
 
 class PlotPanel(wx.Panel):
     def __init__(self, parent, app):
@@ -111,12 +114,6 @@ class PlotPanel(wx.Panel):
     def OnStop(self, event):
         FILELOCK_GUI.stop_measurement_soft()
 
-    def OnComboBoxPresentation(self, event):
-        combobox = event.EventObject
-        presentation = combobox.GetClientData(combobox.Selection)
-        self._plot_context.update_presentation(presentation=presentation, update=True)
-        logger.debug(presentation.title)
-
     def endless_iter(self):
         yield from itertools.count(start=42)
 
@@ -136,11 +133,15 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.button_stop = None
         self.button_display_open_directory = None
         self.button_display_clone = None
+        self.combo_box_presentation = None
         self.combo_box_measurement_color = None
         self.text_ctrl_measurement_topic = None
         self.label_status_text = None
         self.label_coordinates = None
         self.timer = None
+        self.text_ctrl_display_step = None
+        self.text_ctrl_display_td = None
+        self.button_display_apply = None
 
         wx.App.__init__(self)
 
@@ -179,13 +180,13 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.button_display_clone.Bind(wx.EVT_BUTTON, self.OnDisplayClone)
 
         # presentation combo ------------------
-        combo_box_presentation = xrc.XRCCTRL(self.frame, "combo_box_presentation")
-        combo_box_presentation.Bind(wx.EVT_COMBOBOX, self.plotpanel.OnComboBoxPresentation)
+        self.combo_box_presentation = xrc.XRCCTRL(self.frame, "combo_box_presentation")
+        self.combo_box_presentation.Bind(wx.EVT_COMBOBOX, self.OnComboBoxPresentation)
         for presentation in library_topic.PRESENTATIONS.list:
-            combo_box_presentation.Append(presentation.title, presentation)
+            self.combo_box_presentation.Append(presentation.title, presentation)
 
-        idx = combo_box_presentation.FindString(self._plot_context.presentation.title)
-        combo_box_presentation.Select(idx)
+        idx = self.combo_box_presentation.FindString(self._plot_context.presentation.title)
+        self.combo_box_presentation.Select(idx)
 
         self.combo_box_measurement_color = xrc.XRCCTRL(self.frame, "combo_box_measurement_color")
         self.combo_box_measurement_color.Append(COLORS)
@@ -201,6 +202,12 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
         self.label_coordinates = xrc.XRCCTRL(self.frame, "label_coordinates")
         self.plotpanel.canvas.mpl_connect("motion_notify_event", self.UpdateStatusBar)
+
+        # Interrims ------------------
+        self.text_ctrl_display_step = xrc.XRCCTRL(self.frame, "text_ctrl_display_step")
+        self.text_ctrl_display_td = xrc.XRCCTRL(self.frame, "text_ctrl_display_td")
+        self.button_display_apply = xrc.XRCCTRL(self.frame, "button_display_apply")
+        self.button_display_apply.Bind(wx.EVT_BUTTON, self.OnApply)
 
         # final setup ------------------
         self.frame.Show()
@@ -225,7 +232,6 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
         self.label_status_text.SetLabel(FILELOCK_GUI.get_status())
 
-
     def UpdateStatusBar(self, event):
         if event.inaxes:
             self.label_coordinates.SetLabel(f"x={event.xdata:e}  y={event.ydata:e}")
@@ -235,3 +241,21 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
     def OnDisplayClone(self, event):
         self._plot_context.open_display_clone()
+
+    def __update_presentation(self):
+        idx = self.combo_box_presentation.Selection
+        presentation = self.combo_box_presentation.GetClientData(idx)
+        self._plot_context.update_presentation(presentation=presentation, update=True)
+        logger.debug(presentation.title)
+
+    @log_duration
+    def OnComboBoxPresentation(self, event):
+        self.__update_presentation()
+
+    @log_duration
+    def OnApply(self, event):
+        step = self.text_ctrl_display_step.Value
+        td = self.text_ctrl_display_td.Value
+
+        self.__update_presentation()
+        logger.debug(presentation.title)
