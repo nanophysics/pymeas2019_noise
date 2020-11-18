@@ -71,7 +71,7 @@ class Settle:  # pylint: disable=too-many-instance-attributes
 
         time_left_s = TIME_OK_S + self.__last_sample_outside_s - now_s
 
-        now_V = float(array_in[-1]) / self.__config.skalierungsfaktor
+        now_V = float(array_in[-1])
         status = f"Settle: inputRange +-{self.__input_range_V:0.2e}V, ok_range +-{self.__ok_range_V:0.2e}V, now {now_V:0.2e}V, wait for ok {TIME_OK_S}s, {time_left_s:0.0f}s left"
         self.__filelock_measurement.update_status(status)
 
