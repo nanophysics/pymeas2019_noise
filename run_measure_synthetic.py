@@ -52,7 +52,7 @@ def main():
     config.stepname = "slow"
     config.validate()
 
-    sp = program_fir.SamplingProcess(config=config, directory_raw=program.MEASUREMENT_ACTUAL / "raw-green-syntetic")
+    sp = program_fir.SamplingProcess(config=config, directory_raw=program.MEASUREMENT_ACTUAL / "raw-green-synthetic")
     i = program_fir.InSynthetic(sp.output, signal=signal, dt_s=DT_S, time_total_s=10.0)
     i.process()
     logger.info("Done")

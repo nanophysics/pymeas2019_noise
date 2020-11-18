@@ -20,7 +20,7 @@ logger = logging.getLogger("logger")
 class FilenameDensityStepMatcher:
     FILENAME_TAG_SKIP = "_SKIP"
     GLOB_PATTERN = "densitystep_*.pickle"
-    PATTERN = fr"^densitystep_(?P<stepname>.*?)_(\d+)(?P<skiptext>{FILENAME_TAG_SKIP})?.pickle$"
+    PATTERN = fr"^densitystep_(?P<stepname>.*?)_(?P<stage>\d+)(?P<skiptext>{FILENAME_TAG_SKIP})?.pickle$"
     RE = re.compile(PATTERN)
 
     @classmethod
@@ -36,9 +36,13 @@ class FilenameDensityStepMatcher:
         _match = FilenameDensityStepMatcher.RE.match(filename)
         self.match = _match is not None
         self.stepname = None
+        self.stage = None
         self.skip = None
+        self.label = None
         if self.match:
             self.stepname = _match.group("stepname")
+            self.stage = _match.group("stage")
+            self.label = f"{self.stepname}_{self.stage}"
             skiptext = _match.group("skiptext")
             self.skip = skiptext == FilenameDensityStepMatcher.FILENAME_TAG_SKIP
 

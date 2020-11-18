@@ -21,6 +21,13 @@ import run_0_measure
 logger = logging.getLogger("logger")
 
 
+# class Utils:
+#     @classmethod
+#     def topic_2_label(cls, topic) -> str:
+#         assert isinstance(topic, library_topic.Topic)
+#         return f"{topic.color}-{topic.topic}"
+
+
 class PlotContext:
     def __init__(self, plotData, fig, ax):
         # The currently active presentation
@@ -29,13 +36,14 @@ class PlotContext:
         self.plotData = plotData
         self.fig = fig
         self.ax = ax
-        self.__stage = 0
+        self.__topic = None
+        self.__stage = None
 
     def initialize_plot_lines(self):
         """
         Updates the plot: scales and lines
         """
-        for topic in self.plotData.listTopics:
+        for topic in self.list_selected_topics:
             x, y = self.presentation.get_xy(topic=topic, stage=self.__stage)
             assert len(x) == len(y)
             (plot_line,) = self.ax.plot(x, y, linestyle="none", linewidth=0.1, marker=".", markersize=3, color=topic.color, label=topic.topic)
@@ -47,16 +55,13 @@ class PlotContext:
         leg = self.ax.legend(fancybox=True, framealpha=0.5)
         leg.get_frame().set_linewidth(0.0)
 
-    def set_stage(self, only_stage):
-        assert isinstance(only_stage, (type(None), int))
-        self.__stage = only_stage
-
     def update_presentation(self, presentation=None, update=True):
         """
         If 'presentation' is given. Call 'initialize_plot_lines'.
         If 'update': Update the data in the graph
         """
         if presentation is not None:
+            assert isinstance(presentation, library_topic.Presentation)
             self.presentation = presentation
             if self.plotData is not None:
                 # The presentation changed, update the graph
@@ -67,7 +72,7 @@ class PlotContext:
             assert self.plotData is not None
             plt.xlabel(self.presentation.x_label)
             plt.ylabel(self.presentation.title)
-            for topic in self.plotData.listTopics:
+            for topic in self.list_selected_topics:
                 topic.recalculate_data(presentation=self.presentation, stage=self.__stage)
             for ax in self.fig.get_axes():
                 ax.relim()
@@ -85,6 +90,12 @@ class PlotContext:
             # The following line will take up to 5s. Why?
             # self.fig.canvas.draw()
 
+    @property
+    def list_selected_topics(self) -> list:
+        if self.__topic is None:
+            return self.plotData.listTopics
+        return [topic for topic in self.plotData.listTopics if self.__topic == topic]
+
     def animate(self):
         if self.plotData.directories_changed():
             self.plotData.remove_lines_and_reload_data(self.fig, self.ax)
@@ -92,7 +103,7 @@ class PlotContext:
             # initialize_grid()
             return
 
-        for topic in self.plotData.listTopics:
+        for topic in self.list_selected_topics:
             topic.reload_if_changed(presentation=self.presentation, stage=self.__stage)
 
     def start_measurement(self, dir_raw):
@@ -104,6 +115,33 @@ class PlotContext:
     def open_directory_in_explorer(self):
         directory = pathlib.Path(run_0_measure.__file__).absolute().parent
         subprocess.Popen(["explorer", str(directory)])
+
+    @property
+    def iter_topics(self):
+        yield "all", None
+        for topic in self.plotData.listTopics:
+            yield topic.topic, topic
+
+    def iter_stages(self, topic):
+        assert isinstance(topic, (type(None), library_topic.Topic))
+        if topic is None:
+            yield "-", None
+            return
+
+        for _topic in self.plotData.listTopics:
+            if _topic.topic == topic.topic:
+                for stage in _topic.stages:
+                    yield stage.label, stage
+
+    def select_topic_stage(self, presentation, topic, stage) -> None:
+        assert isinstance(presentation, library_topic.Presentation)
+        assert isinstance(topic, (type(None), library_topic.Topic))
+        assert isinstance(stage, (type(None), library_topic.Stage))
+
+        self.__topic = topic
+        self.__stage = stage
+
+        self.update_presentation(presentation=presentation, update=True)
 
     def open_display_clone(self):
         directory = pathlib.Path(run_0_measure.__file__).absolute().parent

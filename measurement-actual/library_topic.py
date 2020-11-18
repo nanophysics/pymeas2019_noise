@@ -107,7 +107,20 @@ class PickleResultSummary:
         return changed
 
 
-class Topic:
+class Stage:
+    def __init__(self, dict_stage):
+        self.stage = dict_stage["stage"]
+        self.dt_s = dict_stage["dt_s"]
+        self.stepsize_bins_V = dict_stage["stepsize_bins_V"]
+        self.stepsize_bins_count = dict_stage["stepsize_bins_count"]
+        self.samples_V = dict_stage["samples_V"]
+
+    @property
+    def label(self):
+        return f"{self.stage} / {self.dt_s:e}s"
+
+
+class Topic:# pylint: disable=too-many-public-methods
     def __init__(self, ra, prs):
         assert isinstance(ra, ResultAttributes)
         assert isinstance(prs, PickleResultSummary)
@@ -131,7 +144,11 @@ class Topic:
         self.__plot_line = plot_line
 
     def reload_if_changed(self, presentation, stage):
-        assert self.__plot_line is not None
+        assert isinstance(stage, (type(None), Stage))
+        if self.__plot_line is None:
+            logger.warning(f"'self.__plot_line is None' for {self.topic}.")
+            return False
+
         # start = time.time()
         changed = self.__prs.reload_if_changed()
         if changed:
@@ -161,28 +178,37 @@ class Topic:
         return Topic(ra, prs)
 
     @property
-    def topic(self):
+    def topic(self) -> str:
         return self.__ra.topic
 
     @property
-    def color(self):
+    def label(self) -> str:
+        return f"{self.color}-{self.topic}"
+
+    @property
+    def color(self) -> str:
         return self.__ra.color
 
-    def __get_stage_data(self, stage):
-        assert isinstance(stage, int)
-        dict_stage = self.__prs.dict_stages.get(stage, None)
-        if dict_stage is None:
-            stages = ",".join([str(s) for s in sorted(self.__prs.dict_stages.keys())])
-            logger.debug(f"No data for topic '{self.topic}' and stage {stage}! Valid stages are {stages}.")
-        return dict_stage
+    @property
+    def stages(self) -> list:
+        l = [Stage(dict_stage) for dict_stage in self.__prs.dict_stages.values()]
+        l.sort(key=lambda stage: stage.stage)
+        return l
+
+    # def __get_stage_data(self, stage):
+    #     assert isinstance(stage, int)
+    #     dict_stage = self.__prs.dict_stages.get(stage, None)
+    #     if dict_stage is None:
+    #         stages = ",".join([str(s.stage) for s in self.stages])
+    #         logger.debug(f"No data for topic '{self.topic}' and stage {stage}! Valid stages are {stages}.")
+    #     return dict_stage
 
     def get_stepsize(self, stage):
-        assert isinstance(stage, int)
-        dict_stage = self.__get_stage_data(stage)
-        if dict_stage is None:
+        assert isinstance(stage, (type(None), Stage))
+        if stage is None:
             return ((), ())
-        stepsize_bins_count = dict_stage["stepsize_bins_count"]
-        stepsize_bins_V = dict_stage["stepsize_bins_V"]
+        stepsize_bins_count = stage.stepsize_bins_count
+        stepsize_bins_V = stage.stepsize_bins_V
         # Mask all array-elements with bins_count == 0
         # stepsize_bins_count = np.ma.masked_equal(stepsize_bins_count, 0)
         stepsize_bins_V = np.ma.masked_where(stepsize_bins_count == 0, stepsize_bins_V)
@@ -192,16 +218,18 @@ class Topic:
         return (stepsize_bins_V, stepsize_bins_count)
 
     def get_timeserie(self, stage):
-        assert isinstance(stage, int)
-        dict_stage = self.__get_stage_data(stage)
-        # TODO(Hans): should never be zero
-        if dict_stage is None:
-            return ((), ())
-        samples_V = dict_stage["samples_V"]
-        dt_s = dict_stage["dt_s"]
+        assert isinstance(stage, (type(None), Stage))
+        if stage is None:
+            stages = self.stages
+            if len(stages) == 0:
+                return ((), ())
+            logger.warning("No stage specified, use the first one.")
+            stage = stages[0]
+
+        assert isinstance(stage, Stage)
         # TODO(Hans): Cache this array
-        x = np.linspace(start=0.0, stop=dt_s * len(samples_V), num=len(samples_V))
-        return (x, samples_V)
+        x = np.linspace(start=0.0, stop=stage.dt_s * len(stage.samples_V), num=len(stage.samples_V))
+        return (x, stage.samples_V)
 
     @property
     def f(self):
@@ -279,10 +307,7 @@ class Presentation:
 
     def get_xy(self, topic, stage=None):
         assert isinstance(topic, Topic)
-        if stage is None:
-            # TODO(Hans): Remove hardcoded value
-            stage = 0
-        assert isinstance(stage, int)
+        assert isinstance(stage, (type(None), Stage))
         return self.__xy_func(topic, stage)
 
     def get_as_dict(self, topic):
@@ -304,6 +329,7 @@ class Presentation:
 
 X_LABEL = "Frequency [Hz]"
 DEFAULT_PRESENTATION = "LSD"
+PRESENTATION_TIMESERIE = "TIMESERIE"
 
 
 class Presentations:
@@ -334,7 +360,7 @@ class Presentations:
             ),
             Presentation(tag="DECADE", x_label=X_LABEL, y_label="decade left of the point [V rms]", help_text="decade left of the point [V rms] Example: The value at 100 Hz represents the voltage between 100Hz/10 = 10 Hz and 100 Hz.", xy_func=lambda topic, stage: topic.decade_f_d),
             Presentation(tag="STEPSIZE", x_label="stepsize [V]", y_label="count samples [samples/s]", help_text="TODO.", xy_func=lambda topic, stage: topic.get_stepsize(stage)),
-            Presentation(tag="TIMESERIE", x_label="timeserie [s]", y_label="sample [V]", help_text="TODO.", xy_func=lambda topic, stage: topic.get_timeserie(stage), logarithmic_scales=False),
+            Presentation(tag=PRESENTATION_TIMESERIE, x_label="timeserie [s]", y_label="sample [V]", help_text="TODO.", xy_func=lambda topic, stage: topic.get_timeserie(stage), logarithmic_scales=False),
         )
 
         self.tags = [p.tag for p in self.list]

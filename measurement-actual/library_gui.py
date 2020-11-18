@@ -52,12 +52,15 @@ class Duration:
     def __exit__(self, exc_type, exc_value, exc_traceback):
         logger.debug(f"{self._title} {time.time() - self._start_s:0.3f}s")
 
+
 def log_duration(f):
     def new_f(*args, **vargs):
         start_s = time.time()
         f(*args, **vargs)
         logger.debug(f"{f.__name__}(): {time.time() - start_s:0.3f}s")
+
     return new_f
+
 
 class PlotPanel(wx.Panel):
     def __init__(self, parent, app):
@@ -83,10 +86,13 @@ class PlotPanel(wx.Panel):
     def init_plot_data(self):
         self.toolbar.update()  # Not sure why this is needed - ADS
 
+        def endless_iter():
+            yield from itertools.count(start=42)
+
         self.animation = matplotlib.animation.FuncAnimation(
             fig=self._plot_context.fig,
             func=self.animate,
-            frames=self.endless_iter(),
+            frames=endless_iter(),
             # Delay between frames in milliseconds
             interval=1000,
             # A function used to draw a clear frame. If not given, the results of drawing from the first item in the frames sequence will be used.
@@ -102,23 +108,6 @@ class PlotPanel(wx.Panel):
         # You will need to override GetToolBar if you are using an
         # unmanaged toolbar in your frame
         return self.toolbar
-
-    def OnStart(self, event):
-        dir_raw = f"{library_topic.DIRECTORY_NAME_RAW_PREFIX}{self._app.combo_box_measurement_color.Value}-{self._app.text_ctrl_measurement_topic.Value}"
-
-        self._plot_context.start_measurement(dir_raw)
-
-    def OnStop(self, event):
-        FILELOCK_GUI.stop_measurement_soft()
-
-    def OnComboBoxPresentation(self, event):
-        combobox = event.EventObject
-        presentation = combobox.GetClientData(combobox.Selection)
-        self._plot_context.update_presentation(presentation=presentation, update=True)
-        logger.debug(presentation.title)
-
-    def endless_iter(self):
-        yield from itertools.count(start=42)
 
     @log_duration
     def animate(self, i):
@@ -140,11 +129,16 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.text_ctrl_measurement_topic = None
         self.label_status_text = None
         self.label_coordinates = None
+        self.button_display_reload_topic = None
+        self.button_display_reload_stage = None
+        self.combo_box_display_topic = None
+        self.combo_box_display_stage = None
+        self.combo_box_presentation = None
         self.timer = None
 
         wx.App.__init__(self)
 
-    def OnInit(self):
+    def OnInit(self):  # pylint: disable=too-many-statements
         xrcfile = pathlib.Path(__file__).absolute().with_suffix(".xrc")
         logger.debug(f"Load {xrcfile}")
         self.res = xrc.XmlResource(str(xrcfile))
@@ -170,22 +164,32 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
         # buttons ------------------
         self.button_start = xrc.XRCCTRL(self.frame, "button_measurement_start")
-        self.button_start.Bind(wx.EVT_BUTTON, self.plotpanel.OnStart)
+        self.button_start.Bind(wx.EVT_BUTTON, self.OnStart)
         self.button_stop = xrc.XRCCTRL(self.frame, "button_measurement_stop")
-        self.button_stop.Bind(wx.EVT_BUTTON, self.plotpanel.OnStop)
+        self.button_stop.Bind(wx.EVT_BUTTON, self.OnStop)
         self.button_display_open_directory = xrc.XRCCTRL(self.frame, "button_display_open_directory")
         self.button_display_open_directory.Bind(wx.EVT_BUTTON, self.OnOpenDirectory)
         self.button_display_clone = xrc.XRCCTRL(self.frame, "button_display_clone")
         self.button_display_clone.Bind(wx.EVT_BUTTON, self.OnDisplayClone)
 
-        # presentation combo ------------------
-        combo_box_presentation = xrc.XRCCTRL(self.frame, "combo_box_presentation")
-        combo_box_presentation.Bind(wx.EVT_COMBOBOX, self.plotpanel.OnComboBoxPresentation)
-        for presentation in library_topic.PRESENTATIONS.list:
-            combo_box_presentation.Append(presentation.title, presentation)
+        # display select topic/stage
+        self.button_display_reload_topic = xrc.XRCCTRL(self.frame, "button_display_reload_topic")
+        self.button_display_reload_topic.Bind(wx.EVT_BUTTON, self.OnButtonReloadTopic)
+        self.button_display_reload_stage = xrc.XRCCTRL(self.frame, "button_display_reload_stage")
+        self.button_display_reload_stage.Bind(wx.EVT_BUTTON, self.OnButtonReloadStage)
+        self.combo_box_display_topic = xrc.XRCCTRL(self.frame, "combo_box_display_topic")
+        self.combo_box_display_topic.Bind(wx.EVT_COMBOBOX, self.OnComboBoxDisplayTopic)
+        self.combo_box_display_stage = xrc.XRCCTRL(self.frame, "combo_box_display_stage")
+        self.combo_box_display_stage.Bind(wx.EVT_COMBOBOX, self.OnComboBoxDisplayStage)
 
-        idx = combo_box_presentation.FindString(self._plot_context.presentation.title)
-        combo_box_presentation.Select(idx)
+        # presentation combo ------------------
+        self.combo_box_presentation = xrc.XRCCTRL(self.frame, "combo_box_presentation")
+        self.combo_box_presentation.Bind(wx.EVT_COMBOBOX, self.OnComboBoxPresentation)
+        for presentation in library_topic.PRESENTATIONS.list:
+            self.combo_box_presentation.Append(presentation.title, presentation)
+
+        idx = self.combo_box_presentation.FindString(self._plot_context.presentation.title)
+        self.combo_box_presentation.Select(idx)
 
         self.combo_box_measurement_color = xrc.XRCCTRL(self.frame, "combo_box_measurement_color")
         self.combo_box_measurement_color.Append(COLORS)
@@ -213,6 +217,8 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.Bind(wx.EVT_TIMER, self.OnTimer)
         self.timer.Start(1000)  # 1 second interval
 
+        self.OnButtonReloadTopic(event=None)
+        self.OnButtonReloadStage(event=None)
         return True
 
     def OnTimer(self, event):
@@ -225,6 +231,19 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
         self.label_status_text.SetLabel(FILELOCK_GUI.get_status())
 
+    def OnStart(self, event):
+        dir_raw = f"{library_topic.DIRECTORY_NAME_RAW_PREFIX}{self.combo_box_measurement_color.Value}-{self.text_ctrl_measurement_topic.Value}"
+
+        self._plot_context.start_measurement(dir_raw)
+
+    def OnStop(self, event):
+        FILELOCK_GUI.stop_measurement_soft()
+
+    def OnComboBoxPresentation(self, event):
+        presentation = self.presentation
+        self._plot_context.update_presentation(presentation=presentation, update=True)
+        logger.debug(presentation.title)
+        self.__enable_display_stage()
 
     def UpdateStatusBar(self, event):
         if event.inaxes:
@@ -235,3 +254,52 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
     def OnDisplayClone(self, event):
         self._plot_context.open_display_clone()
+
+    @property
+    def presentation(self):
+        return self.combo_box_presentation.GetClientData(self.combo_box_presentation.Selection)
+
+    @property
+    def topic(self):
+        return self.combo_box_display_topic.GetClientData(self.combo_box_display_topic.Selection)
+
+    @property
+    def stage(self):
+        return self.combo_box_display_stage.GetClientData(self.combo_box_display_stage.Selection)
+
+    @property
+    def is_presentation_timeseries(self):
+        return self.presentation.tag == library_topic.PRESENTATION_TIMESERIE
+
+    def __enable_display_stage(self):
+        enabled = False
+        if self.is_presentation_timeseries:
+            enabled = self.topic is not None
+        assert isinstance(enabled, bool)
+        self.button_display_reload_stage.Enabled = enabled
+        self.combo_box_display_stage.Enabled = enabled
+
+    def OnButtonReloadTopic(self, event):
+        self.combo_box_display_topic.Clear()
+        for title, topic in self._plot_context.iter_topics:
+            self.combo_box_display_topic.Append(title, topic)
+        self.combo_box_display_topic.Select(0)
+
+    def OnButtonReloadStage(self, event):
+        self.combo_box_display_stage.Clear()
+
+        for title, stage in self._plot_context.iter_stages(self.topic):
+            self.combo_box_display_stage.Append(title, stage)
+
+        self.combo_box_display_stage.Select(0)
+
+        self.__enable_display_stage()
+
+    def OnComboBoxDisplayTopic(self, event):
+        # Update the combobox
+        self.OnButtonReloadStage(event=None)
+        # Update the diagram
+        self.OnComboBoxDisplayStage(event=None)
+
+    def OnComboBoxDisplayStage(self, event):
+        self._plot_context.select_topic_stage(presentation=self.presentation, topic=self.topic, stage=self.stage)

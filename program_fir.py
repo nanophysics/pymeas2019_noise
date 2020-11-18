@@ -143,7 +143,7 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         assert len(array_decimate) > SAMPLES_LEFT_RIGHT
         assert len(array_decimate) % DECIMATE_FACTOR == 0
 
-        CORRECTION_FACTOR = 1.01  # Peter: estimated from measurements with syntetic data, the decimate seams to be a bit off, quick and dirty
+        CORRECTION_FACTOR = 1.01  # Peter: estimated from measurements with synthetic data, the decimate seams to be a bit off, quick and dirty
         array_decimated = CORRECTION_FACTOR * scipy.signal.decimate(array_decimate, DECIMATE_FACTOR, ftype="iir", zero_phase=True)
 
         assert len(array_decimated) == len(array_decimate) // DECIMATE_FACTOR
