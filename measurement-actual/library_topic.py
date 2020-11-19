@@ -122,11 +122,8 @@ class Stage:
 
 
 class Topic:  # pylint: disable=too-many-public-methods
-<<<<<<< HEAD
-=======
     TAG_BASENOISE = "BASENOISE"
 
->>>>>>> Interims
     def __init__(self, ra, prs):
         assert isinstance(ra, ResultAttributes)
         assert isinstance(prs, PickleResultSummary)
@@ -208,14 +205,6 @@ class Topic:  # pylint: disable=too-many-public-methods
         l.sort(key=lambda stage: stage.stage)
         return l
 
-    # def __get_stage_data(self, stage):
-    #     assert isinstance(stage, int)
-    #     dict_stage = self.__prs.dict_stages.get(stage, None)
-    #     if dict_stage is None:
-    #         stages = ",".join([str(s.stage) for s in self.stages])
-    #         logger.debug(f"No data for topic '{self.topic}' and stage {stage}! Valid stages are {stages}.")
-    #     return dict_stage
-
     def get_stepsize(self, stage):
         assert isinstance(stage, (type(None), Stage))
         if stage is None:
@@ -258,12 +247,18 @@ class Topic:  # pylint: disable=too-many-public-methods
 
     @property
     def scaling_LSD(self):
+        if self.__basenoise:
+            base = ResizedArrays(self.d, self.__basenoise.d)
+            # beide quadrieren, substrahieren, wurzel
+            return np.square(base.arr - base.base)
         return self.d
 
     @property
     def scaling_PSD(self):
         if self.__basenoise:
-            return np.square(np.subtract(self.__basenoise.d, self.d))
+            base = ResizedArrays(self.d, self.__basenoise.d)
+            # subtrahieren
+            return base.arr - base.base
         return np.square(self.d)
 
     @property
@@ -303,6 +298,42 @@ class Topic:  # pylint: disable=too-many-public-methods
                     value_decade.append(np.sqrt(value ** 2 - last_value ** 2))
                 last_value = value
         return f_decade, value_decade
+
+
+class ResizedArrays:
+    def __init__(self, arr, base):
+        assert isinstance(arr, (list, tuple))
+        assert isinstance(base, (list, tuple))
+
+        self.arr = np.asarray(arr)
+        if len(base) >= len(arr):
+            self.base = np.asarray(base[: len(arr)])
+        else:
+            self.base = ResizedArrays.pad_array(base, len(arr))
+
+        assert len(self.arr) == len(arr)
+        assert len(self.base) == len(arr)
+
+    @classmethod
+    def pad_array(cls, data, new_len, pad_value=0.0):
+        return np.pad(data, (0, new_len - len(data)), "constant", constant_values=(42.0, pad_value))
+
+
+class ResizedArraysObsolete:
+    def __init__(self, arr, base):
+        assert isinstance(arr, (list, tuple))
+        assert isinstance(base, (list, tuple))
+
+        new_len = max(len(arr), len(base))
+        self.arr = ResizedArrays.pad_array(arr, new_len)
+        self.base = ResizedArrays.pad_array(base, new_len)
+
+        assert len(self.arr) == new_len
+        assert len(self.base) == new_len
+
+    @classmethod
+    def pad_array(cls, data, new_len, pad_value=0.0):
+        return np.pad(data, (0, new_len - len(data)), "constant", constant_values=(42.0, pad_value))
 
 
 class Presentation:
