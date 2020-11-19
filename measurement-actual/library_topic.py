@@ -108,6 +108,7 @@ class PickleResultSummary:
 
 
 class Stage:
+    # TODO(Hans): Why no reuse 'class Densityplot'?
     def __init__(self, dict_stage):
         self.stage = dict_stage["stage"]
         self.dt_s = dict_stage["dt_s"]

@@ -28,37 +28,6 @@ import program_fir_plot  # pylint: disable=wrong-import-position
 DIRECTORY_TOP = pathlib.Path(__file__).absolute().parent
 DIRECTORY_RESULT = "result"
 
-DEFINED_BY_SETUP = "DEFINED_BY_SETUP"
-
-
-class ConfigStep:  # pylint: disable=too-many-instance-attributes
-    def __init__(self, dict_values={}):  # pylint: disable=dangerous-default-value
-        self.stepname = DEFINED_BY_SETUP
-        self.fir_count = DEFINED_BY_SETUP
-        self.fir_count_skipped = DEFINED_BY_SETUP
-        self.input_Vp = DEFINED_BY_SETUP
-        self.skalierungsfaktor = DEFINED_BY_SETUP
-        self.input_channel = DEFINED_BY_SETUP
-        self.duration_s = DEFINED_BY_SETUP
-        self.diagram_legend = DEFINED_BY_SETUP
-        self.result_gain = DEFINED_BY_SETUP
-        self.result_unit = DEFINED_BY_SETUP
-        self.reference = DEFINED_BY_SETUP
-        self.bandwitdth = DEFINED_BY_SETUP
-        self.offset = DEFINED_BY_SETUP
-        self.resolution = DEFINED_BY_SETUP
-        self.dt_s = DEFINED_BY_SETUP
-
-        self.update_by_dict(dict_values)
-
-    def _update_element(self, key, value):
-        assert key in self.__dict__
-        self.__dict__[key] = value
-
-    def update_by_dict(self, dict_config_setup):
-        for key, value in dict_config_setup.items():
-            self._update_element(key, value)
-
 
 def examine_dir_raw(dir_measurement):
     "Returns the directory with the raw-results"

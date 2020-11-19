@@ -129,7 +129,6 @@ class FIR:  # pylint: disable=too-many-instance-attributes
             if self.array is None:
                 # The first time. Left&Right must be faked.
                 self.array = np.flip(array_in[:SAMPLES_LEFT_RIGHT])
-                return None
 
         self.statistics_samples_in += len(array_in)
         # Add to 'self.array'

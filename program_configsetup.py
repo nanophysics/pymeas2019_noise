@@ -114,7 +114,7 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
         assert isinstance(dir_measurement, pathlib.Path)
         assert isinstance(dir_raw, pathlib.Path)
 
-        _lock = library_filelock.FilelockMeasurement
+        _lock = library_filelock.FilelockMeasurement()
 
         for configstep in self.configsteps:
             _lock.update_status(f"Measuring: {dir_raw.name} / {configstep.stepname}")
