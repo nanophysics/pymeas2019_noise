@@ -122,6 +122,11 @@ class Stage:
 
 
 class Topic:  # pylint: disable=too-many-public-methods
+<<<<<<< HEAD
+=======
+    TAG_BASENOISE = "BASENOISE"
+
+>>>>>>> Interims
     def __init__(self, ra, prs):
         assert isinstance(ra, ResultAttributes)
         assert isinstance(prs, PickleResultSummary)
@@ -129,6 +134,8 @@ class Topic:  # pylint: disable=too-many-public-methods
         self.__prs = prs
         self.__plot_line = None
         self.toggle = True
+        self.is_basenoise = ra.topic == Topic.TAG_BASENOISE
+        self.__basenoise = None
 
     def get_as_dict(self):
         return dict(
@@ -143,6 +150,11 @@ class Topic:  # pylint: disable=too-many-public-methods
 
     def set_plot_line(self, plot_line):
         self.__plot_line = plot_line
+
+    def set_basenoise(self, basenoise):
+        assert isinstance(basenoise, Topic)
+        assert self.__basenoise is None
+        self.__basenoise = basenoise
 
     def reload_if_changed(self, presentation, stage):
         assert isinstance(stage, (type(None), Stage))
@@ -250,6 +262,8 @@ class Topic:  # pylint: disable=too-many-public-methods
 
     @property
     def scaling_PSD(self):
+        if self.__basenoise:
+            return np.square(np.subtract(self.__basenoise.d, self.d))
         return np.square(self.d)
 
     @property
@@ -385,6 +399,7 @@ class PlotDataMultipleDirectories:
         assert isinstance(topdir, pathlib.Path)
 
         self.topdir = topdir
+        self.topic_basenoise = None
         self.__load_data()
 
     def __load_data(self):
@@ -392,6 +407,20 @@ class PlotDataMultipleDirectories:
         self.set_directories = {d.name for d in list_directories}
         self.listTopics = [Topic.load(d) for d in list_directories]
         self.listTopics.sort(key=lambda topic: topic.topic.upper())
+
+        # Find topic with basenoise
+        for topic in self.listTopics:
+            if topic.is_basenoise:
+                if self.topic_basenoise is not None:
+                    raise Exception(f"More that one directory with '{Topic.TAG_BASENOISE}'")
+                self.topic_basenoise = topic
+                logger.info(f"Selected basenoise from '{topic.label}'!")
+
+        # Assign basenoise to all other topics
+        if self.topic_basenoise:
+            for topic in self.listTopics:
+                if not topic.is_basenoise:
+                    topic.set_basenoise(self.topic_basenoise)
 
     def read_directories(self):
         list_directories = []
