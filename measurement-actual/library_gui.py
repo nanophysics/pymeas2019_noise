@@ -218,7 +218,6 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.timer.Start(1000)  # 1 second interval
 
         self.OnButtonReloadTopic(event=None)
-        self.OnButtonReloadStage(event=None)
         return True
 
     def OnTimer(self, event):
@@ -284,6 +283,8 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         for title, topic in self._plot_context.iter_topics:
             self.combo_box_display_topic.Append(title, topic)
         self.combo_box_display_topic.Select(0)
+
+        self.OnButtonReloadStage(event=None)
 
     def OnButtonReloadStage(self, event):
         self.combo_box_display_stage.Clear()
