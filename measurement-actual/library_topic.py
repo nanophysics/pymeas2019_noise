@@ -118,10 +118,10 @@ class Stage:
 
     @property
     def label(self):
-        return f"{self.stage} / {self.dt_s:e}s"
+        return f"{self.stage}/dt={self.dt_s:0.2e}s"
 
 
-class Topic:# pylint: disable=too-many-public-methods
+class Topic:  # pylint: disable=too-many-public-methods
     def __init__(self, ra, prs):
         assert isinstance(ra, ResultAttributes)
         assert isinstance(prs, PickleResultSummary)

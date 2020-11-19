@@ -7,6 +7,7 @@ import zhinst.utils
 import zhinst.ziPython
 
 import program
+import program_configsetup
 import program_measurement_stream
 
 logger = logging.getLogger("logger")
@@ -202,7 +203,7 @@ class Instrument:
         self.daq.sync()
 
     def acquire(self, configstep, stream_output, filelock_measurement):  # pylint: disable=too-many-statements,too-many-branches
-        assert isinstance(configstep, program.ConfigStep)
+        assert isinstance(configstep, program_configsetup.ConfigStep)
 
         def convert(adu_values):
             return adu_values

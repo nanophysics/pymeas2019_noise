@@ -1,4 +1,4 @@
-'''
+"""
 'LockingMixin' make sure that a configuration class is not manipulated anymore.
 
 Use of 'LockingMixin'
@@ -47,12 +47,13 @@ AttributeError: This object is frozen: "size_y" is not writeable!
 42
 >>> config.size_y
 6
-'''
+"""
 
-class LockingMixin: # pylint: disable=too-few-public-methods
-    TO_BE_SET = 'TO_BE_SET'
-    __IS_LOCKED = '_locked_members'
-    __IS_FROZEN = '_frozen'
+
+class LockingMixin:  # pylint: disable=too-few-public-methods
+    TO_BE_SET = "TO_BE_SET"
+    __IS_LOCKED = "_locked_members"
+    __IS_FROZEN = "_frozen"
 
     def _lock(self):
         self.__dict__[LockingMixin.__IS_LOCKED] = True
@@ -60,8 +61,21 @@ class LockingMixin: # pylint: disable=too-few-public-methods
     def _freeze(self):
         unset_properties = [name for name, value in self.__dict__.items() if value is LockingMixin.TO_BE_SET]
         if unset_properties:
-            raise Exception(f'These properties have not been set: {unset_properties}!')
+            raise Exception(f"These properties have not been set: {unset_properties}!")
         self.__dict__[LockingMixin.__IS_FROZEN] = True
+
+    @property
+    def info(self):
+        values = {}
+        for name, value in sorted(self.__dict__.items()):
+            if isinstance(value, (list, tuple)):
+                values[name] = [v.info for v in value]
+                continue
+            if isinstance(value, (float, int, bool, str)):
+                values[name] = value
+                continue
+            values[name] = f"type({value.__class__.__name__})"
+        return values
 
     @property
     def is_locked(self):
@@ -82,16 +96,18 @@ class LockingMixin: # pylint: disable=too-few-public-methods
         self.__dict__[name] = value
 
 
-class Configuration(LockingMixin): # pylint: disable=too-few-public-methods
+class Configuration(LockingMixin):  # pylint: disable=too-few-public-methods
     def __init__(self):
-        self.size_x:int = 42
-        self.size_y:int = LockingMixin.TO_BE_SET
-        self.name:str = LockingMixin.TO_BE_SET
+        self.size_x: int = 42
+        self.size_y: int = LockingMixin.TO_BE_SET
+        self.name: str = LockingMixin.TO_BE_SET
         self._lock()
 
     def validate(self):
         self._freeze()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import doctest
+
     doctest.testmod()

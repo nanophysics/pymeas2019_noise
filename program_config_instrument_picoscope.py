@@ -94,7 +94,7 @@ def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):  # p
     step.bandwitdth = "BW_20MHZ"
     step.offset = 0.0
     step.resolution = "16bit"
-    step.duration_s = 200.0
+    step.duration_s = 10.0
     step.dt_s = 1 / f2_settle_fs_hz
     steps.configsteps.append(step)
 

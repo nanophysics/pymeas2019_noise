@@ -1,4 +1,4 @@
-import sys
+import os
 import socket
 import pathlib
 import logging
@@ -44,7 +44,8 @@ class Settle:  # pylint: disable=too-many-instance-attributes
 
     def done(self):
         logger.error(f"Settling: The input voltage did not settle!")
-        sys.exit(42)
+        logger.error(f"Exiting!")
+        os._exit(42)
 
     def push(self, array_in):
         """
@@ -67,7 +68,8 @@ class Settle:  # pylint: disable=too-many-instance-attributes
 
         if self.__filelock_measurement.requested_stop_soft():
             logger.error("Aborted by ctrl-C")
-            sys.exit(0)
+            logger.error(f"Exiting!")
+            os._exit(43)
 
         time_left_s = TIME_OK_S + self.__last_sample_outside_s - now_s
 

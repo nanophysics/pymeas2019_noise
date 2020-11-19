@@ -18,7 +18,7 @@ def run():
 
     configsetup = config_measurement.get_configsetup()
     configsetup.validate()
-    logger.info(configsetup.__dict__)
+    logger.info(configsetup.info)
     configsetup.measure(dir_measurement=dir_measurement, dir_raw=dir_raw)
 
     library_filelock.FilelockMeasurement.update_status(f"Condense data: {dir_raw.name}")
