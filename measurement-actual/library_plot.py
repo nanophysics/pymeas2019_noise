@@ -21,13 +21,6 @@ import run_0_measure
 logger = logging.getLogger("logger")
 
 
-# class Utils:
-#     @classmethod
-#     def topic_2_label(cls, topic) -> str:
-#         assert isinstance(topic, library_topic.Topic)
-#         return f"{topic.color}-{topic.topic}"
-
-
 class PlotContext:
     def __init__(self, plotData, fig, ax):
         # The currently active presentation
@@ -169,19 +162,17 @@ class PlotFile:
         """
         Print all presentation (LSD, LS, PS, etc.)
         """
-        for tag in library_topic.PRESENTATIONS.tags:
-            self.plot_presentation(presentation_tag=tag)
+        for presentation in library_topic.PRESENTATIONS.list:
+            self.plot_presentation(presentation=presentation)
 
-    def plot_presentation(self, presentation_tag=library_topic.DEFAULT_PRESENTATION):
+    def plot_presentation(self, presentation):
         fig, ax = plt.subplots(figsize=(8, 4))
         plot_context = PlotContext(plotData=self.plotData, fig=fig, ax=ax)
-        plot_context.update_presentation(library_topic.PRESENTATIONS.get(presentation_tag), update=False)
 
         if self.title:
             plt.title(self.title)
 
-        plot_context.initialize_plot_lines()
-        plot_context.update_presentation()
+        plot_context.update_presentation(presentation=presentation, update=True)
 
         for ext in self.write_files:
             filename = self.write_files_directory / f"result_{plot_context.presentation.tag}.{ext}"

@@ -50,6 +50,14 @@
             "justMyCode": false,
             "program": "${workspaceFolder}/measurement-actual/run_0_plot_interactive.py",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: run_2_composite_plots.py",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "program": "${workspaceFolder}/measurement-actual/run_2_composite_plots.py",
+            "console": "integratedTerminal"
         }
     ]
 }
