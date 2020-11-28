@@ -121,18 +121,53 @@ class Stage:
         return f"{self.stage}/dt={self.dt_s:0.2e}s"
 
 
+class TopicMinuxBasenoise:
+    """
+    This is a small wrapper around 'Topic'.
+    I there is a basenoise which has to be subtracted, this wrapper
+    caches the difference between noise and base noise in
+    """
+
+    def __init__(self, topic):
+        assert topic.basenoise is not None
+        self.resized_f_d = ResizedArrays(topic.f, topic.basenoise.f, topic.d, topic.basenoise.d)
+
+    @property
+    def f(self):
+        return self.resized_f_d.f
+
+    @property
+    def scaling_LSD(self):
+        # beide quadrieren, substrahieren, wurzel
+        m = np.square(self.resized_f_d.y) - np.square(self.resized_f_d.base_y)
+        m = m.clip(min=0)
+        return np.sqrt(m)
+
+    @property
+    def scaling_PSD(self):
+        # subtrahieren
+        m = np.square(self.resized_f_d.y) - np.square(self.resized_f_d.base_y)
+        return m.clip(min=0)
+
+
 class Topic:  # pylint: disable=too-many-public-methods
     TAG_BASENOISE = "BASENOISE"
 
-    def __init__(self, ra, prs):
+    def __init__(self, ra, prs, dir_raw):
         assert isinstance(ra, ResultAttributes)
         assert isinstance(prs, PickleResultSummary)
+        assert isinstance(dir_raw, pathlib.Path)
         self.__ra = ra
         self.__prs = prs
         self.__plot_line = None
+        self.dir_raw = dir_raw
         self.toggle = True
         self.is_basenoise = ra.topic == Topic.TAG_BASENOISE
-        self.__basenoise = None
+        self.basenoise = None
+
+    @property
+    def topic_minus_basenoise(self):
+        return TopicMinuxBasenoise(self)
 
     def get_as_dict(self):
         return dict(
@@ -145,13 +180,17 @@ class Topic:  # pylint: disable=too-many-public-methods
             presentations=PRESENTATIONS.get_as_dict(self),
         )
 
+    def reset_plot_line(self):
+        self.__plot_line = None
+
     def set_plot_line(self, plot_line):
+        assert self.__plot_line is None
         self.__plot_line = plot_line
 
     def set_basenoise(self, basenoise):
         assert isinstance(basenoise, Topic)
-        assert self.__basenoise is None
-        self.__basenoise = basenoise
+        assert self.basenoise is None
+        self.basenoise = basenoise
 
     def reload_if_changed(self, presentation, stage):
         assert isinstance(stage, (type(None), Stage))
@@ -172,28 +211,28 @@ class Topic:  # pylint: disable=too-many-public-methods
         assert len(x) == len(y)
         self.__plot_line.set_data(x, y)
 
-    def clear_line(self):
-        if self.__plot_line is None:
-            return
-        self.__plot_line.remove()
-        del self.__plot_line
-        self.__plot_line = None
-
     @classmethod
     def load(cls, dir_raw):
         assert isinstance(dir_raw, pathlib.Path)
 
         prs = PickleResultSummary.load(dir_raw)
         ra = ResultAttributes(dir_raw=dir_raw)
-        return Topic(ra, prs)
+        return Topic(ra=ra, prs=prs, dir_raw=dir_raw)
 
     @property
     def topic(self) -> str:
         return self.__ra.topic
 
     @property
-    def label(self) -> str:
+    def color_topic(self) -> str:
         return f"{self.color}-{self.topic}"
+
+    def topic_basenoise(self, presentation) -> str:
+        assert isinstance(presentation, Presentation)
+        if presentation.supports_diff_basenoise:
+            if self.basenoise:
+                return f"{self.topic} - {self.basenoise.topic}"
+        return self.topic
 
     @property
     def color(self) -> str:
@@ -225,7 +264,7 @@ class Topic:  # pylint: disable=too-many-public-methods
             stages = self.stages
             if len(stages) == 0:
                 return ((), ())
-            logger.warning("No stage specified, use the first one.")
+            logger.warning("No stage specified, use the first one. Should we create a TIMESERIES diagram for every stage?")
             stage = stages[0]
 
         assert isinstance(stage, Stage)
@@ -247,18 +286,10 @@ class Topic:  # pylint: disable=too-many-public-methods
 
     @property
     def scaling_LSD(self):
-        if self.__basenoise:
-            base = ResizedArrays(self.d, self.__basenoise.d)
-            # beide quadrieren, substrahieren, wurzel
-            return np.square(base.arr - base.base)
         return self.d
 
     @property
     def scaling_PSD(self):
-        if self.__basenoise:
-            base = ResizedArrays(self.d, self.__basenoise.d)
-            # subtrahieren
-            return base.arr - base.base
         return np.square(self.d)
 
     @property
@@ -301,44 +332,57 @@ class Topic:  # pylint: disable=too-many-public-methods
 
 
 class ResizedArrays:
-    def __init__(self, arr, base):
-        assert isinstance(arr, (list, tuple))
-        assert isinstance(base, (list, tuple))
+    """
+    Given two curves (f/base_f and y/base_y).
+    This class will find matching 'f' and remove all 'f' which are only in one of both curves.
+    The resulting 'self.f', 'self.y', 'self.base_y' will have the same size.
+    """
 
-        self.arr = np.asarray(arr)
-        if len(base) >= len(arr):
-            self.base = np.asarray(base[: len(arr)])
-        else:
-            self.base = ResizedArrays.pad_array(base, len(arr))
+    def __init__(self, f, base_f, d, base_d):
+        assert isinstance(f, (list, tuple))
+        assert isinstance(base_f, (list, tuple))
+        assert isinstance(d, (list, tuple))
+        assert isinstance(base_d, (list, tuple))
 
-        assert len(self.arr) == len(arr)
-        assert len(self.base) == len(arr)
+        new_f = np.zeros(len(f), dtype=np.float32)
+        new_d = np.zeros(len(f), dtype=np.float32)
+        new_base_d = np.zeros(len(f), dtype=np.float32)
 
-    @classmethod
-    def pad_array(cls, data, new_len, pad_value=0.0):
-        return np.pad(data, (0, new_len - len(data)), "constant", constant_values=(42.0, pad_value))
+        idx = 0
+        idx_base = 0
+        idx_out = 0
+        while True:
+            if idx >= len(f):
+                break
+            if idx_base >= len(base_f):
+                break
+            diff = f[idx] - base_f[idx_base]
+            if abs(diff) < 1e-12:
+                # Both are equal
+                new_f[idx_out] = f[idx]
+                new_d[idx_out] = d[idx]
+                new_base_d[idx_out] = base_d[idx_base]
+                idx += 1
+                idx_base += 1
+                idx_out += 1
+                continue
+            if diff < 0:
+                idx += 1
+                continue
+            idx_base += 1
 
+        self.f = new_f[:idx_out]
+        self.y = new_d[:idx_out]
+        self.base_y = new_base_d[:idx_out]
 
-class ResizedArraysObsolete:
-    def __init__(self, arr, base):
-        assert isinstance(arr, (list, tuple))
-        assert isinstance(base, (list, tuple))
-
-        new_len = max(len(arr), len(base))
-        self.arr = ResizedArrays.pad_array(arr, new_len)
-        self.base = ResizedArrays.pad_array(base, new_len)
-
-        assert len(self.arr) == new_len
-        assert len(self.base) == new_len
-
-    @classmethod
-    def pad_array(cls, data, new_len, pad_value=0.0):
-        return np.pad(data, (0, new_len - len(data)), "constant", constant_values=(42.0, pad_value))
+        assert len(self.f) == len(self.y)
+        assert len(self.f) == len(self.base_y)
 
 
 class Presentation:
-    def __init__(self, tag, help_text, xy_func, x_label, y_label, logarithmic_scales=True):  # pylint: disable=too-many-arguments
+    def __init__(self, tag, supports_diff_basenoise, help_text, xy_func, x_label, y_label, logarithmic_scales=True):  # pylint: disable=too-many-arguments
         assert isinstance(tag, str)
+        assert isinstance(supports_diff_basenoise, bool)
         assert isinstance(help_text, str)
         assert isinstance(xy_func, types.FunctionType)
         assert isinstance(y_label, str)
@@ -347,6 +391,7 @@ class Presentation:
         self.tag = tag
         self.help_text = help_text
         self.__xy_func = xy_func
+        self.supports_diff_basenoise = supports_diff_basenoise
         self.x_label = x_label
         self.y_label = y_label
         self.logarithmic_scales = logarithmic_scales
@@ -354,6 +399,9 @@ class Presentation:
     def get_xy(self, topic, stage=None):
         assert isinstance(topic, Topic)
         assert isinstance(stage, (type(None), Stage))
+        if self.supports_diff_basenoise:
+            if topic.basenoise:
+                return self.__xy_func(topic.topic_minus_basenoise, stage)
         return self.__xy_func(topic, stage)
 
     def get_as_dict(self, topic):
@@ -383,15 +431,17 @@ class Presentations:
         self.list = (
             Presentation(
                 tag=DEFAULT_PRESENTATION,
+                supports_diff_basenoise=True,
                 x_label=X_LABEL,
                 y_label="linear spectral density [V/Hz^0.5]",
                 help_text="linear spectral density [V/Hz^0.5] represents the noise density. Useful to describe random noise.",
                 xy_func=lambda topic, stage: (topic.f, topic.scaling_LSD),
             ),
-            Presentation(tag="PSD", x_label=X_LABEL, y_label="power spectral density [V^2/Hz]", help_text="power spectral density [V^2/Hz] ist just the square of the LSD. This representation of random noise is useful if you want to sum up the signal over a given frequency interval. ", xy_func=lambda topic, stage: (topic.f, topic.scaling_PSD)),
-            Presentation(tag="LS", x_label=X_LABEL, y_label="linear spectrum [V rms]", help_text="linear spectrum [V rms] represents the voltage in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.", xy_func=lambda topic, stage: (topic.f, topic.scaling_LS)),
+            Presentation(tag="PSD", supports_diff_basenoise=True, x_label=X_LABEL, y_label="power spectral density [V^2/Hz]", help_text="power spectral density [V^2/Hz] ist just the square of the LSD. This representation of random noise is useful if you want to sum up the signal over a given frequency interval. ", xy_func=lambda topic, stage: (topic.f, topic.scaling_PSD)),
+            Presentation(tag="LS", supports_diff_basenoise=False, x_label=X_LABEL, y_label="linear spectrum [V rms]", help_text="linear spectrum [V rms] represents the voltage in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.", xy_func=lambda topic, stage: (topic.f, topic.scaling_LS)),
             Presentation(
                 tag="PS",
+                supports_diff_basenoise=False,
                 x_label=X_LABEL,
                 y_label="power spectrum [V^2]",
                 help_text="power spectrum [V^2] represents the square of LS. Useful if you want to measure the amplitude of a sinusoidal signal which is just between two frequency bins. You can now add the two values to get the amplitude of the sinusoidal signal.",
@@ -399,14 +449,15 @@ class Presentations:
             ),
             Presentation(
                 tag="INTEGRAL",
+                supports_diff_basenoise=False,
                 x_label=X_LABEL,
                 y_label="integral [V rms]",
                 help_text="integral [V rms] represents the integrated voltage from the lowest measured frequency up to the actual frequency. Example: Value at 1 kHz: is the voltage between 0.01 Hz and 1 kHz.",
                 xy_func=lambda topic, stage: (topic.f, topic.scaling_INTEGRAL),
             ),
-            Presentation(tag="DECADE", x_label=X_LABEL, y_label="decade left of the point [V rms]", help_text="decade left of the point [V rms] Example: The value at 100 Hz represents the voltage between 100Hz/10 = 10 Hz and 100 Hz.", xy_func=lambda topic, stage: topic.decade_f_d),
-            Presentation(tag="STEPSIZE", x_label="stepsize [V]", y_label="count samples [samples/s]", help_text="TODO.", xy_func=lambda topic, stage: topic.get_stepsize(stage)),
-            Presentation(tag=PRESENTATION_TIMESERIE, x_label="timeserie [s]", y_label="sample [V]", help_text="TODO.", xy_func=lambda topic, stage: topic.get_timeserie(stage), logarithmic_scales=False),
+            Presentation(tag="DECADE", supports_diff_basenoise=False, x_label=X_LABEL, y_label="decade left of the point [V rms]", help_text="decade left of the point [V rms] Example: The value at 100 Hz represents the voltage between 100Hz/10 = 10 Hz and 100 Hz.", xy_func=lambda topic, stage: topic.decade_f_d),
+            Presentation(tag="STEPSIZE", supports_diff_basenoise=False, x_label="stepsize [V]", y_label="count samples [samples/s]", help_text="TODO.", xy_func=lambda topic, stage: topic.get_stepsize(stage)),
+            Presentation(tag=PRESENTATION_TIMESERIE, supports_diff_basenoise=False, x_label="timeserie [s]", y_label="sample [V]", help_text="TODO.", xy_func=lambda topic, stage: topic.get_timeserie(stage), logarithmic_scales=False),
         )
 
         self.tags = [p.tag for p in self.list]
@@ -425,31 +476,80 @@ class Presentations:
 PRESENTATIONS = Presentations()
 
 
+class StartupDuration:
+    """
+    Measure the duration during application startup
+    to know where to optimize.
+    """
+
+    MAX_DURATION_S = 10
+
+    def __init__(self):
+        self.__on = True
+        self.initialized_s = time.time()
+
+    def log(self, msg):
+        if self.__on:
+            duration_s = time.time() - self.initialized_s
+            logger.debug(f"time={duration_s:1.1f}: {msg}")
+
+            if duration_s > StartupDuration.MAX_DURATION_S:
+                self.__on = False
+                logger.debug(f"time={duration_s:1.1f}: Switch off duration logging after {StartupDuration.MAX_DURATION_S:1.1f}s")
+
+    def off(self):
+        self.__on = False
+
+
 class PlotDataMultipleDirectories:
     def __init__(self, topdir):
         assert isinstance(topdir, pathlib.Path)
 
+        self.startup_duration = StartupDuration()
+        self.startup_duration.log("PlotDataMultipleDirectories initialized")
         self.topdir = topdir
         self.topic_basenoise = None
-        self.__load_data()
+        self.list_topics = []
+        self.load_data()
+        self.startup_duration.log("After load_data()")
 
-    def __load_data(self):
+    def load_data(self):
+        self.topic_basenoise = None
+
         list_directories = self.read_directories()
         self.set_directories = {d.name for d in list_directories}
-        self.listTopics = [Topic.load(d) for d in list_directories]
-        self.listTopics.sort(key=lambda topic: topic.topic.upper())
+
+        for topic in self.list_topics:
+            topic.basenoise = None
+
+        list_topics_tmp = self.list_topics
+
+        def topic_exists(dir_raw):
+            for topic in list_topics_tmp:
+                if topic.dir_raw == dir_raw:
+                    return topic
+            return None
+
+        self.list_topics = []
+        for dir_raw in list_directories:
+            topic = topic_exists(dir_raw)
+            if topic is None:
+                topic = Topic.load(dir_raw=dir_raw)
+            self.list_topics.append(topic)
+
+        self.list_topics.sort(key=lambda topic: topic.topic.upper())
 
         # Find topic with basenoise
-        for topic in self.listTopics:
+        for topic in self.list_topics:
             if topic.is_basenoise:
                 if self.topic_basenoise is not None:
                     raise Exception(f"More that one directory with '{Topic.TAG_BASENOISE}'")
                 self.topic_basenoise = topic
-                logger.info(f"Selected basenoise from '{topic.label}'!")
+                logger.info(f"Selected basenoise from '{topic.color_topic}'!")
 
         # Assign basenoise to all other topics
         if self.topic_basenoise:
-            for topic in self.listTopics:
+            for topic in self.list_topics:
                 if not topic.is_basenoise:
                     topic.set_basenoise(self.topic_basenoise)
 
@@ -465,30 +565,16 @@ class PlotDataMultipleDirectories:
         set_directories_new = {d.name for d in self.read_directories()}
         return self.set_directories != set_directories_new
 
-    def remove_lines(self, fig, ax):
-        for topic in self.listTopics:
-            topic.clear_line()
-        # if len(ax.lines) > 0:
-        if ax.has_data() > 0:
-            ax.legend().remove()
-
-    def remove_lines_and_reload_data(self, fig, ax):
-        self.remove_lines(fig, ax)
-
-        self.__load_data()
-
-        fig.canvas.draw()
-
 
 class PlotDataSingleDirectory:
     def __init__(self, dir_raw):
         assert isinstance(dir_raw, pathlib.Path)
 
-        self.listTopics = [Topic.load(dir_raw)]
+        self.list_topics = [Topic.load(dir_raw)]
 
     def remove_lines(self, fig, ax):
         # TODO(hans): Merge with other method of the same name
-        for topic in self.listTopics:
+        for topic in self.list_topics:
             topic.clear_line()
         # if len(ax.lines) > 0:
         if ax.has_data() > 0:

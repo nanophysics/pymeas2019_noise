@@ -22,82 +22,115 @@ logger = logging.getLogger("logger")
 
 
 class PlotContext:
-    def __init__(self, plotData, fig, ax):
+    def __init__(self, plotData):
         # The currently active presentation
-        self.presentation = None
+        self.__presentation = library_topic.PRESENTATIONS.get(library_topic.DEFAULT_PRESENTATION)
         # The data to be displayed
         self.plotData = plotData
-        self.fig = fig
-        self.ax = ax
+        self.__plot_is_invalid = True
         self.__topic = None
         self.__stage = None
+        self.__fig, self.__ax = plt.subplots(figsize=(8, 4))
+
+    @property
+    def fig(self):
+        return self.__fig
+
+    @property
+    def presentation_title(self):
+        return self.__presentation.title
+
+    @property
+    def presentation_tag(self):
+        return self.__presentation.tag
+
+    def invalidate(self):
+        self.__plot_is_invalid = True
+
+    def set_presentation(self, presentation):
+        assert isinstance(presentation, library_topic.Presentation)
+        if self.__presentation != presentation:
+            self.invalidate()
+        self.__presentation = presentation
 
     def initialize_plot_lines(self):
         """
         Updates the plot: scales and lines
         """
         for topic in self.list_selected_topics:
-            x, y = self.presentation.get_xy(topic=topic, stage=self.__stage)
+            x, y = self.__presentation.get_xy(topic=topic, stage=self.__stage)
             assert len(x) == len(y)
-            (plot_line,) = self.ax.plot(x, y, linestyle="none", linewidth=0.1, marker=".", markersize=3, color=topic.color, label=topic.topic)
-            scale = "log" if self.presentation.logarithmic_scales else "linear"
-            self.ax.set_xscale(scale)
-            self.ax.set_yscale(scale)
+            (plot_line,) = self.__ax.plot(x, y, linestyle="none", linewidth=0.1, marker=".", markersize=3, color=topic.color, label=topic.topic_basenoise(self.__presentation))
+            scale = "log" if self.__presentation.logarithmic_scales else "linear"
+            self.__ax.set_xscale(scale)
+            self.__ax.set_yscale(scale)
             topic.set_plot_line(plot_line)
 
-        leg = self.ax.legend(fancybox=True, framealpha=0.5)
+        leg = self.__ax.legend(fancybox=True, framealpha=0.5)
         leg.get_frame().set_linewidth(0.0)
 
-    def update_presentation(self, presentation=None, update=True):
-        """
-        If 'presentation' is given. Call 'initialize_plot_lines'.
-        If 'update': Update the data in the graph
-        """
-        if presentation is not None:
-            assert isinstance(presentation, library_topic.Presentation)
-            self.presentation = presentation
-            if self.plotData is not None:
-                # The presentation changed, update the graph
-                self.plotData.remove_lines(fig=self.fig, ax=self.ax)
-                self.initialize_plot_lines()
+    def clear_figure(self):
+        # for legend in self.__fig.legends:
+        #     legend.remove()
+        for line in self.__fig.lines:
+            line.remove()
+        # for axe in self.__fig.axes:
+        #     axe.remove()
+        while len(self.__ax.lines) > 0:
+            # Why are the lines not removed in the first go?
+            for line in self.__ax.lines:
+                line.remove()
 
-        if update:
-            assert self.plotData is not None
-            plt.xlabel(self.presentation.x_label)
-            plt.ylabel(self.presentation.title)
-            for topic in self.list_selected_topics:
-                topic.recalculate_data(presentation=self.presentation, stage=self.__stage)
-            for ax in self.fig.get_axes():
-                ax.relim()
-                ax.autoscale()
-                plt.grid(True, which="major", axis="both", linestyle="-", color="gray", linewidth=0.5)
-                plt.grid(True, which="minor", axis="both", linestyle="-", color="silver", linewidth=0.1)
-                if self.presentation.logarithmic_scales:
-                    ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
-                    ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
-                # Uncomment to modify figure
-                # self.fig.set_size_inches(13.0, 7.0)
-                # ax.set_xlim(1e-1, 1e4)
-                # ax.set_ylim(1e-9, 1e-5)
+    def update_presentation(self):
+        assert self.plotData is not None
 
-            # The following line will take up to 5s. Why?
-            # self.fig.canvas.draw()
+        if self.__plot_is_invalid:
+            self.__plot_is_invalid = False
+            for topic in self.plotData.list_topics:
+                topic.reset_plot_line()
+            self.clear_figure()
+            self.initialize_plot_lines()
+
+        plt.xlabel(self.__presentation.x_label)
+        plt.ylabel(self.__presentation.title)
+
+        for topic in self.list_selected_topics:
+            topic.recalculate_data(presentation=self.__presentation, stage=self.__stage)
+
+        for ax in self.__fig.get_axes():
+            ax.relim()
+            ax.autoscale()
+            plt.grid(True, which="major", axis="both", linestyle="-", color="gray", linewidth=0.5)
+            plt.grid(True, which="minor", axis="both", linestyle="-", color="silver", linewidth=0.1)
+            if self.__presentation.logarithmic_scales:
+                ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
+                ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
+            # Uncomment to modify figure
+            # self.__fig.set_size_inches(13.0, 7.0)
+            # ax.set_xlim(1e-1, 1e4)
+            # ax.set_ylim(1e-9, 1e-5)
+
+        # The following line will take up to 5s. Why?
+        # self.__fig.canvas.draw()
 
     @property
     def list_selected_topics(self) -> list:
         if self.__topic is None:
-            return self.plotData.listTopics
-        return [topic for topic in self.plotData.listTopics if self.__topic == topic]
+            return self.plotData.list_topics
+        return [topic for topic in self.plotData.list_topics if self.__topic == topic]
 
     def animate(self):
         if self.plotData.directories_changed():
-            self.plotData.remove_lines_and_reload_data(self.fig, self.ax)
-            self.initialize_plot_lines()
-            # initialize_grid()
+            self.invalidate()
+            self.plotData.load_data()
+
+        if self.__plot_is_invalid:
+            self.update_presentation()
             return
 
         for topic in self.list_selected_topics:
-            topic.reload_if_changed(presentation=self.presentation, stage=self.__stage)
+            topic.reload_if_changed(presentation=self.__presentation, stage=self.__stage)
+
 
     def start_measurement(self, dir_raw):
         # The start button has been pressed
@@ -113,7 +146,7 @@ class PlotContext:
     @property
     def iter_topics(self):
         yield "all", None
-        for topic in self.plotData.listTopics:
+        for topic in self.plotData.list_topics:
             yield topic.topic, topic
 
     def iter_stages(self, topic):
@@ -122,7 +155,7 @@ class PlotContext:
             yield "-", None
             return
 
-        for _topic in self.plotData.listTopics:
+        for _topic in self.plotData.list_topics:
             if _topic.topic == topic.topic:
                 for stage in _topic.stages:
                     yield stage.label, stage
@@ -132,16 +165,30 @@ class PlotContext:
         assert isinstance(topic, (type(None), library_topic.Topic))
         assert isinstance(stage, (type(None), library_topic.Stage))
 
+        if self.__topic != topic:
+            self.invalidate()
+        if self.__stage != stage:
+            self.invalidate()
+
         self.__topic = topic
         self.__stage = stage
 
-        self.update_presentation(presentation=presentation, update=True)
+        self.set_presentation(presentation=presentation)
 
     def open_display_clone(self):
         directory = pathlib.Path(run_0_measure.__file__).absolute().parent
         import run_0_plot_interactive
 
         subprocess.Popen([sys.executable, run_0_plot_interactive.__file__], cwd=directory)
+
+    def savefig(self, filename, dpi):
+        self.__fig.savefig(filename, dpi=dpi)
+
+    def close(self):
+        self.__fig.clf()
+        plt.close(self.__fig)
+        plt.clf()
+        plt.close()
 
 
 class PlotFile:
@@ -163,23 +210,22 @@ class PlotFile:
         Print all presentation (LSD, LS, PS, etc.)
         """
         for presentation in library_topic.PRESENTATIONS.list:
+            if presentation.tag == library_topic.PRESENTATION_TIMESERIE:
+                continue
             self.plot_presentation(presentation=presentation)
 
     def plot_presentation(self, presentation):
-        fig, ax = plt.subplots(figsize=(8, 4))
-        plot_context = PlotContext(plotData=self.plotData, fig=fig, ax=ax)
+        plot_context = PlotContext(plotData=self.plotData)
 
         if self.title:
             plt.title(self.title)
 
-        plot_context.update_presentation(presentation=presentation, update=True)
+        plot_context.set_presentation(presentation=presentation)
+        plot_context.update_presentation()
 
         for ext in self.write_files:
-            filename = self.write_files_directory / f"result_{plot_context.presentation.tag}.{ext}"
+            filename = self.write_files_directory / f"result_{plot_context.presentation_tag}.{ext}"
             logger.info(filename)
-            fig.savefig(filename, dpi=300)
+            plot_context.savefig(filename=filename, dpi=300)
 
-        fig.clf()
-        plt.close(fig)
-        plt.clf()
-        plt.close()
+        plot_context.close()

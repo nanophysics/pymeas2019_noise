@@ -67,12 +67,16 @@ class PlotPanel(wx.Panel):
         self._app = app
         self._plot_context = app._plot_context
         self.animation = None
+        self.canvas_force_resize = False
+        self.canvas_last_resize_s = None
 
         wx.Panel.__init__(self, parent, -1)
 
         self.canvas = FigureCanvasWxAgg(self, -1, self._plot_context.fig)
         self.toolbar = NavigationToolbar2WxAgg(self.canvas)  # matplotlib toolbar
         self.toolbar.Realize()
+
+        self.canvas.Bind(wx.EVT_SIZE, self.OnSizeCanvas)
 
         # Now put all into a sizer which will resize the figure when the window size changes
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -83,12 +87,19 @@ class PlotPanel(wx.Panel):
         self.SetSizer(sizer)
         self.Fit()
 
+    def OnSizeCanvas(self, event):
+        logger.debug(f'_on_size_canvas {event.GetSize()}')
+        self.canvas_last_resize_s = time.time()
+        if self.canvas_force_resize:
+            event.Skip()
+
     def init_plot_data(self):
         self.toolbar.update()  # Not sure why this is needed - ADS
 
         def endless_iter():
             yield from itertools.count(start=42)
 
+        self._plot_context.plotData.startup_duration.log("FuncAnimation() - before")
         self.animation = matplotlib.animation.FuncAnimation(
             fig=self._plot_context.fig,
             func=self.animate,
@@ -99,6 +110,7 @@ class PlotPanel(wx.Panel):
             init_func=None,
             repeat=False,
         )
+        self._plot_context.plotData.startup_duration.log("FuncAnimation() - after")
 
         # Important: If this statement is BEFORE 'FuncAnimation', the animation sometimes does not start!
         with Duration("update_presentation():") as elapsed:
@@ -111,8 +123,20 @@ class PlotPanel(wx.Panel):
 
     @log_duration
     def animate(self, i):
-        self._plot_context.animate()
+        self._plot_context.plotData.startup_duration.log("animate() - beginning")
 
+        if self.canvas_last_resize_s:
+            # The frame has been resized
+            if self.canvas_last_resize_s + 0.5 < time.time():
+                # And the last event was more than 500ms ago
+                logger.info('matplotlib-canvas: delayed resize')
+                # self.canvas.SetSize(self.canvas_requested_size)
+                self.canvas_force_resize = True
+                self.Layout()
+                self.canvas_force_resize = False
+                self.canvas_last_resize_s = None
+
+        self._plot_context.animate()
 
 class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
     def __init__(self, plot_context):
@@ -139,6 +163,8 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         wx.App.__init__(self)
 
     def OnInit(self):  # pylint: disable=too-many-statements
+        self._plot_context.plotData.startup_duration.log("OnInit() - beginning")
+
         xrcfile = pathlib.Path(__file__).absolute().with_suffix(".xrc")
         logger.debug(f"Load {xrcfile}")
         self.res = xrc.XmlResource(str(xrcfile))
@@ -188,7 +214,7 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         for presentation in library_topic.PRESENTATIONS.list:
             self.combo_box_presentation.Append(presentation.title, presentation)
 
-        idx = self.combo_box_presentation.FindString(self._plot_context.presentation.title)
+        idx = self.combo_box_presentation.FindString(self._plot_context.presentation_title)
         self.combo_box_presentation.Select(idx)
 
         self.combo_box_measurement_color = xrc.XRCCTRL(self.frame, "combo_box_measurement_color")
@@ -218,15 +244,17 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.timer.Start(1000)  # 1 second interval
 
         self.OnButtonReloadTopic(event=None)
+
+        self._plot_context.plotData.startup_duration.log("OnInit() - done")
         return True
 
     def OnTimer(self, event):
         # do whatever you want to do every second here
 
-        is_measurment_running = FILELOCK_GUI.is_measurment_running()
-        logger.debug(f"OnTimer() is_measurment_running={is_measurment_running}")
-        self.button_start.Enabled = not is_measurment_running
-        self.button_stop.Enabled = is_measurment_running
+        is_measurement_running = FILELOCK_GUI.is_measurement_running()
+        logger.debug(f"OnTimer() is_measurement_running={is_measurement_running}")
+        self.button_start.Enabled = not is_measurement_running
+        self.button_stop.Enabled = is_measurement_running
 
         self.label_status_text.SetLabel(FILELOCK_GUI.get_status())
 
@@ -239,9 +267,9 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         FILELOCK_GUI.stop_measurement_soft()
 
     def OnComboBoxPresentation(self, event):
-        presentation = self.presentation
-        self._plot_context.update_presentation(presentation=presentation, update=True)
-        logger.debug(presentation.title)
+        logger.debug(f'OnComboBoxPresentation(): {self.presentation.title}')
+        self._plot_context.set_presentation(self.presentation)
+        self._plot_context.update_presentation()
         self.__enable_display_stage()
 
     def UpdateStatusBar(self, event):
@@ -264,7 +292,10 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
     @property
     def stage(self):
-        return self.combo_box_display_stage.GetClientData(self.combo_box_display_stage.Selection)
+        selection = self.combo_box_display_stage.Selection
+        if selection == -1:
+            return None
+        return self.combo_box_display_stage.GetClientData(selection)
 
     @property
     def is_presentation_timeseries(self):
@@ -295,6 +326,9 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.combo_box_display_stage.Select(0)
 
         self.__enable_display_stage()
+
+        self._plot_context.invalidate()
+        self._plot_context.select_topic_stage(presentation=self.presentation, topic=self.topic, stage=self.stage)
 
     def OnComboBoxDisplayTopic(self, event):
         # Update the combobox

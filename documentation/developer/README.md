@@ -44,8 +44,8 @@ Before commit, run the `Black` launch-target in VSCode.
 
 - The GUI has to stop the measurement
 - The GUI has to restart the measurement
-  - Stop the measurment
-  - Wait till the measurment finished
+  - Stop the measurement
+  - Wait till the measurement finished
   - Start a new measurement
 
 ### Use case - Compact measurement
@@ -62,9 +62,9 @@ Before commit, run the `Black` launch-target in VSCode.
 - File `tmp_filelock_lock.txt`
   - The measurement creates this files and locks it.
   - A) The measurement deletes the file at exit
-  - B) The GUI tries to delete the file: If the file may be deleted, the measurment has quit
+  - B) The GUI tries to delete the file: If the file may be deleted, the measurement has quit
 - File `tmp_filelock_status.txt` (Future - not implemented now)
-  - The measurment creates this file
+  - The measurement creates this file
   - Content:
     - `MEASURING`
     - `STOPPING`
@@ -73,5 +73,5 @@ Before commit, run the `Black` launch-target in VSCode.
 - File `tmp_filelock_stop_hard.txt`
 - File `tmp_filelock_stop_soft.txt`
   - The measurement creates these files and does NOT lock them.
-  - When the GUI removes this file, the measurment will stop.
+  - When the GUI removes this file, the measurement will stop.
   - The measurement deletes the files at exit.

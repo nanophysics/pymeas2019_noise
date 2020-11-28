@@ -131,7 +131,7 @@ class FilelockMeasurement:
 
 class FilelockGui:
     @classmethod
-    def is_measurment_running(cls):
+    def is_measurement_running(cls):
         assert FilelockMeasurement.FILE_LOCK is None, 'We are the gui. "FilelockMeasurement" must not be initialized!'
 
         if not FILENAME_LOCK.exists():

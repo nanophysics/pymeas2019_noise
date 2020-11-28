@@ -114,8 +114,8 @@ def run_condense_dir_raw(dir_raw, do_plot=True):
 
 
 def write_presentation_summary_file(plotData, directory):
-    assert len(plotData.listTopics) == 1
-    dict_result = plotData.listTopics[0].get_as_dict()
+    assert len(plotData.list_topics) == 1
+    dict_result = plotData.list_topics[0].get_as_dict()
 
     with (directory / "result_presentation.txt").open("w") as f:
         # pprint.PrettyPrinter(indent=2, width=1024, stream=f).pprint(dict_result)
