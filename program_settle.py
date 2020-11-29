@@ -6,12 +6,14 @@ import numpy as np
 
 import library_filelock
 import program_fir
+import program_configsetup
 
 
 logger = logging.getLogger("logger")
 
 
 INPUT_PART = 0.5  # part of the input range.
+
 
 class Settle:  # pylint: disable=too-many-instance-attributes
     """
@@ -21,6 +23,11 @@ class Settle:  # pylint: disable=too-many-instance-attributes
 
     def __init__(self, config, directory):
         assert isinstance(directory, pathlib.Path)
+        assert isinstance(config, program_configsetup.SamplingProcessConfig)
+
+        if config.settle:
+            if config.settle_time_ok_s + 1.0 > config.duration_s:
+                raise Exception(f"Will never settle if settle_time_ok_s {config.settle_time_ok_s:0.1}s is bigger than duration_s {config.duration_s:0.1}s")
 
         self.__config = config
         self.__directory = directory

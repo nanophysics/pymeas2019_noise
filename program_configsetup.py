@@ -12,7 +12,7 @@ import program_fir
 logger = logging.getLogger("logger")
 
 
-class SamplingProcessConfig(LockingMixin):  # pylint: disable=too-few-public-methods
+class SamplingProcessConfig(LockingMixin):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):
         self.fir_count: int = 0
         self.fir_count_skipped: int = 0
@@ -21,6 +21,7 @@ class SamplingProcessConfig(LockingMixin):  # pylint: disable=too-few-public-met
         self.settle_time_ok_s: float = None
         self.skalierungsfaktor: float = 1.0
         self.input_Vp: float = 1.0
+        self.duration_s: float = LockingMixin.TO_BE_SET
 
         self._lock()
 
@@ -34,6 +35,7 @@ class SamplingProcessConfig(LockingMixin):  # pylint: disable=too-few-public-met
             assert isinstance(self.settle_time_ok_s, float)
         assert isinstance(self.skalierungsfaktor, float)
         assert isinstance(self.input_Vp, float)
+        assert isinstance(self.duration_s, float)
 
         self._freeze()
 
@@ -85,6 +87,7 @@ class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-ma
         c.settle_time_ok_s = self.settle_time_ok_s
         c.skalierungsfaktor = self.skalierungsfaktor
         c.input_Vp = self.input_Vp.V  # pylint: disable=no-member
+        c.duration_s = self.duration_s
         return c
 
 
