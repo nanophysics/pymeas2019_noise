@@ -138,7 +138,7 @@ class FIR:  # pylint: disable=too-many-instance-attributes
     def decimate(self, array_decimate):
         self.statistics_count += 1
 
-        logger.debug(f"{self.stage},")
+        logger.debug(f"decimate, stage {self.stage}")
         assert len(array_decimate) > SAMPLES_LEFT_RIGHT
         assert len(array_decimate) % DECIMATE_FACTOR == 0
 

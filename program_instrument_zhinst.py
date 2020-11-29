@@ -6,7 +6,6 @@ import zhinst
 import zhinst.utils
 import zhinst.ziPython
 
-import program
 import program_configsetup
 import program_measurement_stream
 

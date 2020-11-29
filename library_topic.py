@@ -203,7 +203,7 @@ class Topic:  # pylint: disable=too-many-public-methods
         if changed:
             self.recalculate_data(presentation=presentation, stage=stage)
             # logger.info(f'changed {time.time()-start:0.2f}s "{self.__ra.topic}"')
-            logger.info(f'plot: reload changed data: "{self.__ra.topic}"')
+            logger.debug(f'plot: reload changed data: "{self.__ra.topic}"')
         return changed
 
     def recalculate_data(self, presentation, stage):
@@ -571,11 +571,3 @@ class PlotDataSingleDirectory:
         assert isinstance(dir_raw, pathlib.Path)
 
         self.list_topics = [Topic.load(dir_raw)]
-
-    def remove_lines(self, fig, ax):
-        # TODO(hans): Merge with other method of the same name
-        for topic in self.list_topics:
-            topic.clear_line()
-        # if len(ax.lines) > 0:
-        if ax.has_data() > 0:
-            ax.legend().remove()

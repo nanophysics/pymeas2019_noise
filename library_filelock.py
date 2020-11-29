@@ -4,7 +4,7 @@ import atexit
 import pathlib
 import logging
 
-import library_path
+import library_logger
 
 logger = logging.getLogger("logger")
 
@@ -176,7 +176,7 @@ class FilelockGui:
 
 
 def main():
-    library_path.init_logger_measurement()
+    library_logger.init_logger_measurement(DIRECTORY_OF_THIS_FILE)
 
     filelock = FilelockMeasurement()
     for i in range(1000):

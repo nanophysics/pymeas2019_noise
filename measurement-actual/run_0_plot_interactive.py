@@ -1,15 +1,18 @@
 import pathlib
 
-import matplotlib.pyplot as plt
+import library_path
 
+library_path.find_append_path()
+
+# pylint: disable=wrong-import-position
 import library_topic
 import library_plot
 import library_gui
-import library_path
-
-library_path.init_logger_gui()
+import library_logger
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
+
+library_logger.init_logger_gui(DIRECTORY_OF_THIS_FILE)
 
 
 def run():

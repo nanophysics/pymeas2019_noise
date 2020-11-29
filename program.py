@@ -21,9 +21,10 @@ except ImportError as ex:
     logger.error(f"ERROR: Failed to import ({ex}). Try: pip install -r requirements.txt")
     sys.exit(0)
 
-import library_topic  # pylint: disable=wrong-import-position
-import library_plot  # pylint: disable=wrong-import-position
-import program_fir_plot  # pylint: disable=wrong-import-position
+# pylint: disable=wrong-import-position
+import library_topic
+import library_plot
+import program_fir_plot
 
 DIRECTORY_TOP = pathlib.Path(__file__).absolute().parent
 DIRECTORY_RESULT = "result"

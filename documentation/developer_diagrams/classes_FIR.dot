@@ -4,12 +4,12 @@ rankdir=BT
 "0" [label="{Classify|V\lbin_count\leseries : list\l|bins_factory()\lfind_bin_index(value)\l}", shape="record"];
 "1" [label="{ClassifyBins|V\lcount : ndarray\l|add(value)\l}", shape="record"];
 "2" [label="{Density|frequencies : ndarray, NoneType\lout\l|density(array)\ldone()\linit(stage, dt_s)\lpush(array_in)\l}", shape="record"];
-"3" [label="{FIR|TAG_PUSH : NoneType\larray : tuple, NoneType, list\lfake_left_right : bool\lout\lpushcalulator_next : NoneType\lstage : NoneType\lstatistics_count : NoneType, int\lstatistics_samples_in : int, NoneType\lstatistics_samples_out : int, NoneType\l|decimate(array_decimate)\ldone()\linit(stage, dt_s)\lpush(array_in)\l}", shape="record"];
+"3" [label="{FIR|TAG_PUSH : NoneType\larray : NoneType, list, tuple\lfake_left_right : bool\lout\lpushcalulator_next : NoneType\lstage : NoneType\lstatistics_count : NoneType, int\lstatistics_samples_in : int, NoneType\lstatistics_samples_out : NoneType, int\l|decimate(array_decimate)\ldone()\linit(stage, dt_s)\lpush(array_in)\l}", shape="record"];
 "4" [label="{InSynthetic|dt_s\lout\lpushcalulator_next\lsignal\ltotal_samples\l|process()\l}", shape="record"];
 "5" [label="{OutTrash|array : ndarray\ldt_s : NoneType\lstage : NoneType\l|done()\linit(stage, dt_s)\lpush(array_in)\l}", shape="record"];
 "6" [label="{PushCalculator|dt_s\lprevious_fir_samples_input\lprevious_fir_samples_select\lpush_size_samples\l|}", shape="record"];
 "7" [label="{SamplingProcess|config\ldirectory_raw\loutput : Settle\l|}", shape="record"];
-"8" [label="{UniformPieces|array : ndarray, tuple, list\lout\lpushcalulator_next : NoneType\lstage : NoneType\ltotal_samples : NoneType, int\l|done()\linit(stage, dt_s)\lpush(array_in)\l}", shape="record"];
+"8" [label="{UniformPieces|array : list, ndarray, tuple\lout\lpushcalulator_next : NoneType\lstage : NoneType\ltotal_samples : int, NoneType\l|done()\linit(stage, dt_s)\lpush(array_in)\l}", shape="record"];
 "1" -> "2" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="__stepsize_bins", style="solid"];
 "6" -> "2" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="__pushcalulator", style="solid"];
 "6" -> "3" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="pushcalulator_next", style="solid"];

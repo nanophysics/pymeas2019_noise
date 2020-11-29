@@ -34,6 +34,7 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/measurement-actual/run_0_measure.py",
+            "cwd": "${workspaceFolder}/measurement-actual",
             "console": "integratedTerminal"
         },
         {
@@ -49,6 +50,7 @@
             "request": "launch",
             "justMyCode": false,
             "program": "${workspaceFolder}/measurement-actual/run_0_plot_interactive.py",
+            "cwd": "${workspaceFolder}/measurement-actual",
             "console": "integratedTerminal"
         },
         {
@@ -57,6 +59,7 @@
             "request": "launch",
             "justMyCode": false,
             "program": "${workspaceFolder}/measurement-actual/run_2_composite_plots.py",
+            "cwd": "${workspaceFolder}/measurement-actual",
             "console": "integratedTerminal"
         }
     ]

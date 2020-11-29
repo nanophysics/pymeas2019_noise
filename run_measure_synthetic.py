@@ -1,3 +1,4 @@
+import pathlib
 import logging
 
 import numpy as np
@@ -6,7 +7,9 @@ import program
 import program_fir
 import program_configsetup
 
-import library_path
+import library_logger
+
+DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 
 logger = logging.getLogger("logger")
 
@@ -43,7 +46,7 @@ class TestSignal:
 
 
 def main():
-    library_path.init_logger_measurement()
+    library_logger.init_logger_measurement(DIRECTORY_OF_THIS_FILE)
 
     signal = TestSignal(sine_amp_V_rms=1e-4, noise_density_V_sqrtHz=1e-7)
 

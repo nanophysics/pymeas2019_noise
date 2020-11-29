@@ -1,12 +1,14 @@
 import logging
 
 import library_path
-import library_filelock
 
 dir_measurement = library_path.find_append_path()
 
-import config_measurement  # pylint: disable=wrong-import-position
-import program  # pylint: disable=wrong-import-position
+# pylint: disable=wrong-import-position
+import library_logger
+import library_filelock
+import config_measurement
+import program
 
 logger = logging.getLogger("logger")
 
@@ -14,7 +16,7 @@ logger = logging.getLogger("logger")
 def run():
     dir_raw = program.examine_dir_raw(dir_measurement=dir_measurement)
 
-    library_path.init_logger_measurement(directory=dir_raw)
+    library_logger.init_logger_measurement(directory=dir_raw)
 
     configsetup = config_measurement.get_configsetup()
     configsetup.validate()

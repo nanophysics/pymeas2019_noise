@@ -121,6 +121,7 @@ class PlotContext:
 
     def animate(self):
         if self.plotData.directories_changed():
+            logger.info('Directories changed: Reload all data!')
             self.invalidate()
             self.plotData.load_data()
 
