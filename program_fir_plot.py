@@ -142,15 +142,8 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         # return [DensityPlot(filename) for filename in cls.pickle_files_from_directory(dir_input, skip)]
         l = []
         for filename in cls.pickle_files_from_directory(dir_input, skip):
-            try:
-                dp = DensityPlot(filename)
-                l.append(dp)
-            except pickle.UnpicklingError as e:
-                logger.error(f"Unpicking f{filename}: {e}")
-                logger.exception(e)
-            except Exception as e:  # pylint: disable=broad-except
-                logger.error(f"Read f{filename}: {e}")
-                logger.exception(e)
+            dp = DensityPlot(filename)
+            l.append(dp)
         return l
 
     @classmethod
@@ -187,8 +180,20 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         return self.stepname, self.dt_s
 
     def __init__(self, filename):
-        with open(filename, "rb") as f:
-            data = pickle.load(f)
+        retry = 0
+        while True:
+            try:
+                with open(filename, "rb") as f:
+                    data = pickle.load(f)
+                    break
+            except Exception as e:  # pylint: disable=broad-except
+                logger.debug(f"Unpicking {filename}: {e}")
+                # We could not read the file. probably because the measureing process was writing it just now.
+                # Lets try again!
+                retry += 1
+                if retry >= 3:
+                    raise
+                time.sleep(0.05)
         self.stepname = data["stepname"]
         self.stage = data["stage"]
         self.dt_s = data["dt_s"]
