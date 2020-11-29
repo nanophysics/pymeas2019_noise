@@ -193,6 +193,8 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.button_start.Bind(wx.EVT_BUTTON, self.OnStart)
         self.button_stop = xrc.XRCCTRL(self.frame, "button_measurement_stop")
         self.button_stop.Bind(wx.EVT_BUTTON, self.OnStop)
+        button_measurement_skip_settle = xrc.XRCCTRL(self.frame, "button_measurement_skip_settle")
+        button_measurement_skip_settle.Bind(wx.EVT_BUTTON, self.OnSkipSettle)
         self.button_display_open_directory = xrc.XRCCTRL(self.frame, "button_display_open_directory")
         self.button_display_open_directory.Bind(wx.EVT_BUTTON, self.OnOpenDirectory)
         self.button_display_clone = xrc.XRCCTRL(self.frame, "button_display_clone")
@@ -265,6 +267,9 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
     def OnStop(self, event):
         FILELOCK_GUI.stop_measurement_soft()
+
+    def OnSkipSettle(self, event):
+        FILELOCK_GUI.skip_settle()
 
     def OnComboBoxPresentation(self, event):
         logger.debug(f'OnComboBoxPresentation(): {self.presentation.title}')

@@ -5,7 +5,7 @@ TITLE = "Noise Demo Title"
 
 SETTLE_TIME_OK_S = 100.0
 
-IS_COMPUTER_DEVELOPMENT = socket.gethostname() in ("maerki-lenovo",)
+IS_COMPUTER_DEVELOPMENT = socket.gethostname() in ("maerki-lenovox",)
 if IS_COMPUTER_DEVELOPMENT:
     SETTLE_TIME_OK_S = 5.0
 

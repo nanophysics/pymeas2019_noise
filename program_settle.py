@@ -66,6 +66,10 @@ class Settle:  # pylint: disable=too-many-instance-attributes
             # A sample is outside the range
             self.__last_sample_outside_s = now_s
 
+        if self.__filelock_measurement.requested_skip_settle():
+            logger.info("Settle: DONE")
+            raise StopIteration("Manually skipped settling")
+
         if self.__filelock_measurement.requested_stop_soft():
             logger.error("Aborted by ctrl-C")
             logger.error(f"Exiting!")
