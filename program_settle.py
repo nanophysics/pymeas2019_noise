@@ -12,9 +12,6 @@ import program_configsetup
 logger = logging.getLogger("logger")
 
 
-INPUT_PART = 0.5  # part of the input range.
-
-
 class Settle:  # pylint: disable=too-many-instance-attributes
     """
     Stream-Sink: Implements a Stream-Interface
@@ -27,14 +24,14 @@ class Settle:  # pylint: disable=too-many-instance-attributes
 
         if config.settle:
             if config.settle_time_ok_s + 1.0 > config.duration_s:
-                raise Exception(f"Will never settle if settle_time_ok_s {config.settle_time_ok_s:0.1}s is bigger than duration_s {config.duration_s:0.1}s")
+                raise Exception(f"Will never settle if settle_time_ok_s {config.settle_time_ok_s:0.1}s is bigger than duration_s {config.duration_s:0.1}s!")
 
         self.__config = config
         self.__directory = directory
         self.__dt_s = None
 
         self.__input_range_V = self.__config.input_Vp * self.__config.skalierungsfaktor
-        self.__ok_range_V = self.__input_range_V * INPUT_PART
+        self.__ok_range_V = self.__input_range_V * self.__config.settle_input_part
         self.__fifo = np.empty(0, dtype=program_fir.NUMPY_FLOAT_TYPE)
         self.__last_sample_outside_s = 0.0
         self.__filelock_measurement = library_filelock.FilelockMeasurement()
