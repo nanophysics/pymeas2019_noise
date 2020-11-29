@@ -17,7 +17,7 @@ def run():
     library_logger.init_logger_composite_plots(DIRECTORY_OF_THIS_FILE)
 
     plotData = library_topic.PlotDataMultipleDirectories(DIRECTORY_OF_THIS_FILE)
-    plotFile = library_plot.PlotFile(plotData=plotData, title=config_measurement.TITLE)
+    plotFile = library_plot.PlotFile(plotData=plotData, write_files_directory=DIRECTORY_OF_THIS_FILE, title=config_measurement.TITLE)
     plotFile.plot_presentations()
 
 

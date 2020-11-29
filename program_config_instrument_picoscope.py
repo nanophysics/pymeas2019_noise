@@ -73,10 +73,11 @@ exponent_settle = 19  # 238 Hz
 f2_settle_fs_hz = f0_fast_fs_hz / float(2 ** exponent_settle)
 
 
-def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):  # pylint: disable=too-many-statements
+def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor, settle_time_ok_s):  # pylint: disable=too-many-statements
     assert isinstance(inputRange, InputRange)
     assert isinstance(duration_slow_s, float)
     assert isinstance(skalierungsfaktor, float)
+    assert isinstance(settle_time_ok_s, float)
 
     steps = ConfigSetup()
     steps.setup_name = "Measure"
@@ -86,6 +87,7 @@ def get_config_setupPS500A(inputRange, duration_slow_s, skalierungsfaktor):  # p
     step = ConfigStep()
     step.stepname = "0_settle"
     step.settle = True
+    step.settle_time_ok_s = settle_time_ok_s
     # External
     step.skalierungsfaktor = skalierungsfaktor
     # Picoscope

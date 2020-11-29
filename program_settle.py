@@ -1,5 +1,4 @@
 import os
-import socket
 import pathlib
 import logging
 
@@ -13,12 +12,6 @@ logger = logging.getLogger("logger")
 
 
 INPUT_PART = 0.5  # part of the input range.
-TIME_OK_S = 100.0
-
-IS_COMPUTER_DEVELOPMENT = socket.gethostname() in ("maerki-lenovo",)
-if IS_COMPUTER_DEVELOPMENT:
-    TIME_OK_S = 5.0
-
 
 class Settle:  # pylint: disable=too-many-instance-attributes
     """
@@ -71,10 +64,10 @@ class Settle:  # pylint: disable=too-many-instance-attributes
             logger.error(f"Exiting!")
             os._exit(43)
 
-        time_left_s = TIME_OK_S + self.__last_sample_outside_s - now_s
+        time_left_s = self.__config.settle_time_ok_s + self.__last_sample_outside_s - now_s
 
         now_V = float(array_in[-1])
-        status = f"Settle: inputRange +-{self.__input_range_V:0.2e}V, ok_range +-{self.__ok_range_V:0.2e}V, now {now_V:0.2e}V, wait for ok {TIME_OK_S}s, {time_left_s:0.0f}s left"
+        status = f"Settle: inputRange +-{self.__input_range_V:0.2e}V, ok_range +-{self.__ok_range_V:0.2e}V, now {now_V:0.2e}V, wait for ok {self.__config.settle_time_ok_s:0.1f}s, {time_left_s:0.0f}s left"
         self.__filelock_measurement.update_status(status)
 
         if time_left_s < 0:

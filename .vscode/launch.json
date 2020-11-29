@@ -54,6 +54,15 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Python: run_1_condense.py",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "program": "${workspaceFolder}/measurement-actual/run_1_condense.py",
+            "cwd": "${workspaceFolder}/measurement-actual",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Python: run_2_composite_plots.py",
             "type": "python",
             "request": "launch",

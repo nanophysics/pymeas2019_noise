@@ -18,6 +18,7 @@ class SamplingProcessConfig(LockingMixin):  # pylint: disable=too-few-public-met
         self.fir_count_skipped: int = 0
         self.stepname: str = LockingMixin.TO_BE_SET
         self.settle: bool = False
+        self.settle_time_ok_s: float = None
         self.skalierungsfaktor: float = 1.0
         self.input_Vp: float = 1.0
 
@@ -28,6 +29,9 @@ class SamplingProcessConfig(LockingMixin):  # pylint: disable=too-few-public-met
         assert isinstance(self.fir_count_skipped, int)
         assert isinstance(self.stepname, str)
         assert isinstance(self.settle, bool)
+        assert isinstance(self.settle_time_ok_s, (type(None), float))
+        if self.settle:
+            assert isinstance(self.settle_time_ok_s, float)
         assert isinstance(self.skalierungsfaktor, float)
         assert isinstance(self.input_Vp, float)
 
@@ -38,6 +42,7 @@ class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-ma
     def __init__(self):
         self.stepname: str = LockingMixin.TO_BE_SET
         self.settle: bool = False
+        self.settle_time_ok_s: float = None
         self.skalierungsfaktor: float = LockingMixin.TO_BE_SET
         self.fir_count: int = 0
         self.fir_count_skipped: int = 0
@@ -54,6 +59,9 @@ class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-ma
     def validate(self):
         assert isinstance(self.stepname, str)
         assert isinstance(self.settle, bool)
+        assert isinstance(self.settle_time_ok_s, (type(None), float))
+        if self.settle:
+            assert isinstance(self.settle_time_ok_s, float)
         assert isinstance(self.skalierungsfaktor, float)
         assert isinstance(self.fir_count, int)
         assert isinstance(self.fir_count_skipped, int)
@@ -74,6 +82,7 @@ class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-ma
         c.fir_count_skipped = self.fir_count_skipped
         c.stepname = self.stepname
         c.settle = self.settle
+        c.settle_time_ok_s = self.settle_time_ok_s
         c.skalierungsfaktor = self.skalierungsfaktor
         c.input_Vp = self.input_Vp.V  # pylint: disable=no-member
         return c
