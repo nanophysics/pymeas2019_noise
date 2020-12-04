@@ -3,12 +3,15 @@ import pathlib
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).parent.absolute()
 
+TOPDIR = None
+DIR_MEASUREMENT = DIRECTORY_OF_THIS_FILE
 
 def find_append_path():
-    dir_measurement = DIRECTORY_OF_THIS_FILE
-    for parent in dir_measurement.parents:
-        if (parent / "TOPDIR.TXT").exists():
-            sys.path.insert(0, str(parent))
-            sys.path.insert(0, str(parent / 'src'))
-            return dir_measurement
+    global TOPDIR
+    global DIR_MEASUREMENT
+    for TOPDIR in DIR_MEASUREMENT.parents:
+        if (TOPDIR / "TOPDIR.TXT").exists():
+            sys.path.insert(0, str(TOPDIR))
+            sys.path.insert(0, str(TOPDIR / 'pymeas'))
+            return TOPDIR, DIR_MEASUREMENT
     raise Exception('No file "TOPDIR.TXT" not found in parent directories!')

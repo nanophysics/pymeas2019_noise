@@ -1,7 +1,11 @@
+import sys
 import pathlib
 import logging
 
 import numpy as np
+
+DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
+sys.path.append(str(DIRECTORY_OF_THIS_FILE / 'pymeas'))
 
 import program
 import program_fir
@@ -9,14 +13,11 @@ import program_configsetup
 
 import library_logger
 
-DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
-
 logger = logging.getLogger("logger")
 
 np.random.seed(47)
 
 DT_S = 2 ** 5 / 125e6
-
 
 class TestSignal:
     def __init__(self, sine_amp_V_rms, noise_density_V_sqrtHz):
@@ -53,6 +54,7 @@ def main():
     config = program_configsetup.SamplingProcessConfig()
     config.fir_count = 20
     config.stepname = "slow"
+    config.duration_s = 10.0
     config.validate()
 
     sp = program_fir.SamplingProcess(config=config, directory_raw=program.MEASUREMENT_ACTUAL / "raw-green-synthetic")

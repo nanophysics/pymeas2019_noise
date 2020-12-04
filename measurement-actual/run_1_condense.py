@@ -2,9 +2,7 @@ import pathlib
 
 import library_path
 
-DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
-
-DIR_MEASUREMENT = library_path.find_append_path()
+TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
 
 # pylint: disable=wrong-import-position
 import library_logger
@@ -17,10 +15,10 @@ def reload_if_changed(dir_raw):
 
 
 def run():
-    library_logger.init_logger_condense(DIRECTORY_OF_THIS_FILE)
+    library_logger.init_logger_condense(DIR_MEASUREMENT)
 
-    program.run_condense(DIR_MEASUREMENT)
-    run_2_composite_plots.run()
+    program.run_condense(dir_measurement=DIR_MEASUREMENT)
+    run_2_composite_plots.run(dir_measurement=DIR_MEASUREMENT)
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ import pathlib
 
 import library_path
 
-TOPDIR = library_path.find_append_path()
+TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
 
 MSL_EQUIPMENT_PATH = TOPDIR / "libraries" / "msl-equipment"
 assert (MSL_EQUIPMENT_PATH / "README.rst").is_file(), f"Subrepo is missing (did you clone with --recursive?): {MSL_EQUIPMENT_PATH}"
@@ -105,7 +105,7 @@ def run_condense_dir_raw(dir_raw, do_plot=True):
     plotData = library_topic.PlotDataSingleDirectory(dir_raw)
     write_presentation_summary_file(plotData, dir_raw)
     if do_plot:
-        plotFile = library_plot.PlotFile(plotData=plotData)
+        plotFile = library_plot.PlotFile(plotData=plotData, write_files_directory=dir_raw)
         plotFile.plot_presentations()
 
     try:
