@@ -74,7 +74,9 @@ class PickleResultSummary:
         prs = None
         if filename_summary_pickle.exists():
             with filename_summary_pickle.open("rb") as fin:
-                sys.modules['library_topic'] = sys.modules['pymeas.library_topic']
+                # For compatibility with the old source structure
+                # May be remove when old pickle files have gone.
+                sys.modules["library_topic"] = sys.modules["pymeas.library_topic"]
                 try:
                     prs = pickle.load(fin)
                 except pickle.UnpicklingError as e:

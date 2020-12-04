@@ -15,8 +15,9 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker
 import matplotlib.animation
 
-from . import library_topic
 import run_0_measure
+
+from . import library_topic
 
 logger = logging.getLogger("logger")
 
@@ -121,7 +122,7 @@ class PlotContext:
 
     def animate(self):
         if self.plotData.directories_changed():
-            logger.info('Directories changed: Reload all data!')
+            logger.info("Directories changed: Reload all data!")
             self.invalidate()
             self.plotData.load_data()
 
@@ -131,7 +132,6 @@ class PlotContext:
 
         for topic in self.list_selected_topics:
             topic.reload_if_changed(presentation=self.__presentation, stage=self.__stage)
-
 
     def start_measurement(self, dir_raw):
         # The start button has been pressed

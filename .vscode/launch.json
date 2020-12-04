@@ -10,7 +10,7 @@
             "request": "launch",
             "module": "pylint",
             "cwd": "${workspaceFolder}",
-            "args": ["--rcfile=${workspaceFolder}/.pylintrc", "--verbose", "*.py", "measurement-actual"],
+            "args": ["--rcfile=${workspaceFolder}/.pylintrc", "--verbose", "*.py", "pymeas/*.py", "measurement-actual"],
             "console": "integratedTerminal"
         },
         {
@@ -19,7 +19,7 @@
             "request": "launch",
             "module": "black",
             "cwd": "${workspaceFolder}",
-            "args": ["--config", "${workspaceFolder}/.blackconfig.yaml", "*.py", "measurement-actual/*.py"],
+            "args": ["--config", "${workspaceFolder}/.blackconfig.yaml", "*.py", "pymeas/*.py", "measurement-actual/*.py"],
             "console": "integratedTerminal"
         },
         {

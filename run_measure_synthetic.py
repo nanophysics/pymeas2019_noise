@@ -18,6 +18,7 @@ np.random.seed(47)
 
 DT_S = 2 ** 5 / 125e6
 
+
 class TestSignal:
     def __init__(self, sine_amp_V_rms, noise_density_V_sqrtHz):
         self.sine_amp_V_rms = sine_amp_V_rms

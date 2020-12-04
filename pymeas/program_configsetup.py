@@ -42,6 +42,7 @@ class SamplingProcessConfig(LockingMixin):  # pylint: disable=too-few-public-met
 
         self._freeze()
 
+
 class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):
         self.stepname: str = LockingMixin.TO_BE_SET

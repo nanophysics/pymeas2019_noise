@@ -16,7 +16,7 @@ except ImportError as ex:
     logger.exception(ex)
     sys.exit(0)
 
-# pylint: disable=wrong-import-position
+# pylint: disable=wrong-import-position, wrong-import-order
 import msl.equipment
 import msl.equipment.resources.picotech.picoscope
 from msl.equipment.resources.picotech.picoscope import callbacks

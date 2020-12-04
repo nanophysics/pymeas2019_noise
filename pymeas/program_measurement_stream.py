@@ -125,7 +125,7 @@ class InThread:  # pylint: disable=too-many-instance-attributes
 
 def run():
     import numpy as np
-    import program_fir
+    from pymeas import program_fir
 
     sp = program_fir.SamplingProcess(fir_count=3)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
     i = InThread(sp.output, dt_s=0.01)  # pylint: disable=no-value-for-parameter

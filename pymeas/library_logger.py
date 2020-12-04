@@ -18,6 +18,7 @@ def init_logger_gui(directory):
 def init_logger_condense(directory):
     init_logger(directory, ("logger_condense.txt", "logger_condense_1.txt", "logger_condense_2.txt"))
 
+
 def init_logger_composite_plots(directory):
     init_logger(directory, ("logger_composite_plots.txt", "logger_composite_plots_1.txt", "logger_composite_plots_2.txt"))
 

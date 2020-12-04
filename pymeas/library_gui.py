@@ -88,7 +88,7 @@ class PlotPanel(wx.Panel):
         self.Fit()
 
     def OnSizeCanvas(self, event):
-        logger.debug(f'_on_size_canvas {event.GetSize()}')
+        logger.debug(f"_on_size_canvas {event.GetSize()}")
         self.canvas_last_resize_s = time.time()
         if self.canvas_force_resize:
             event.Skip()
@@ -129,7 +129,7 @@ class PlotPanel(wx.Panel):
             # The frame has been resized
             if self.canvas_last_resize_s + 0.5 < time.time():
                 # And the last event was more than 500ms ago
-                logger.info('matplotlib-canvas: delayed resize')
+                logger.info("matplotlib-canvas: delayed resize")
                 # self.canvas.SetSize(self.canvas_requested_size)
                 self.canvas_force_resize = True
                 self.Layout()
@@ -137,6 +137,7 @@ class PlotPanel(wx.Panel):
                 self.canvas_last_resize_s = None
 
         self._plot_context.animate()
+
 
 class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
     def __init__(self, plot_context):
@@ -272,7 +273,7 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         FILELOCK_GUI.skip_settle()
 
     def OnComboBoxPresentation(self, event):
-        logger.debug(f'OnComboBoxPresentation(): {self.presentation.title}')
+        logger.debug(f"OnComboBoxPresentation(): {self.presentation.title}")
         self._plot_context.set_presentation(self.presentation)
         self._plot_context.update_presentation()
         self.__enable_display_stage()

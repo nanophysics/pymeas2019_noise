@@ -11,7 +11,7 @@ logger = logging.getLogger("logger")
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 
 TOPDIR = DIRECTORY_OF_THIS_FILE.parent
-assert (TOPDIR / 'TOPDIR.TXT').exists()
+assert (TOPDIR / "TOPDIR.TXT").exists()
 
 FILENAME_LOCK = TOPDIR / "tmp_filelock_lock.txt"
 FILENAME_STATUS = TOPDIR / "tmp_filelock_status.txt"
