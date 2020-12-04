@@ -4,8 +4,8 @@ import logging
 
 import numpy as np
 
-import program_configsetup
-import program_measurement_stream
+from . import program_configsetup
+from . import program_measurement_stream
 
 logger = logging.getLogger("logger")
 

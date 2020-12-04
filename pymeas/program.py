@@ -25,9 +25,9 @@ except ImportError as ex:
     sys.exit(0)
 
 # pylint: disable=wrong-import-position
-import library_topic
-import library_plot
-import program_fir_plot
+from . import library_topic
+from . import library_plot
+from . import program_fir_plot
 
 DIRECTORY_TOP = pathlib.Path(__file__).absolute().parent
 DIRECTORY_RESULT = "result"

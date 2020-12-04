@@ -5,10 +5,10 @@ import library_path
 library_path.find_append_path()
 
 # pylint: disable=wrong-import-position
-import library_topic
-import library_plot
-import library_gui
-import library_logger
+from pymeas import library_topic
+from pymeas import library_plot
+from pymeas import library_gui
+from pymeas import library_logger
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 

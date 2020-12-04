@@ -1,4 +1,5 @@
 import re
+import sys
 import time
 import types
 import pickle
@@ -73,6 +74,7 @@ class PickleResultSummary:
         prs = None
         if filename_summary_pickle.exists():
             with filename_summary_pickle.open("rb") as fin:
+                sys.modules['library_topic'] = sys.modules['pymeas.library_topic']
                 try:
                     prs = pickle.load(fin)
                 except pickle.UnpicklingError as e:

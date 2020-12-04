@@ -4,10 +4,10 @@ import types
 import logging
 import pathlib
 
-from program_lockingmixin import LockingMixin
+from .program_lockingmixin import LockingMixin
 
-import library_filelock
-import program_fir
+from . import library_filelock
+from . import program_fir
 
 logger = logging.getLogger("logger")
 
@@ -41,7 +41,6 @@ class SamplingProcessConfig(LockingMixin):  # pylint: disable=too-few-public-met
         assert isinstance(self.duration_s, float)
 
         self._freeze()
-
 
 class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):

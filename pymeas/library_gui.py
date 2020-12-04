@@ -19,8 +19,8 @@ import matplotlib.animation
 import wx
 import wx.xrc as xrc
 
-import library_filelock
-import library_topic
+from . import library_filelock
+from . import library_topic
 
 # Hide messages like:
 #   Treat the new Tool classes introduced in v1.5 as experimental for now, the API will likely change in version 2.1 and perhaps the rcParam as well

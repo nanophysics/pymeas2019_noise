@@ -1,5 +1,6 @@
 import numpy as np
-import program_eseries
+
+from . import program_eseries
 
 
 class Classify:

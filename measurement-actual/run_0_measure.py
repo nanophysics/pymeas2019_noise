@@ -5,10 +5,11 @@ import library_path
 TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
 
 # pylint: disable=wrong-import-position
-import library_logger
-import library_filelock
+from pymeas import library_logger
+from pymeas import library_filelock
+from pymeas import program
+
 import config_measurement
-import program
 
 logger = logging.getLogger("logger")
 

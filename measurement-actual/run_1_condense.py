@@ -1,14 +1,12 @@
-import pathlib
-
 import library_path
 
 TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
 
 # pylint: disable=wrong-import-position
-import library_logger
-import program
-import run_2_composite_plots
+from pymeas import library_logger
+from pymeas import program
 
+import run_2_composite_plots
 
 def reload_if_changed(dir_raw):
     return program.reload_if_changed(dir_raw=dir_raw)

@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker
 import matplotlib.animation
 
-import library_topic
+from . import library_topic
 import run_0_measure
 
 logger = logging.getLogger("logger")

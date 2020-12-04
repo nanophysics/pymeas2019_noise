@@ -4,9 +4,9 @@ import logging
 
 import numpy as np
 
-import library_filelock
-import program_fir
-import program_configsetup
+from . import library_filelock
+from . import program_fir
+from . import program_configsetup
 
 
 logger = logging.getLogger("logger")

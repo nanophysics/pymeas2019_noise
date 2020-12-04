@@ -2,7 +2,7 @@ TITLE = "Noise Demo Title"
 
 
 def get_configsetup():
-    import program_config_instrument_picoscope
+    from pymeas import program_config_instrument_picoscope
 
     return program_config_instrument_picoscope.get_config_setupPS500A(
         # To choose the best input range, see the description in 'program_config_instrument_picoscope'.

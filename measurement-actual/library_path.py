@@ -7,11 +7,9 @@ TOPDIR = None
 DIR_MEASUREMENT = DIRECTORY_OF_THIS_FILE
 
 def find_append_path():
-    global TOPDIR
-    global DIR_MEASUREMENT
+    global TOPDIR  # pylint: disable=global-statement
     for TOPDIR in DIR_MEASUREMENT.parents:
         if (TOPDIR / "TOPDIR.TXT").exists():
             sys.path.insert(0, str(TOPDIR))
-            sys.path.insert(0, str(TOPDIR / 'pymeas'))
             return TOPDIR, DIR_MEASUREMENT
     raise Exception('No file "TOPDIR.TXT" not found in parent directories!')

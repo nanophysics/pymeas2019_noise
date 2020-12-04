@@ -3,10 +3,11 @@ import logging
 
 import numpy as np
 import scipy.signal
-import program_classify
-import program_settle
-import program_fir_plot
-import program_configsetup
+
+from . import program_classify
+from . import program_settle
+from . import program_fir_plot
+from . import program_configsetup
 
 logger = logging.getLogger("logger")
 

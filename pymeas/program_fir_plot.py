@@ -10,9 +10,10 @@ import threading
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import program_eseries
-import program_fir
-import library_topic
+
+from . import program_eseries
+from . import program_fir
+from . import library_topic
 
 logger = logging.getLogger("logger")
 

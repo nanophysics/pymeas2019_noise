@@ -4,8 +4,8 @@ import logging
 
 from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 
-import program_instrument_picoscope5442D
-from program_configsetup import ConfigSetup, ConfigStep
+from .library_gui import program_instrument_picoscope5442D
+from .program_configsetup import ConfigSetup, ConfigStep
 
 logger = logging.getLogger("logger")
 

@@ -4,17 +4,20 @@ import atexit
 import pathlib
 import logging
 
-import library_logger
+from . import library_logger
 
 logger = logging.getLogger("logger")
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 
-FILENAME_LOCK = DIRECTORY_OF_THIS_FILE / "tmp_filelock_lock.txt"
-FILENAME_STATUS = DIRECTORY_OF_THIS_FILE / "tmp_filelock_status.txt"
-FILENAME_STOP_HARD = DIRECTORY_OF_THIS_FILE / "tmp_filelock_stop_hard.txt"
-FILENAME_STOP_SOFT = DIRECTORY_OF_THIS_FILE / "tmp_filelock_stop_soft.txt"
-FILENAME_SKIP_SETTLE = DIRECTORY_OF_THIS_FILE / "tmp_filelock_skip_settle.txt"
+TOPDIR = DIRECTORY_OF_THIS_FILE.parent
+assert (TOPDIR / 'TOPDIR.TXT').exists()
+
+FILENAME_LOCK = TOPDIR / "tmp_filelock_lock.txt"
+FILENAME_STATUS = TOPDIR / "tmp_filelock_status.txt"
+FILENAME_STOP_HARD = TOPDIR / "tmp_filelock_stop_hard.txt"
+FILENAME_STOP_SOFT = TOPDIR / "tmp_filelock_stop_soft.txt"
+FILENAME_SKIP_SETTLE = TOPDIR / "tmp_filelock_skip_settle.txt"
 
 REQUEST_CHECKINTERVAL_S = 0.5
 
