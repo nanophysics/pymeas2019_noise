@@ -9,5 +9,6 @@ def find_append_path():
     for parent in dir_measurement.parents:
         if (parent / "TOPDIR.TXT").exists():
             sys.path.insert(0, str(parent))
+            sys.path.insert(0, str(parent / 'src'))
             return dir_measurement
     raise Exception('No file "TOPDIR.TXT" not found in parent directories!')

@@ -2,7 +2,7 @@ import logging
 
 import library_path
 
-dir_measurement = library_path.find_append_path()
+TOPDIR = library_path.find_append_path()
 
 # pylint: disable=wrong-import-position
 import library_logger
@@ -14,14 +14,14 @@ logger = logging.getLogger("logger")
 
 
 def run():
-    dir_raw = program.examine_dir_raw(dir_measurement=dir_measurement)
+    dir_raw = program.examine_dir_raw(dir_measurement=TOPDIR)
 
     library_logger.init_logger_measurement(directory=dir_raw)
 
     configsetup = config_measurement.get_configsetup()
     configsetup.validate()
     logger.info(configsetup.info)
-    configsetup.measure(dir_measurement=dir_measurement, dir_raw=dir_raw)
+    configsetup.measure(dir_measurement=TOPDIR, dir_raw=dir_raw)
 
     library_filelock.FilelockMeasurement.update_status(f"Condense data: {dir_raw.name}")
 
