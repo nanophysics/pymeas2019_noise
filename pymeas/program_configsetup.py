@@ -102,19 +102,32 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
     def __init__(self):
         self.setup_name: str = LockingMixin.TO_BE_SET
         self.module_instrument: types.ModuleType = LockingMixin.TO_BE_SET
-        self.configsteps: list = LockingMixin.TO_BE_SET
+        self.step_0_settle = LockingMixin.TO_BE_SET
+        self.step_1_fast = LockingMixin.TO_BE_SET
+        self.step_2_medium = LockingMixin.TO_BE_SET
+        self.step_3_slow = LockingMixin.TO_BE_SET
 
         self._lock()
 
     def validate(self):
         assert isinstance(self.setup_name, str)
         assert isinstance(self.module_instrument, types.ModuleType)
-        assert isinstance(self.configsteps, list)
+        assert isinstance(self.step_0_settle, ConfigStep)
+        assert isinstance(self.step_1_fast, ConfigStep)
+        assert isinstance(self.step_2_medium, ConfigStep)
+        assert isinstance(self.step_3_slow, ConfigStep)
 
         self._freeze()
 
         for configstep in self.configsteps:
             configstep.validate()
+
+    @property
+    def configsteps(self):
+        yield self.step_0_settle
+        yield self.step_1_fast
+        yield self.step_2_medium
+        yield self.step_3_slow
 
     def measure(self, dir_measurement, dir_raw):
         assert isinstance(dir_measurement, pathlib.Path)
