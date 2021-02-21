@@ -10,7 +10,7 @@
             "request": "launch",
             "module": "pylint",
             "cwd": "${workspaceFolder}",
-            "args": ["--rcfile=${workspaceFolder}/.pylintrc", "--verbose", "*.py", "pymeas/*.py", "measurement-actual"],
+            "args": ["--rcfile=${workspaceFolder}/.pylintrc", "--verbose", "*.py", "pymeas", "compact_measurement", "measurement-actual"],
             "console": "integratedTerminal"
         },
         {
@@ -19,7 +19,7 @@
             "request": "launch",
             "module": "black",
             "cwd": "${workspaceFolder}",
-            "args": ["--config", "${workspaceFolder}/.blackconfig.yaml", "*.py", "pymeas/*.py", "measurement-actual/*.py"],
+            "args": ["--config", "${workspaceFolder}/.blackconfig.yaml", "*.py", "pymeas/*.py", "compact_measurement/*.py", "measurement-actual/*.py"],
             "console": "integratedTerminal"
         },
         {
@@ -69,6 +69,15 @@
             "justMyCode": false,
             "program": "${workspaceFolder}/measurement-actual/run_2_composite_plots.py",
             "cwd": "${workspaceFolder}/measurement-actual",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: COMPACT run_measurements.py",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "program": "${workspaceFolder}/compact_measurement/run_measurements.py",
+            "cwd": "${workspaceFolder}/compact_measurement",
             "console": "integratedTerminal"
         }
     ]
