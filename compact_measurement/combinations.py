@@ -12,6 +12,11 @@ COLOR_SUPPLY = 'red'
 COLOR_HV = ('red', 'green', 'blue', 'orange')
 COLOR_DA = ('red', 'green', 'blue', 'orange', 'red', 'green', 'blue', 'orange', 'red', 'green')
 
+class Speed(Enum):
+    DETAILED = 1
+    SMOKE = 2
+    MOCKED = 3
+
 # Compact/Supply output voltages
 class OutputLevel(Enum):
     MINUS = 0
@@ -74,28 +79,28 @@ class Combination:
 
     @property
     def dirpart(self):
-        # DAdirect-10V/DA01
+        # DAdirect-10V
         if self.measurementtype == MeasurementType.SUPPLY:
             return f"{self.measurementtype.name}_{self.level.supply}"
         level = self.level.compact_da
         if self.measurementtype == MeasurementType.HV:
             level = self.level.compact_hv
-        return f"{self.filter_.name}_{level}_{self.measurementtype.name}"
+        return f"{self.filter_.name}_{level}"
 
     @property
-    def channel_text(self):
+    def channel_color_text(self):
         if self.short:
-            return 'grey-BASENOISE'
+            return 'grey', 'BASENOISE'
         if self.measurementtype == MeasurementType.SUPPLY:
-            return f'{COLOR_SUPPLY}-SUPPLY'
+            return COLOR_SUPPLY, 'SUPPLY'
         if self.measurementtype == MeasurementType.HV:
             color = COLOR_HV[self.channel-COMPACT_HV_FIRST]
-            return f"{color}-CH{self.channel:02d}"
+            return color, f"CH{self.channel:02d}"
         color = COLOR_DA[self.channel-COMPACT_DA_FIRST]
-        return f"{color}-DA{self.channel:02d}"
+        return color, f"DA{self.channel:02d}"
 
-def combinations(smoketest=False):
-    if smoketest:
+def Combinations(speed):
+    if speed == Speed.SMOKE:
         yield Combination(MeasurementType.DA, Filter.OUT, OutputLevel.PLUS, COMPACT_DA_FIRST)
         yield Combination(MeasurementType.DA, Filter.OUT, OutputLevel.ZERO, short=True)
         yield Combination(MeasurementType.HV, Filter.DIRECT, OutputLevel.MINUS, COMPACT_DA_LAST)
@@ -119,7 +124,7 @@ def combinations(smoketest=False):
         yield Combination(MeasurementType.SUPPLY, level=level)
 
 def print_combinations():
-    for combination in combinations():
+    for combination in Combinations(speed=Speed.DETAILED):
         print(combination)
 
 

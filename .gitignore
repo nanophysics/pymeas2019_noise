@@ -18,3 +18,4 @@ todo/peter/tests/*
 versuche/*
 .vscode/.ropeproject/*
 measurement-actual/logger_condense.txt
+measurements/*

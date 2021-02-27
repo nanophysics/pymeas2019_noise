@@ -1,10 +1,13 @@
 import sys
+import socket
 import pathlib
 from dataclasses import dataclass
 
 from mp import pyboard_query
+import library_path
 
-from combinations import Combination
+from combinations import Speed, Combination, Combinations
+
 
 TEMPLATE = """
 TITLE = "{TITLE}"
@@ -25,23 +28,67 @@ def get_configsetup():
     return config
 """
 
+TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
+
+MODULE_CONFIG_FILENAME = pathlib.Path(f"config_{socket.gethostname()}.py")
+if not MODULE_CONFIG_FILENAME.exists():
+    print(f"ERROR: Missing file: {MODULE_CONFIG_FILENAME.name}")
+    sys.exit(1)
+
+MODULE_CONFIG = __import__(str(MODULE_CONFIG_FILENAME.with_suffix('')))
 
 @dataclass
-class MeasurementContext:
-    topdir: pathlib.Path
+class MeasurementContext:  # pylint: disable=too-many-instance-attributes
     compact_serial: str
     measurement_date: str
-    compact_pythonpath: str
-    scanner_pythonpath: str
+    topdir: pathlib.Path = TOPDIR
+    compact_pythonpath: str = MODULE_CONFIG.COMPACT_PYTHONPATH
+    scanner_pythonpath: str = MODULE_CONFIG.SCANNER_PYTHONPATH
     compact_2012 = None
     scanner_2020 = None
-
+    speed: Speed = Speed.MOCKED
 
     @property
     def dirpart(self):
         # 20201111_03
         return f"{self.compact_serial}-{self.measurement_date}"
 
+@dataclass
+class Stati:
+    filename: pathlib.Path
+
+    def commit(self):
+        self.filename.write_text('DONE')
+
+    def is_done(self):
+        _done = self.filename.exists()
+        if _done:
+            print(f'SKIPPED: exists: {self.filename}')
+        return _done
+
+class MeasurementController:
+    def __init__(self, context):
+        self.context = context
+
+    def run_measurements(self):
+        for combination in Combinations(speed=self.context.speed):
+            # print(combination)
+            with Measurement(self.context, combination) as measurement:
+                if measurement.is_done():
+                    continue
+                measurement.create_directory()
+                if self.context.speed != Speed.MOCKED:
+                    measurement.connect_pyboards()
+                    measurement.configure_compact()
+                    measurement.configure_pyscan()
+                    measurement.measure()
+                measurement.commit()
+
+    def run_qualifikation(self):
+        pass
+
+    def run_diagrams(self):
+        pass
 
 class Measurement:
     def __init__(self, context: MeasurementContext, combination: Combination):
@@ -49,12 +96,26 @@ class Measurement:
         self.combination = combination
         self.query_scanner = pyboard_query.BoardQueryPyboard('scanner_pyb_2020')
         self.query_compact = pyboard_query.BoardQueryPyboard('compact_2012')
+        self.compact_2012 = None
+        self.scanner_2020 = None
+        # 20201111_03-DAdirect-10V/stati_DA01_done.txt
+        # f_stati = self._dir_measurement_raw
+        # self.stati = Stati(f_stati.with_name(f"stati_{f_stati.name}_done.txt"))
+
+        # 20201111_03-DAdirect-10V/DA01/stati_done.txt
+        self.stati = Stati(self._dir_measurement_raw / "stati_done.txt")
 
     def __enter__(self):
         return self
 
     def __exit__(self, _type, value, tb):
         self.close()
+
+    def is_done(self):
+        return self.stati.is_done()
+
+    def commit(self):
+        return self.stati.commit()
 
     def close(self):
         if self.query_scanner.board is not None:
@@ -70,19 +131,29 @@ class Measurement:
             raise Exception(f'Expected compact_2012 with hw_serial={expected_serial}, but {connected_serial} is connected!')
 
     @property
+    def _dir_measuremens(self):
+        return self.context.topdir / 'measurements'
+
+    @property
     def _dir_measurement(self):
-        # 20201111_03-DAdirect-10V/DA01
+        # 20201111_03-DAdirect-10V
         dirname = f"{self.context.dirpart}_{self.combination.dirpart}"
-        return self.context.topdir / dirname
+        return self._dir_measuremens / dirname
+
+    @property
+    def _dir_measurement_raw(self):
+        # 20201111_03-DAdirect-10V/DA01
+        _channel_color, channel_text = self.combination.channel_color_text
+        return self._dir_measurement / channel_text
 
     @property
     def _config_measurement(self):
         # 20201111_03-DAdirect-10V/DA01
-        return self._dir_measurement / "config_measurement.py"
+        return self._dir_measurement_raw / "config_measurement.py"
 
     def create_directory(self):
-        if not self._dir_measurement.exists():
-            self._dir_measurement.mkdir(parents=True, exist_ok=False)
+        if not self._dir_measurement_raw.exists():
+            self._dir_measurement_raw.mkdir(parents=True, exist_ok=False)
 
         if not self._config_measurement.exists():
             dict_template = {
@@ -91,9 +162,9 @@ class Measurement:
             }
             self._config_measurement.write_text(TEMPLATE.format(**dict_template))
 
-        dir_raw = self._dir_measurement / self.combination.channel_text
+        dir_raw = self._dir_measurement_raw
         dir_raw.mkdir(parents=False, exist_ok=True)
-        print(self._dir_measurement.name + '/' + dir_raw.name)
+        # print(self._dir_measurement.name + '/' + dir_raw.name)
 
     def _add_pythonpath(self, pythonpath):
         path = pathlib.Path(pythonpath).absolute()
@@ -103,7 +174,7 @@ class Measurement:
 
     def configure_compact(self):
         self._add_pythonpath(self.context.compact_pythonpath)
-        import compact_2012_driver
+        import compact_2012_driver  # # pylint: disable=import-error
         self.compact_2012 = compact_2012_driver.Compact2012(board=self.query_compact.board)
         # TODO(hans): Uncomment
         # self.compact_2012.sync_calib_raw_init()
@@ -142,7 +213,7 @@ class Measurement:
 
     def configure_pyscan(self):
         self._add_pythonpath(self.context.scanner_pythonpath)
-        import scanner_pyb_2020
+        import scanner_pyb_2020  # pylint: disable=import-error
         self.scanner_2020 = scanner_pyb_2020.ScannerPyb2020(board=self.query_scanner.board)
         self.scanner_2020.reset()
 
@@ -183,11 +254,8 @@ class Measurement:
         code = compile(source, str(self._config_measurement), 'exec')
         global_vars = {}
         local_vars = {}
-        exec(code, global_vars, local_vars)
+        exec(code, global_vars, local_vars)  # pylint: disable=exec-used
         configsetup = local_vars['get_configsetup']()
         configsetup.validate()
 
         program_measure.measure(configsetup, dir_measurement=self._dir_measurement)
-
-    def commit(self):
-        pass

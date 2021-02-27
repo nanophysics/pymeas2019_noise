@@ -59,6 +59,6 @@ Implementation:
   * Ein korrekt abgeschlossener Arbeitschritt hinterlässt ein File:
     * stati_20201111_03-20201130a_A_directorystructure_done.txt
     * 20201111_03-20201130a_DIRECT_-10V_DA/blue-DA03/stati_measurement_done.txt
-    * stati_20201111_03-20201130a_B_qualifiaction_done.txt
+    * stati_20201111_03-20201130a_B_qualification_done.txt
     * stati_20201111_03-20201130a_C_diagrams_done.txt
 
