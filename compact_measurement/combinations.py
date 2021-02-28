@@ -203,17 +203,23 @@ class Combination:
     @property
     def picoscope_input_Vp(self) -> str:
         if self.measurementtype == MeasurementType.DA:
+            #return "program_config_instrument_picoscope.InputRange.R_5V" # TODO(peter): Remove
             return "program_config_instrument_picoscope.InputRange.R_100mV"
 
         if self.measurementtype == MeasurementType.HV:
-            return "program_config_instrument_picoscope.InputRange.R_100mV"
+            #return "program_config_instrument_picoscope.InputRange.R_10V" # TODO(peter): Remove
+            return "program_config_instrument_picoscope.InputRange.R_1V"
 
         if self.measurementtype == MeasurementType.SUPPLY:
-            return "program_config_instrument_picoscope.InputRange.R_100mV"
+            #return "program_config_instrument_picoscope.InputRange.R_5V" # TODO(peter): Remove
+            return "program_config_instrument_picoscope.InputRange.R_200mV"
 
         raise AttributeError()
 
 def Combinations(speed):
+    # yield Combination(MeasurementType.DA, FilterDA.OUT, OutputLevel.PLUS, short=True)
+    # yield Combination(MeasurementType.DA, FilterDA.OUT, OutputLevel.PLUS, COMPACT_DA_FIRST)
+    # return
     if speed == Speed.SMOKE:
         yield Combination(MeasurementType.DA, FilterDA.OUT, OutputLevel.PLUS, short=True)
         yield Combination(MeasurementType.DA, FilterDA.OUT, OutputLevel.PLUS, COMPACT_DA_FIRST)

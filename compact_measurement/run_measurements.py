@@ -2,8 +2,8 @@ from measurement import MeasurementContext, MeasurementController, Speed, Enviro
 
 CONTEXT = MeasurementContext(
     compact_serial="20000101_01",
-    measurement_date="20201130a",
-    speed=Speed.SMOKE,
+    measurement_date="20210228b",
+    speed=Speed.DETAILED,
     environment=Environment.REAL
 )
 

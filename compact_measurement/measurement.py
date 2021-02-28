@@ -21,17 +21,19 @@ def get_configsetup():
 
     config = program_config_instrument_picoscope.get_config_setupPS500A()
 
-    duration_slow_s = 48 * 3600.0
-    config.step_0_settle.settle_time_ok_s = duration_slow_s
-    config.step_0_settle.duration_s = 30.0 * duration_slow_s
+    config.step_0_settle.settle = True
+    config.step_0_settle.settle_time_ok_s = 40.0
+    config.step_0_settle.duration_s = config.step_0_settle.settle_time_ok_s + 4.0 * 60 # maximale Zeit bis Fehler
     config.step_0_settle.settle_input_part = 0.5
+    config.step_3_slow.duration_s = 5.0 * 60.0
 
     if {SMOKE}:
         # Smoke test: Reduce times to a minimum
-        config.step_0_settle.settle = False
-        config.step_1_fast.duration_s = 0.2
-        config.step_2_medium.duration_s = 0.5
-        config.step_3_slow.duration_s = 3.0
+        config.step_0_settle.settle_time_ok_s = 40.0
+        config.step_0_settle.duration_s = config.step_0_settle.settle_time_ok_s + 4.0 * 60 # maximale Zeit bis Fehler
+        #config.step_1_fast.duration_s = 0.2
+        #config.step_2_medium.duration_s = 0.5
+        config.step_3_slow.duration_s = 0.5 * 60.0
 
     for step in config.configsteps:
         # To choose the best input range, see the description in 'program_config_instrument_picoscope'.
@@ -197,13 +199,12 @@ class Measurement:
         if not self.dir_measurement_raw.exists():
             self.dir_measurement_raw.mkdir(parents=True, exist_ok=False)
 
-        if not self.config_measurement.exists():
-            dict_template = {
-                "TITLE": self.dir_measurement.name,
-                "input_Vp": self.combination.picoscope_input_Vp,
-                "SMOKE": (self.context.speed == Speed.SMOKE),
-            }
-            self.config_measurement.write_text(TEMPLATE.format(**dict_template))
+        dict_template = {
+            "TITLE": self.dir_measurement.name,
+            "input_Vp": self.combination.picoscope_input_Vp,
+            "SMOKE": (self.context.speed == Speed.SMOKE),
+        }
+        self.config_measurement.write_text(TEMPLATE.format(**dict_template))
 
         dir_raw = self.dir_measurement_raw
         dir_raw.mkdir(parents=False, exist_ok=True)

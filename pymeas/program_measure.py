@@ -12,7 +12,7 @@ logger = logging.getLogger("logger")
 def measure2(configsetup, dir_raw):
     library_logger.init_logger_measurement(directory=dir_raw)
 
-    logger.info(configsetup.info)
+    configsetup.dump(logger, indent=' config.')
     configsetup.measure(dir_measurement=dir_raw.parent, dir_raw=dir_raw)
 
     library_filelock.FilelockMeasurement.update_status(f"Condense data: {dir_raw.name}")

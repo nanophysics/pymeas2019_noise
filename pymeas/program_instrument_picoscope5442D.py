@@ -1,3 +1,4 @@
+import gc
 import sys
 import time
 import logging
@@ -246,6 +247,11 @@ class Instrument:
         logger.info(f"Time spent in aquisition {time.time()-start_s:1.1f}s")
         logger.info("Waiting for thread to finish calculations...")
         stream.join()
+
+        for i in range(5):
+            time.sleep(0.5)
+            unreachable_objects = gc.collect()
+            logger.info(f"Garbage collection... (unreachable_objects={unreachable_objects})")
 
         logger.info("Done")
 

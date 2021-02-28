@@ -64,18 +64,21 @@ class LockingMixin:  # pylint: disable=too-few-public-methods
             raise Exception(f"These properties have not been set: {unset_properties}!")
         self.__dict__[LockingMixin.__IS_FROZEN] = True
 
-    @property
-    def info(self):
-        values = {}
+    def dump(self, logger, indent='') -> None:
         for name, value in sorted(self.__dict__.items()):
+            if name.startswith('_'):
+                continue
             if isinstance(value, (list, tuple)):
-                values[name] = [v.info for v in value]
+                logger.info(f'{indent}{name} = {[v.info for v in value]}')
                 continue
-            if isinstance(value, (float, int, bool, str)):
-                values[name] = value
+            if isinstance(value, (float, int, bool, str, type(None))):
+                logger.info(f'{indent}{name} = {value}')
                 continue
-            values[name] = f"type({value.__class__.__name__})"
-        return values
+            if isinstance(value, (LockingMixin,)):
+                value.dump(logger, indent=f'{indent}{name}.' )
+                continue
+            logger.info(f'{indent}{name} = type({value.__class__.__name__}):{value}')
+
 
     @property
     def is_locked(self):

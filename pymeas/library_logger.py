@@ -53,20 +53,20 @@ def init_logger(directory, filenames):
         raise Exception(f"All log-files locked: {filenames}")
 
     print(f"logging to {str(filename)}")
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     # create file handler which logs even debug messages
     fh = logging.FileHandler(filename=filename)
     fh.setLevel(logging.DEBUG)
 
     # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
+    # ch = logging.StreamHandler()
+    # ch.setLevel(logging.INFO)
 
     # create formatter and add it to the handlers
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(threadName)s - %(levelname)s - %(message)s")
-    ch.setFormatter(formatter)
+    # ch.setFormatter(formatter)
     fh.setFormatter(formatter)
 
     # add the handlers to logger
-    logger.addHandler(ch)
+    # logger.addHandler(ch)
     logger.addHandler(fh)
