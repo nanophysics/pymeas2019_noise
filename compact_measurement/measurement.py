@@ -1,4 +1,5 @@
 import sys
+import logging
 import socket
 import pathlib
 from dataclasses import dataclass
@@ -6,7 +7,10 @@ from dataclasses import dataclass
 from mp import pyboard_query
 import library_path
 
-from combinations import Speed, Combination, Combinations
+from combinations import Speed, Environment, Combination, Combinations
+
+LOGGER_NAME = "compact_measurements"
+logger = logging.getLogger(LOGGER_NAME)
 
 
 TEMPLATE = """
@@ -21,6 +25,14 @@ def get_configsetup():
     config.step_0_settle.settle_time_ok_s = duration_slow_s
     config.step_0_settle.duration_s = 30.0 * duration_slow_s
     config.step_0_settle.settle_input_part = 0.5
+
+    if {SMOKE}:
+        # Smoke test: Reduce times to a minimum
+        config.step_0_settle.settle = False
+        config.step_1_fast.duration_s = 0.2
+        config.step_2_medium.duration_s = 0.5
+        config.step_3_slow.duration_s = 3.0
+
     for step in config.configsteps:
         # To choose the best input range, see the description in 'program_config_instrument_picoscope'.
         step.input_Vp = {input_Vp}
@@ -30,12 +42,12 @@ def get_configsetup():
 
 TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
 
-MODULE_CONFIG_FILENAME = pathlib.Path(f"config_{socket.gethostname()}.py")
+MODULE_CONFIG_FILENAME = DIR_MEASUREMENT /  f"config_{socket.gethostname()}.py"
 if not MODULE_CONFIG_FILENAME.exists():
     print(f"ERROR: Missing file: {MODULE_CONFIG_FILENAME.name}")
     sys.exit(1)
 
-MODULE_CONFIG = __import__(str(MODULE_CONFIG_FILENAME.with_suffix('')))
+MODULE_CONFIG = __import__(MODULE_CONFIG_FILENAME.with_suffix('').name)
 
 @dataclass
 class MeasurementContext:  # pylint: disable=too-many-instance-attributes
@@ -46,49 +58,82 @@ class MeasurementContext:  # pylint: disable=too-many-instance-attributes
     scanner_pythonpath: str = MODULE_CONFIG.SCANNER_PYTHONPATH
     compact_2012 = None
     scanner_2020 = None
-    speed: Speed = Speed.MOCKED
+    speed: Speed = Speed.SMOKE
+    environment: Environment = Environment.MOCKED
 
     @property
     def dirpart(self):
         # 20201111_03
         return f"{self.compact_serial}-{self.measurement_date}"
 
+    @property
+    def dir_measurements(self):
+        return self.topdir / 'compact_measurements'
+
 @dataclass
 class Stati:
+    topdir: pathlib.Path
     filename: pathlib.Path
 
     def commit(self):
+        # logger.info(f'    commit(): {self.filename.relative_to(self.topdir)}')
         self.filename.write_text('DONE')
 
     def is_done(self):
         _done = self.filename.exists()
-        if _done:
-            print(f'SKIPPED: exists: {self.filename}')
+        # if _done:
+            # logger.info(f'    is_done(): SKIPPED: File exists {self.filename.relative_to(self.topdir)}')
         return _done
 
 class MeasurementController:
     def __init__(self, context):
         self.context = context
+        self.init_logger()
+
+    def init_logger(self):
+        logger.setLevel(logging.DEBUG)
+        # create file handler which logs even debug messages
+        self.context.dir_measurements.mkdir(parents=True, exist_ok=True)
+        fh = logging.FileHandler(filename=self.context.dir_measurements / 'logger_measurements.txt', mode='w+')
+        fh.setLevel(logging.DEBUG)
+
+        # create console handler with a higher log level
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+
+        # create formatter and add it to the handlers
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        ch.setFormatter(formatter)
+        fh.setFormatter(formatter)
+
+        # add the handlers to logger
+        logger.addHandler(ch)
+        logger.addHandler(fh)
 
     def run_measurements(self):
+        logger.info('****** run_measurements()')
+        logger.info(f'  context.dirpart: {self.context.dirpart}')
+        logger.info(f'  context.speed: {self.context.speed.name}')
+        logger.info(f'  context.environment: {self.context.environment.name}')
+
         for combination in Combinations(speed=self.context.speed):
             # print(combination)
             with Measurement(self.context, combination) as measurement:
                 if measurement.is_done():
                     continue
+                logger.info(f'    {measurement.dir_measurement_raw.relative_to(self.context.dir_measurements)}')
                 measurement.create_directory()
-                if self.context.speed != Speed.MOCKED:
-                    measurement.connect_pyboards()
-                    measurement.configure_compact()
-                    measurement.configure_pyscan()
-                    measurement.measure()
+                measurement.connect_pyboards()
+                measurement.configure_pyscan()
+                measurement.configure_compact()
+                measurement.measure()
                 measurement.commit()
 
     def run_qualifikation(self):
-        pass
+        logger.info('    run_qualifikation()')
 
     def run_diagrams(self):
-        pass
+        logger.info('    run_diagrams()')
 
 class Measurement:
     def __init__(self, context: MeasurementContext, combination: Combination):
@@ -100,10 +145,10 @@ class Measurement:
         self.scanner_2020 = None
         # 20201111_03-DAdirect-10V/stati_DA01_done.txt
         # f_stati = self._dir_measurement_raw
-        # self.stati = Stati(f_stati.with_name(f"stati_{f_stati.name}_done.txt"))
+        # self.stati = Stati(f_stati.with_name(f"stati_{f_stati.name}_measurement_done.txt"))
 
         # 20201111_03-DAdirect-10V/DA01/stati_done.txt
-        self.stati = Stati(self._dir_measurement_raw / "stati_done.txt")
+        self.stati = Stati(self.context.dir_measurements, self.dir_measurement_raw / "stati_measurement_done.txt")
 
     def __enter__(self):
         return self
@@ -124,6 +169,9 @@ class Measurement:
             self.query_compact.board.close()
 
     def connect_pyboards(self):
+        if self.context.environment in (Environment.MOCKED, Environment.MOCKED_SCANNER_COMPACT):
+            return
+
         pyboard_query.Connect([self.query_compact, self.query_scanner])
         expected_serial = self.context.compact_serial
         connected_serial = self.query_compact.board.identification.HWSERIAL
@@ -131,40 +179,34 @@ class Measurement:
             raise Exception(f'Expected compact_2012 with hw_serial={expected_serial}, but {connected_serial} is connected!')
 
     @property
-    def _dir_measuremens(self):
-        return self.context.topdir / 'measurements'
+    def dir_measurement(self):
+        # compact_measurements/20000101_01-20201130a/DA_OUT_+10V
+        return self.context.dir_measurements / self.context.dirpart / self.combination.dirpart
 
     @property
-    def _dir_measurement(self):
-        # 20201111_03-DAdirect-10V
-        dirname = f"{self.context.dirpart}_{self.combination.dirpart}"
-        return self._dir_measuremens / dirname
-
-    @property
-    def _dir_measurement_raw(self):
+    def dir_measurement_raw(self):
         # 20201111_03-DAdirect-10V/DA01
-        _channel_color, channel_text = self.combination.channel_color_text
-        return self._dir_measurement / channel_text
+        return self.dir_measurement / f"raw-{self.combination.channel_color_text}"
 
     @property
-    def _config_measurement(self):
+    def config_measurement(self):
         # 20201111_03-DAdirect-10V/DA01
-        return self._dir_measurement_raw / "config_measurement.py"
+        return self.dir_measurement / "config_measurement.py"
 
     def create_directory(self):
-        if not self._dir_measurement_raw.exists():
-            self._dir_measurement_raw.mkdir(parents=True, exist_ok=False)
+        if not self.dir_measurement_raw.exists():
+            self.dir_measurement_raw.mkdir(parents=True, exist_ok=False)
 
-        if not self._config_measurement.exists():
+        if not self.config_measurement.exists():
             dict_template = {
-                "TITLE": self._dir_measurement.name,
-                "input_Vp": "program_config_instrument_picoscope.InputRange.R_100mV",
+                "TITLE": self.dir_measurement.name,
+                "input_Vp": self.combination.picoscope_input_Vp,
+                "SMOKE": (self.context.speed == Speed.SMOKE),
             }
-            self._config_measurement.write_text(TEMPLATE.format(**dict_template))
+            self.config_measurement.write_text(TEMPLATE.format(**dict_template))
 
-        dir_raw = self._dir_measurement_raw
+        dir_raw = self.dir_measurement_raw
         dir_raw.mkdir(parents=False, exist_ok=True)
-        # print(self._dir_measurement.name + '/' + dir_raw.name)
 
     def _add_pythonpath(self, pythonpath):
         path = pathlib.Path(pythonpath).absolute()
@@ -173,89 +215,51 @@ class Measurement:
         sys.path.append(str(path))
 
     def configure_compact(self):
+        if self.context.environment in (Environment.MOCKED, Environment.MOCKED_SCANNER_COMPACT):
+            return
+
         self._add_pythonpath(self.context.compact_pythonpath)
-        import compact_2012_driver  # # pylint: disable=import-error
+        import compact_2012_driver  # pylint: disable=import-error
         self.compact_2012 = compact_2012_driver.Compact2012(board=self.query_compact.board)
-        # TODO(hans): Uncomment
-        # self.compact_2012.sync_calib_raw_init()
 
-        # dict_requested_values = {
-        #     0: # Optional. The DAC [0..9]
-        #         {
-        #             'f_DA_OUT_desired_V': 5.5, # The value to set
-        #             'f_DA_OUT_sweep_VperSecond': 0.1, # Optional
-        #             'f_gain': 0.5, # Optional. f_DA_OUT_desired_V=f_dac_desired_V*f_gain
-        #         }
-        # }
+        dict_requested_values = {}
+        for dac in range(10):
+            dict_requested_values[dac] = {'f_DA_OUT_desired_V': 0.0}
+        dict_requested_values[self.combination.channel0] = {'f_DA_OUT_desired_V': self.combination.f_DA_OUT_desired_V}
 
-        # return: b_done, {
-        #     0: 5.1, # Actual value DA_OUT
-        # }
+        b_done, dict_changed_values = self.compact_2012.sync_dac_set_all(dict_requested_values)
 
-        # This method will receive try to set the values of the dacs.
-        # If the call is following very shortly after the last call, it may delay before setting the DACs.
-        # If required, f_DA_OUT_sweep_VperSecond will be used for small voltage increments.
-        # The effective set values will be returned. To be used for updateing the display and the log output.
-        # If b_done == False, the labber driver muss call this method again with the same parameters.
-
-        # dict_requested_values = {
-        #     0: # Optional. The DAC [0..9]
-        #         {
-        #             'f_DA_OUT_desired_V': 5.5, # The value to set
-        #             'f_DA_OUT_sweep_VperSecond': 0.1, # Optional
-        #             'f_gain': 0.5, # Optional. f_DA_OUT_desired_V=f_dac_desired_V*f_gain
-        #         }
-        # }
-
-        # b_done, dict_changed_values = self.compact_2012.sync_dac_set_all(dict_requested_values)
-
-        # _iADC24, _fADC24_V = self.compact_2012.sync_calib_read_ADC24(iDac_index=2)
 
     def configure_pyscan(self):
+        if self.context.environment in (Environment.MOCKED, Environment.MOCKED_SCANNER_COMPACT):
+            return
+
         self._add_pythonpath(self.context.scanner_pythonpath)
         import scanner_pyb_2020  # pylint: disable=import-error
         self.scanner_2020 = scanner_pyb_2020.ScannerPyb2020(board=self.query_scanner.board)
         self.scanner_2020.reset()
 
-    def measure(self):
-        self.scanner_2020.boards[0].set(9)
-        dict_requested_values = {
-            0: # Optional. The DAC [0..9]
-                {
-                    'f_DA_OUT_desired_V': 5.5, # The value to set
-                    'f_DA_OUT_sweep_VperSecond': 0.1, # Optional
-                    'f_gain': 0.5, # Optional. f_DA_OUT_desired_V=f_dac_desired_V*f_gain
-                }
-        }
+        self.combination.configure_pyscan(self.scanner_2020)
 
-        b_done, dict_changed_values = self.compact_2012.sync_dac_set_all(dict_requested_values)
+    def measure(self):
+        if self.context.environment in (Environment.MOCKED,):
+            return
 
         self._add_pythonpath(self.context.topdir / "libraries" / "msl-equipment")
 
-        # pylint: disable=wrong-import-position
+        # pylint: disable=wrong-import-position, disable=unused-import
         from pymeas import program_config_instrument_picoscope
-        from pymeas import program_measure
+        from pymeas import program_measure, library_topic, library_plot
 
-        def get_configsetup():
-            config = program_config_instrument_picoscope.get_config_setupPS500A()
-
-            duration_slow_s = 48 * 3600.0
-            config.step_0_settle.settle_time_ok_s = duration_slow_s
-            config.step_0_settle.duration_s = 30.0 * duration_slow_s
-            config.step_0_settle.settle_input_part = 0.5
-            for step in config.configsteps:
-                # To choose the best input range, see the description in 'program_config_instrument_picoscope'.
-                step.input_Vp = program_config_instrument_picoscope.InputRange.R_100mV
-                step.skalierungsfaktor = 1.0e-3
-            return config
-
-        # TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
-        source = self._config_measurement.read_text()
-        code = compile(source, str(self._config_measurement), 'exec')
+        source = self.config_measurement.read_text()
+        code = compile(source, str(self.config_measurement), 'exec')
         global_vars = {}
         local_vars = {}
         exec(code, global_vars, local_vars)  # pylint: disable=exec-used
         configsetup = local_vars['get_configsetup']()
         configsetup.validate()
 
-        program_measure.measure(configsetup, dir_measurement=self._dir_measurement)
+        program_measure.measure2(configsetup, dir_raw=self.dir_measurement_raw)
+        plotData = library_topic.PlotDataMultipleDirectories(topdir=self.dir_measurement)
+        plotFile = library_plot.PlotFile(plotData=plotData, write_files_directory=self.dir_measurement, title=self.dir_measurement.name)
+        plotFile.plot_presentations()

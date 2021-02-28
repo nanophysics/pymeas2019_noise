@@ -1,9 +1,10 @@
-from measurement import MeasurementContext, MeasurementController, Speed
+from measurement import MeasurementContext, MeasurementController, Speed, Environment
 
 CONTEXT = MeasurementContext(
     compact_serial="20000101_01",
     measurement_date="20201130a",
-    speed=Speed.MOCKED
+    speed=Speed.SMOKE,
+    environment=Environment.REAL
 )
 
 def main():

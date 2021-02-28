@@ -1,16 +1,4 @@
-Direktorystruktur
-
-20201111_03-DAdirect-10V/DA01
-20201111_03-DAdirect-10V/DA02
-
-20201111_03-DAdirect+10V/DA01
-20201111_03-DAdirect+10V/DA02
-
-20201111_03-DAdirect+0V/DA01
-20201111_03-DAdirect+0V/DA02
-
-20201111_03-OUT-10V/DA01
-20201111_03-OUT-10V/DA02
+TODO: Add directory structure
 
 <compact_serial>-<messdatum>-<messung>-<voltage>/<channel>
 

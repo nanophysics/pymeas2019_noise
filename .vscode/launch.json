@@ -72,7 +72,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Python: COMPACT run_measurements.py",
+            "name": "Python: COMPACT_MEASUREMENTS run_measurements.py",
             "type": "python",
             "request": "launch",
             "justMyCode": false,
