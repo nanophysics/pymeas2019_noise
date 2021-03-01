@@ -1,4 +1,5 @@
 import sys
+import time
 import shutil
 import logging
 import socket
@@ -116,8 +117,7 @@ class MeasurementController:
                 logger.info(f'    {measurement.dir_measurement_raw.relative_to(self.context.dir_measurements)}')
                 measurement.create_directory()
                 measurement.connect_pyboards()
-                measurement.configure_pyscan()
-                measurement.configure_compact()
+                measurement.configure()
                 measurement.measure()
                 measurement.commit()
 
@@ -186,7 +186,7 @@ class Measurement:
         return self.dir_measurement / "config_measurement.py"
 
     def create_directory(self):
-        self.dir_measurement.mkdir(parents=True, exist_ok=False)
+        self.dir_measurement.mkdir(parents=True, exist_ok=True)
 
         dict_template = {
             "TITLE": self.dir_measurement.name,
@@ -201,32 +201,38 @@ class Measurement:
         assert path.is_dir()
         sys.path.append(str(path))
 
-    def configure_compact(self):
-        if self.context.environment in (Environment.MOCKED, Environment.MOCKED_SCANNER_COMPACT):
+    def configure(self):
+        if self.context.environment != Environment.REAL:
             return
 
         self._add_pythonpath(self.context.compact_pythonpath)
         import compact_2012_driver  # pylint: disable=import-error
         self.compact_2012 = compact_2012_driver.Compact2012(board=self.query_compact.board)
 
-        dict_requested_values = {}
-        for dac in range(10):
-            dict_requested_values[dac] = {'f_DA_OUT_desired_V': 0.0}
-        dict_requested_values[self.combination.channel0] = {'f_DA_OUT_desired_V': self.combination.f_DA_OUT_desired_V}
-
-        b_done, dict_changed_values = self.compact_2012.sync_dac_set_all(dict_requested_values)
-
-
-    def configure_pyscan(self):
-        if self.context.environment in (Environment.MOCKED, Environment.MOCKED_SCANNER_COMPACT):
-            return
-
         self._add_pythonpath(self.context.scanner_pythonpath)
         import scanner_pyb_2020  # pylint: disable=import-error
         self.scanner_2020 = scanner_pyb_2020.ScannerPyb2020(board=self.query_scanner.board)
         self.scanner_2020.reset()
 
+        # in order to protect the preamplifyer_noise_2020 one should discharge the inputcapacitor
+        # compact: all compact DA voltages to 0V
+        dict_requested_values = {}
+        for dac in range(10):
+            dict_requested_values[dac] = {'f_DA_OUT_desired_V': 0.0}
+        self.compact_2012.sync_dac_set_all(dict_requested_values)
+
+        # pyb_scanner: to B19, connected to a 2k2 Resistor. Together with the preamplifyer capacitor of 100uF we get a timeconstant of 0.22s.
+        self.scanner_2020.boards[1].set(19)
+        resistor_B19 = 2200.0
+        capacitor_preamplifyer_noise_2020_F = 100e-6
+        wait_s = 5.0 * resistor_B19 * capacitor_preamplifyer_noise_2020_F
+        time.sleep(wait_s)
+        # pyb_scanner: now connect
         self.combination.configure_pyscan(self.scanner_2020)
+
+        # compact: DA voltage
+        dict_requested_values[self.combination.channel0] = {'f_DA_OUT_desired_V': self.combination.f_DA_OUT_desired_V}
+        self.compact_2012.sync_dac_set_all(dict_requested_values)
 
     def measure(self):
         if self.context.environment in (Environment.MOCKED,):
@@ -235,11 +241,12 @@ class Measurement:
         if EXTERN_MEASUREMENT_PROCESS:
             # Copy the requires file templates
             directory_measurement_actual = TOPDIR / 'measurement-actual'
-            for filename in directory_measurement_actual.glob('*[.py|.bat]'):
+            for filename in directory_measurement_actual.glob('*.*'):
                 if filename.name == 'config_measurement.py':
                     # To not overwrite 'config_measurement.py'!
                     continue
-                shutil.copyfile(filename, self.dir_measurement / filename.name)
+                if filename.suffix in ('.bat', '.py'):
+                    shutil.copyfile(filename, self.dir_measurement / filename.name)
 
             logger.info(f"Measure {self.dir_measurement_raw.relative_to(self.context.topdir)}")
             subprocess.check_call([sys.executable, "run_0_measure.py", self.dir_measurement_raw.name], cwd=str(self.dir_measurement), creationflags=subprocess.CREATE_NEW_CONSOLE)
