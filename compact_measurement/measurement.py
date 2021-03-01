@@ -186,8 +186,7 @@ class Measurement:
         return self.dir_measurement / "config_measurement.py"
 
     def create_directory(self):
-        if not self.dir_measurement_raw.exists():
-            self.dir_measurement_raw.mkdir(parents=True, exist_ok=False)
+        self.dir_measurement.mkdir(parents=True, exist_ok=False)
 
         dict_template = {
             "TITLE": self.dir_measurement.name,
@@ -195,9 +194,6 @@ class Measurement:
             "SMOKE": (self.context.speed == Speed.SMOKE),
         }
         self.config_measurement.write_text(TEMPLATE.format(**dict_template))
-
-        dir_raw = self.dir_measurement_raw
-        dir_raw.mkdir(parents=False, exist_ok=True)
 
     def _add_pythonpath(self, pythonpath):
         path = pathlib.Path(pythonpath).absolute()
@@ -240,6 +236,9 @@ class Measurement:
             # Copy the requires file templates
             directory_measurement_actual = TOPDIR / 'measurement-actual'
             for filename in directory_measurement_actual.glob('*[.py|.bat]'):
+                if filename.name == 'config_measurement.py':
+                    # To not overwrite 'config_measurement.py'!
+                    continue
                 shutil.copyfile(filename, self.dir_measurement / filename.name)
 
             logger.info(f"Measure {self.dir_measurement_raw.relative_to(self.context.topdir)}")
