@@ -23,14 +23,14 @@ def get_configsetup():
 
     config.step_0_settle.settle = True
     config.step_0_settle.settle_time_ok_s = 40.0
-    config.step_0_settle.duration_s = config.step_0_settle.settle_time_ok_s + 4.0 * 60 # maximale Zeit bis Fehler
+    config.step_0_settle.duration_s = config.step_0_settle.settle_time_ok_s + 8.0 * 60.0 # maximale Zeit bis Fehler
     config.step_0_settle.settle_input_part = 0.5
     config.step_3_slow.duration_s = 5.0 * 60.0
 
     if {SMOKE}:
         # Smoke test: Reduce times to a minimum
         config.step_0_settle.settle_time_ok_s = 40.0
-        config.step_0_settle.duration_s = config.step_0_settle.settle_time_ok_s + 4.0 * 60 # maximale Zeit bis Fehler
+        config.step_0_settle.duration_s = config.step_0_settle.settle_time_ok_s + 4.0 * 60.0 # maximale Zeit bis Fehler
         #config.step_1_fast.duration_s = 0.2
         #config.step_2_medium.duration_s = 0.5
         config.step_3_slow.duration_s = 0.5 * 60.0

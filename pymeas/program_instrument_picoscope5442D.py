@@ -218,7 +218,7 @@ class Instrument:
                     stop("time over")
 
                 if overflow:
-                    logger.warning("!!! Overflow !!!  Voltage to big at input of picoscope. Change input range.")
+                    logger.warning("!!! Overflow !!!  Voltage to big at input of picoscope. If it stays that way, change input range.")
                 # logger.debug('.', end='')
 
                 assert not auto_stop
