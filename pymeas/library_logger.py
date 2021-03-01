@@ -30,6 +30,27 @@ def init_logger_measurement(directory):
     init_logger(directory, ("logger_measurement.txt",))
 
 
+def init_logger_append(filename):
+    print(f"logging to {str(filename)}")
+    logger.setLevel(logging.INFO)
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler(filename=filename)
+    fh.setLevel(logging.DEBUG)
+
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(threadName)s - %(levelname)s - %(message)s")
+    ch.setFormatter(formatter)
+    fh.setFormatter(formatter)
+
+    # add the handlers to logger
+    logger.addHandler(ch)
+    logger.addHandler(fh)
+
+
 def init_logger(directory, filenames):
     assert isinstance(directory, pathlib.Path)
     assert isinstance(filenames, (list, tuple))
@@ -52,21 +73,4 @@ def init_logger(directory, filenames):
     else:
         raise Exception(f"All log-files locked: {filenames}")
 
-    print(f"logging to {str(filename)}")
-    logger.setLevel(logging.INFO)
-    # create file handler which logs even debug messages
-    fh = logging.FileHandler(filename=filename)
-    fh.setLevel(logging.DEBUG)
-
-    # create console handler with a higher log level
-    # ch = logging.StreamHandler()
-    # ch.setLevel(logging.INFO)
-
-    # create formatter and add it to the handlers
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(threadName)s - %(levelname)s - %(message)s")
-    # ch.setFormatter(formatter)
-    fh.setFormatter(formatter)
-
-    # add the handlers to logger
-    # logger.addHandler(ch)
-    logger.addHandler(fh)
+    init_logger_append(filename=filename)

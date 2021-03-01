@@ -1,7 +1,9 @@
 import sys
+import shutil
 import logging
 import socket
 import pathlib
+import subprocess
 from dataclasses import dataclass
 
 from mp import pyboard_query
@@ -9,9 +11,7 @@ import library_path
 
 from combinations import Speed, Environment, Combination, Combinations
 
-LOGGER_NAME = "compact_measurements"
-logger = logging.getLogger(LOGGER_NAME)
-
+EXTERN_MEASUREMENT_PROCESS = True
 
 TEMPLATE = """
 TITLE = "{TITLE}"
@@ -42,7 +42,12 @@ def get_configsetup():
     return config
 """
 
+
 TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
+
+from pymeas import library_logger  # pylint: disable=wrong-import-position
+logger = logging.getLogger(library_logger.LOGGER_NAME)
+
 
 MODULE_CONFIG_FILENAME = DIR_MEASUREMENT /  f"config_{socket.gethostname()}.py"
 if not MODULE_CONFIG_FILENAME.exists():
@@ -93,24 +98,9 @@ class MeasurementController:
         self.init_logger()
 
     def init_logger(self):
-        logger.setLevel(logging.DEBUG)
         # create file handler which logs even debug messages
         self.context.dir_measurements.mkdir(parents=True, exist_ok=True)
-        fh = logging.FileHandler(filename=self.context.dir_measurements / 'logger_measurements.txt', mode='w+')
-        fh.setLevel(logging.DEBUG)
-
-        # create console handler with a higher log level
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.INFO)
-
-        # create formatter and add it to the handlers
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        ch.setFormatter(formatter)
-        fh.setFormatter(formatter)
-
-        # add the handlers to logger
-        logger.addHandler(ch)
-        logger.addHandler(fh)
+        library_logger.init_logger_append(self.context.dir_measurements / 'logger_measurements.txt')
 
     def run_measurements(self):
         logger.info('****** run_measurements()')
@@ -246,9 +236,20 @@ class Measurement:
         if self.context.environment in (Environment.MOCKED,):
             return
 
+        if EXTERN_MEASUREMENT_PROCESS:
+            # Copy the requires file templates
+            directory_measurement_actual = TOPDIR / 'measurement-actual'
+            for filename in directory_measurement_actual.glob('*[.py|.bat]'):
+                shutil.copyfile(filename, self.dir_measurement / filename.name)
+
+            logger.info(f"Measure {self.dir_measurement_raw.relative_to(self.context.topdir)}")
+            subprocess.check_call([sys.executable, "run_0_measure.py", self.dir_measurement_raw.name], cwd=str(self.dir_measurement), creationflags=subprocess.CREATE_NEW_CONSOLE)
+            return
+
+        # TODO(hans): Obsolete: Remove
         self._add_pythonpath(self.context.topdir / "libraries" / "msl-equipment")
 
-        # pylint: disable=wrong-import-position, disable=unused-import
+        # pylint: disable=wrong-import-position,unused-import
         from pymeas import program_config_instrument_picoscope
         from pymeas import program_measure, library_topic, library_plot
 

@@ -1,10 +1,10 @@
 import sys
-import time
 
 from mp import pyboard_query
 
 sys.path.insert(0, r"C:\data\scanner_pyb\software")
 
+# pylint: disable=wrong-import-position
 import scanner_pyb_2020
 
 if __name__ == "__main__":
