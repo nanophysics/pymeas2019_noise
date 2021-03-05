@@ -2,7 +2,7 @@ from measurement import MeasurementContext, MeasurementController, Speed, Enviro
 
 CONTEXT = MeasurementContext(
     compact_serial="20000101_01",
-    measurement_date="20210301a",
+    measurement_date="20210304a",
     speed=Speed.DETAILED,
     environment=Environment.REAL
 )

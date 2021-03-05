@@ -26,7 +26,8 @@ def get_configsetup():
     config.step_0_settle.settle_time_ok_s = 40.0
     config.step_0_settle.duration_s = config.step_0_settle.settle_time_ok_s + 8.0 * 60.0 # maximale Zeit bis Fehler
     config.step_0_settle.settle_input_part = 0.5
-    config.step_3_slow.duration_s = 5.0 * 60.0
+    #config.step_3_slow.duration_s = 5.0 * 60.0 # bei 0.1 Hz noch recht verrauscht
+    config.step_3_slow.duration_s = 10.0 * 60.0 # bei 0.1 Hz noch recht verrauscht
 
     if {SMOKE}:
         # Smoke test: Reduce times to a minimum
@@ -227,6 +228,8 @@ class Measurement:
         capacitor_preamplifyer_noise_2020_F = 100e-6
         wait_s = 5.0 * resistor_B19 * capacitor_preamplifyer_noise_2020_F
         time.sleep(wait_s)
+        # pyb_scanner: disconnect
+        self.scanner_2020.reset()
         # pyb_scanner: now connect
         self.combination.configure_pyscan(self.scanner_2020)
 

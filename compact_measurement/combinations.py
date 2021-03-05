@@ -10,7 +10,7 @@ COMPACT_HV_LAST = 14
 
 # https://matplotlib.org/2.0.2/examples/color/named_colors.html
 COLOR_HV = ('red', 'green', 'blue', 'orange')
-COLOR_DA = ('blue', 'orange', 'black', 'green', 'red', 'cyan', 'magenta', 'yellow', 'purple', 'lime')
+COLOR_DA = ('blue', 'orange', 'black', 'green', 'red', 'cyan', 'magenta', 'darkgoldenrod', 'purple', 'lime') # yellow
 
 
 class Speed(Enum):
@@ -212,7 +212,7 @@ class Combination:
 
         if self.measurementtype == MeasurementType.SUPPLY:
             #return "program_config_instrument_picoscope.InputRange.R_5V" # TODO(peter): Remove
-            return "program_config_instrument_picoscope.InputRange.R_200mV"
+            return "program_config_instrument_picoscope.InputRange.R_1V"
 
         raise AttributeError()
 
