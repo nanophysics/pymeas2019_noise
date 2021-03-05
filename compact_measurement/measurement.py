@@ -10,9 +10,7 @@ from dataclasses import dataclass
 from mp import pyboard_query
 import library_path
 
-from combinations import Speed, Environment, Combination, Combinations
-
-EXTERN_MEASUREMENT_PROCESS = True
+from combinations import Speed, Combination, Combinations
 
 TEMPLATE = """
 TITLE = "{TITLE}"
@@ -48,6 +46,8 @@ def get_configsetup():
 TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
 
 from pymeas import library_logger  # pylint: disable=wrong-import-position
+from pymeas import library_topic, library_plot # pylint: disable=wrong-import-position
+
 logger = logging.getLogger(library_logger.LOGGER_NAME)
 
 
@@ -68,7 +68,9 @@ class MeasurementContext:  # pylint: disable=too-many-instance-attributes
     compact_2012 = None
     scanner_2020 = None
     speed: Speed = Speed.SMOKE
-    environment: Environment = Environment.MOCKED
+    mocked_scanner: bool = False
+    mocked_compact: bool = False
+    mocked_picoscope: bool = False
 
     @property
     def dirpart(self):
@@ -108,7 +110,8 @@ class MeasurementController:
         logger.info('****** run_measurements()')
         logger.info(f'  context.dirpart: {self.context.dirpart}')
         logger.info(f'  context.speed: {self.context.speed.name}')
-        logger.info(f'  context.environment: {self.context.environment.name}')
+        logger.info(f'  context.mocked_scanner: {self.context.mocked_scanner}')
+        logger.info(f'  context.mocked_compact: {self.context.mocked_compact}')
 
         for combination in Combinations(speed=self.context.speed):
             # print(combination)
@@ -120,6 +123,7 @@ class MeasurementController:
                 measurement.connect_pyboards()
                 measurement.configure()
                 measurement.measure()
+                measurement.plot()
                 measurement.commit()
 
     def run_qualifikation(self):
@@ -162,10 +166,14 @@ class Measurement:
             self.query_compact.board.close()
 
     def connect_pyboards(self):
-        if self.context.environment in (Environment.MOCKED, Environment.MOCKED_SCANNER_COMPACT):
+        query = []
+        if not self.context.mocked_compact:
+            query.append(self.query_compact)
+        if not self.context.mocked_scanner:
+            query.append(self.query_scanner)
+        if len(query) == 0:
             return
-
-        pyboard_query.Connect([self.query_compact, self.query_scanner])
+        pyboard_query.Connect(query)
         expected_serial = self.context.compact_serial
         connected_serial = self.query_compact.board.identification.HWSERIAL
         if expected_serial != connected_serial:
@@ -187,14 +195,17 @@ class Measurement:
         return self.dir_measurement / "config_measurement.py"
 
     def create_directory(self):
-        self.dir_measurement.mkdir(parents=True, exist_ok=True)
+        self.dir_measurement_raw.mkdir(parents=True, exist_ok=True)
 
         dict_template = {
             "TITLE": self.dir_measurement.name,
             "input_Vp": self.combination.picoscope_input_Vp,
             "SMOKE": (self.context.speed == Speed.SMOKE),
         }
-        self.config_measurement.write_text(TEMPLATE.format(**dict_template))
+        config_measurement_text = TEMPLATE.format(**dict_template)
+        if self.config_measurement. exists():
+            assert config_measurement_text == self.config_measurement.read_text()
+        self.config_measurement.write_text(config_measurement_text)
 
     def _add_pythonpath(self, pythonpath):
         path = pathlib.Path(pythonpath).absolute()
@@ -203,79 +214,64 @@ class Measurement:
         sys.path.append(str(path))
 
     def configure(self):
-        if self.context.environment != Environment.REAL:
-            return
+        if not self.context.mocked_compact:
+            self._add_pythonpath(self.context.compact_pythonpath)
+            import compact_2012_driver  # pylint: disable=import-error
+            self.compact_2012 = compact_2012_driver.Compact2012(board=self.query_compact.board)
 
-        self._add_pythonpath(self.context.compact_pythonpath)
-        import compact_2012_driver  # pylint: disable=import-error
-        self.compact_2012 = compact_2012_driver.Compact2012(board=self.query_compact.board)
+        if not self.context.mocked_scanner:
+            self._add_pythonpath(self.context.scanner_pythonpath)
+            import scanner_pyb_2020  # pylint: disable=import-error
+            self.scanner_2020 = scanner_pyb_2020.ScannerPyb2020(board=self.query_scanner.board)
+            self.scanner_2020.reset()
 
-        self._add_pythonpath(self.context.scanner_pythonpath)
-        import scanner_pyb_2020  # pylint: disable=import-error
-        self.scanner_2020 = scanner_pyb_2020.ScannerPyb2020(board=self.query_scanner.board)
-        self.scanner_2020.reset()
+        if not self.context.mocked_compact:
+            # in order to protect the preamplifyer_noise_2020 one should discharge the inputcapacitor
+            # compact: all compact DA voltages to 0V
+            dict_requested_values = {}
+            for dac in range(10):
+                dict_requested_values[dac] = {'f_DA_OUT_desired_V': 0.0}
+            self.compact_2012.sync_dac_set_all(dict_requested_values)
 
-        # in order to protect the preamplifyer_noise_2020 one should discharge the inputcapacitor
-        # compact: all compact DA voltages to 0V
-        dict_requested_values = {}
-        for dac in range(10):
-            dict_requested_values[dac] = {'f_DA_OUT_desired_V': 0.0}
-        self.compact_2012.sync_dac_set_all(dict_requested_values)
+        if not self.context.mocked_scanner:
+            # pyb_scanner: to B19, connected to a 2k2 Resistor. Together with the preamplifyer capacitor of 100uF we get a timeconstant of 0.22s.
+            self.scanner_2020.boards[1].set(19)
+            resistor_B19 = 2200.0
+            capacitor_preamplifyer_noise_2020_F = 100e-6
+            wait_s = 5.0 * resistor_B19 * capacitor_preamplifyer_noise_2020_F
+            time.sleep(wait_s)
+            # pyb_scanner: disconnect
+            self.scanner_2020.reset()
+            # pyb_scanner: now connect
+            self.combination.configure_pyscan(self.scanner_2020)
 
-        # pyb_scanner: to B19, connected to a 2k2 Resistor. Together with the preamplifyer capacitor of 100uF we get a timeconstant of 0.22s.
-        self.scanner_2020.boards[1].set(19)
-        resistor_B19 = 2200.0
-        capacitor_preamplifyer_noise_2020_F = 100e-6
-        wait_s = 5.0 * resistor_B19 * capacitor_preamplifyer_noise_2020_F
-        time.sleep(wait_s)
-        # pyb_scanner: disconnect
-        self.scanner_2020.reset()
-        # pyb_scanner: now connect
-        self.combination.configure_pyscan(self.scanner_2020)
+        if not self.context.mocked_compact:
+            # compact: DA voltage
+            dict_requested_values[self.combination.channel0] = {'f_DA_OUT_desired_V': self.combination.f_DA_OUT_desired_V}
+            self.compact_2012.sync_dac_set_all(dict_requested_values)
 
-        # compact: DA voltage
-        dict_requested_values[self.combination.channel0] = {'f_DA_OUT_desired_V': self.combination.f_DA_OUT_desired_V}
-        self.compact_2012.sync_dac_set_all(dict_requested_values)
-        
         # an dieser Stelle noch self.scanner_2020.boards[1].set(20) und man koennte die Spannung mit dem Multimeter messen.
         # Fuer die picoscope messung muss Relais 20 aber wieder ausgeschaltet sein.
         # Koennte also auch anschliessend an picoscopemessung zusaetzlich relais 20 geschaltet werden.
         # multimeter_hp34401.py
 
     def measure(self):
-        if self.context.environment in (Environment.MOCKED,):
+        if self.context.mocked_picoscope:
             return
 
-        if EXTERN_MEASUREMENT_PROCESS:
-            # Copy the requires file templates
-            directory_measurement_actual = TOPDIR / 'measurement-actual'
-            for filename in directory_measurement_actual.glob('*.*'):
-                if filename.name == 'config_measurement.py':
-                    # To not overwrite 'config_measurement.py'!
-                    continue
-                if filename.suffix in ('.bat', '.py'):
-                    shutil.copyfile(filename, self.dir_measurement / filename.name)
+        # Copy the requires file templates
+        directory_measurement_actual = TOPDIR / 'measurement-actual'
+        for filename in directory_measurement_actual.glob('*.*'):
+            if filename.name == 'config_measurement.py':
+                # To not overwrite 'config_measurement.py'!
+                continue
+            if filename.suffix in ('.bat', '.py'):
+                shutil.copyfile(filename, self.dir_measurement / filename.name)
 
-            logger.info(f"Measure {self.dir_measurement_raw.relative_to(self.context.topdir)}")
-            subprocess.check_call([sys.executable, "run_0_measure.py", self.dir_measurement_raw.name], cwd=str(self.dir_measurement), creationflags=subprocess.CREATE_NEW_CONSOLE)
-            return
+        logger.info(f"Measure {self.dir_measurement_raw.relative_to(self.context.topdir)}")
+        subprocess.check_call([sys.executable, "run_0_measure.py", self.dir_measurement_raw.name], cwd=str(self.dir_measurement), creationflags=subprocess.CREATE_NEW_CONSOLE)
 
-        # TODO(hans): Obsolete: Remove
-        self._add_pythonpath(self.context.topdir / "libraries" / "msl-equipment")
-
-        # pylint: disable=wrong-import-position,unused-import
-        from pymeas import program_config_instrument_picoscope
-        from pymeas import program_measure, library_topic, library_plot
-
-        source = self.config_measurement.read_text()
-        code = compile(source, str(self.config_measurement), 'exec')
-        global_vars = {}
-        local_vars = {}
-        exec(code, global_vars, local_vars)  # pylint: disable=exec-used
-        configsetup = local_vars['get_configsetup']()
-        configsetup.validate()
-
-        program_measure.measure2(configsetup, dir_raw=self.dir_measurement_raw)
+    def plot(self):
         plotData = library_topic.PlotDataMultipleDirectories(topdir=self.dir_measurement)
         plotFile = library_plot.PlotFile(plotData=plotData, write_files_directory=self.dir_measurement, title=self.dir_measurement.name)
         plotFile.plot_presentations()

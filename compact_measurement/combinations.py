@@ -17,11 +17,6 @@ class Speed(Enum):
     DETAILED = 1
     SMOKE = 2
 
-class Environment(Enum):
-    REAL = 1
-    MOCKED_SCANNER_COMPACT = 2
-    MOCKED = 3
-
 # Compact/Supply output voltages
 class OutputLevel(Enum):
     MINUS = 0
