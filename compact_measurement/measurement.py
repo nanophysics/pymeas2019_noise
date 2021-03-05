@@ -236,6 +236,11 @@ class Measurement:
         # compact: DA voltage
         dict_requested_values[self.combination.channel0] = {'f_DA_OUT_desired_V': self.combination.f_DA_OUT_desired_V}
         self.compact_2012.sync_dac_set_all(dict_requested_values)
+        
+        # an dieser Stelle noch self.scanner_2020.boards[1].set(20) und man koennte die Spannung mit dem Multimeter messen.
+        # Fuer die picoscope messung muss Relais 20 aber wieder ausgeschaltet sein.
+        # Koennte also auch anschliessend an picoscopemessung zusaetzlich relais 20 geschaltet werden.
+        # multimeter_hp34401.py
 
     def measure(self):
         if self.context.environment in (Environment.MOCKED,):
