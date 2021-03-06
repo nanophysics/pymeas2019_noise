@@ -1,9 +1,9 @@
-import os
 import pathlib
 import logging
 
 import numpy as np
 
+from .library_filelock import ExitCode
 from . import library_filelock
 from . import program_fir
 from . import program_configsetup
@@ -40,9 +40,7 @@ class Settle:  # pylint: disable=too-many-instance-attributes
         self.__dt_s = dt_s
 
     def done(self):
-        logger.error(f"Settling: The input voltage did not settle!")
-        logger.error(f"Exiting!")
-        os._exit(42)
+        ExitCode.ERROR_INPUT_NOT_SETTLE.os_exit(msg="Settling: The input voltage did not settle!")
 
     def push(self, array_in):
         """
@@ -64,13 +62,13 @@ class Settle:  # pylint: disable=too-many-instance-attributes
             self.__last_sample_outside_s = now_s
 
         if self.__filelock_measurement.requested_skip_settle():
-            logger.info("Settle: DONE")
+            logger.info("Settle: DONE (Manually skipped settling)")
             raise StopIteration("Manually skipped settling")
 
         if self.__filelock_measurement.requested_stop_soft():
             logger.error("Aborted by ctrl-C")
             logger.error(f"Exiting!")
-            os._exit(43)
+            ExitCode.CTRL_C.os_exit()
 
         time_left_s = self.__config.settle_time_ok_s + self.__last_sample_outside_s - now_s
 

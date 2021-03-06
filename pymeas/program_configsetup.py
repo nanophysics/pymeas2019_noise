@@ -1,12 +1,11 @@
-import sys
 import enum
 import types
 import logging
 import pathlib
 
 from .program_lockingmixin import LockingMixin
+from .library_filelock import ExitCode, FilelockMeasurement
 
-from . import library_filelock
 from . import program_fir
 
 logger = logging.getLogger("logger")
@@ -135,18 +134,18 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
 
         try:
             self.measure_for_all_steps(dir_measurement=dir_measurement, dir_raw=dir_raw)
-        except Exception:  # pylint: disable=broad-except
+            ExitCode.OK.os_exit()
+        except Exception as e:  # pylint: disable=broad-except
             import traceback
 
             traceback.print_exc()
-            logger.info("Hit any key to terminate")
-            sys.stdin.read()
+            ExitCode.ERROR_PICOSCOPE.os_exit(msg=str(e))
 
     def measure_for_all_steps(self, dir_measurement, dir_raw):
         assert isinstance(dir_measurement, pathlib.Path)
         assert isinstance(dir_raw, pathlib.Path)
 
-        _lock = library_filelock.FilelockMeasurement()
+        _lock = FilelockMeasurement()
 
         for configstep in self.configsteps:
             _lock.update_status(f"Measuring: {dir_raw.name} / {configstep.stepname}")

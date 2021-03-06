@@ -2,5 +2,9 @@
   "python.linting.pylintEnabled": true,
   "python.linting.enabled": true,
   "python.formatting.provider": "black",
-  "python.formatting.blackArgs": ["--config", "${workspaceFolder}/.blackconfig.yaml"]
+  "python.formatting.blackArgs": [
+    "--config",
+    "${workspaceFolder}/.blackconfig.yaml"
+  ],
+  "python.pythonPath": "C:\\Users\\maerki\\AppData\\Local\\Programs\\Python\\Python37-32\\python.exe"
 }

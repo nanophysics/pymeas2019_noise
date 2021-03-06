@@ -9,8 +9,23 @@ from dataclasses import dataclass
 
 from mp import pyboard_query
 import library_path
+from library_stati import Stati
 
-from combinations import Speed, Combination, Combinations
+from library_combinations import Speed, Combination
+
+TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
+
+from pymeas.library_filelock import ExitCode  # pylint: disable=wrong-import-position
+from pymeas import library_logger  # pylint: disable=wrong-import-position
+
+logger = logging.getLogger(library_logger.LOGGER_NAME)
+
+MODULE_CONFIG_FILENAME = DIR_MEASUREMENT /  f"config_{socket.gethostname()}.py"
+if not MODULE_CONFIG_FILENAME.exists():
+    print(f"ERROR: Missing file: {MODULE_CONFIG_FILENAME.name}")
+    sys.exit(1)
+
+MODULE_CONFIG = __import__(MODULE_CONFIG_FILENAME.with_suffix('').name)
 
 TEMPLATE = """
 TITLE = "{TITLE}"
@@ -29,7 +44,7 @@ def get_configsetup():
 
     if {SMOKE}:
         # Smoke test: Reduce times to a minimum
-        config.step_0_settle.settle_time_ok_s = 40.0
+        config.step_0_settle.settle_time_ok_s = 5.0
         config.step_0_settle.duration_s = config.step_0_settle.settle_time_ok_s + 4.0 * 60.0 # maximale Zeit bis Fehler
         #config.step_1_fast.duration_s = 0.2
         #config.step_2_medium.duration_s = 0.5
@@ -43,20 +58,6 @@ def get_configsetup():
 """
 
 
-TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
-
-from pymeas import library_logger  # pylint: disable=wrong-import-position
-from pymeas import library_topic, library_plot # pylint: disable=wrong-import-position
-
-logger = logging.getLogger(library_logger.LOGGER_NAME)
-
-
-MODULE_CONFIG_FILENAME = DIR_MEASUREMENT /  f"config_{socket.gethostname()}.py"
-if not MODULE_CONFIG_FILENAME.exists():
-    print(f"ERROR: Missing file: {MODULE_CONFIG_FILENAME.name}")
-    sys.exit(1)
-
-MODULE_CONFIG = __import__(MODULE_CONFIG_FILENAME.with_suffix('').name)
 
 @dataclass
 class MeasurementContext:  # pylint: disable=too-many-instance-attributes
@@ -73,64 +74,13 @@ class MeasurementContext:  # pylint: disable=too-many-instance-attributes
     mocked_picoscope: bool = False
 
     @property
-    def dirpart(self):
+    def dir_measurement_date(self):
         # 20201111_03
-        return f"{self.compact_serial}-{self.measurement_date}"
+        return self.dir_measurements / f"{self.compact_serial}-{self.measurement_date}"
 
     @property
     def dir_measurements(self):
         return self.topdir / 'compact_measurements'
-
-@dataclass
-class Stati:
-    topdir: pathlib.Path
-    filename: pathlib.Path
-
-    def commit(self):
-        # logger.info(f'    commit(): {self.filename.relative_to(self.topdir)}')
-        self.filename.write_text('DONE')
-
-    def is_done(self):
-        _done = self.filename.exists()
-        # if _done:
-            # logger.info(f'    is_done(): SKIPPED: File exists {self.filename.relative_to(self.topdir)}')
-        return _done
-
-class MeasurementController:
-    def __init__(self, context):
-        self.context = context
-        self.init_logger()
-
-    def init_logger(self):
-        # create file handler which logs even debug messages
-        self.context.dir_measurements.mkdir(parents=True, exist_ok=True)
-        library_logger.init_logger_append(self.context.dir_measurements / 'logger_measurements.txt')
-
-    def run_measurements(self):
-        logger.info('****** run_measurements()')
-        logger.info(f'  context.dirpart: {self.context.dirpart}')
-        logger.info(f'  context.speed: {self.context.speed.name}')
-        logger.info(f'  context.mocked_scanner: {self.context.mocked_scanner}')
-        logger.info(f'  context.mocked_compact: {self.context.mocked_compact}')
-
-        for combination in Combinations(speed=self.context.speed):
-            # print(combination)
-            with Measurement(self.context, combination) as measurement:
-                if measurement.is_done():
-                    continue
-                logger.info(f'    {measurement.dir_measurement_raw.relative_to(self.context.dir_measurements)}')
-                measurement.create_directory()
-                measurement.connect_pyboards()
-                measurement.configure()
-                measurement.measure()
-                measurement.plot()
-                measurement.commit()
-
-    def run_qualifikation(self):
-        logger.info('    run_qualifikation()')
-
-    def run_diagrams(self):
-        logger.info('    run_diagrams()')
 
 class Measurement:
     def __init__(self, context: MeasurementContext, combination: Combination):
@@ -140,24 +90,15 @@ class Measurement:
         self.query_compact = pyboard_query.BoardQueryPyboard('compact_2012')
         self.compact_2012 = None
         self.scanner_2020 = None
-        # 20201111_03-DAdirect-10V/stati_DA01_done.txt
-        # f_stati = self._dir_measurement_raw
-        # self.stati = Stati(f_stati.with_name(f"stati_{f_stati.name}_measurement_done.txt"))
-
-        # 20201111_03-DAdirect-10V/DA01/stati_done.txt
-        self.stati = Stati(self.context.dir_measurements, self.dir_measurement_raw / "stati_measurement_done.txt")
+        # 20201111_03-DAdirect-10V/DA01/stati_measurement_done.txt
+        self.stati_measurement = Stati(self.context.dir_measurements, self.dir_measurement_channel / "stati_measurement_done.txt")
+        self.stati_plot = Stati(self.context.dir_measurements, self.dir_measurementtype / "stati_plot_done.txt")
 
     def __enter__(self):
         return self
 
     def __exit__(self, _type, value, tb):
         self.close()
-
-    def is_done(self):
-        return self.stati.is_done()
-
-    def commit(self):
-        return self.stati.commit()
 
     def close(self):
         if self.query_scanner.board is not None:
@@ -180,32 +121,36 @@ class Measurement:
             raise Exception(f'Expected compact_2012 with hw_serial={expected_serial}, but {connected_serial} is connected!')
 
     @property
-    def dir_measurement(self):
+    def dir_measurementtype(self):
         # compact_measurements/20000101_01-20201130a/DA_OUT_+10V
-        return self.context.dir_measurements / self.context.dirpart / self.combination.dirpart
+        return self.context.dir_measurement_date / self.combination.dirpart_measurementtype
 
     @property
-    def dir_measurement_raw(self):
+    def dir_measurement_channel(self):
         # 20201111_03-DAdirect-10V/DA01
-        return self.dir_measurement / f"raw-{self.combination.channel_color_text}"
+        return self.dir_measurementtype / f"raw-{self.combination.channel_color_text}"
 
     @property
     def config_measurement(self):
         # 20201111_03-DAdirect-10V/DA01
-        return self.dir_measurement / "config_measurement.py"
+        return self.dir_measurementtype / "config_measurement.py"
 
     def create_directory(self):
-        self.dir_measurement_raw.mkdir(parents=True, exist_ok=True)
+        self.dir_measurementtype.mkdir(parents=True, exist_ok=True)
 
         dict_template = {
-            "TITLE": self.dir_measurement.name,
+            "TITLE": self.dir_measurementtype.name,
             "input_Vp": self.combination.picoscope_input_Vp,
             "SMOKE": (self.context.speed == Speed.SMOKE),
         }
+
         config_measurement_text = TEMPLATE.format(**dict_template)
-        if self.config_measurement. exists():
-            assert config_measurement_text == self.config_measurement.read_text()
-        self.config_measurement.write_text(config_measurement_text)
+        if not self.config_measurement.exists():
+            self.config_measurement.write_text(config_measurement_text)
+
+        # We expect that the file 'config_measurement' always has the same content
+        if config_measurement_text != self.config_measurement.read_text():
+            logger.error(f'Contents changed: {self.config_measurement}')
 
     def _add_pythonpath(self, pythonpath):
         path = pathlib.Path(pythonpath).absolute()
@@ -266,12 +211,18 @@ class Measurement:
                 # To not overwrite 'config_measurement.py'!
                 continue
             if filename.suffix in ('.bat', '.py'):
-                shutil.copyfile(filename, self.dir_measurement / filename.name)
+                shutil.copyfile(filename, self.dir_measurementtype / filename.name)
 
-        logger.info(f"Measure {self.dir_measurement_raw.relative_to(self.context.topdir)}")
-        subprocess.check_call([sys.executable, "run_0_measure.py", self.dir_measurement_raw.name], cwd=str(self.dir_measurement), creationflags=subprocess.CREATE_NEW_CONSOLE)
+        logger.info(f"Measure {self.dir_measurement_channel.relative_to(self.context.topdir)}")
+        self.subprocess(cmd="run_0_measure.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / 'logger_measurement.txt')
 
     def plot(self):
-        plotData = library_topic.PlotDataMultipleDirectories(topdir=self.dir_measurement)
-        plotFile = library_plot.PlotFile(plotData=plotData, write_files_directory=self.dir_measurement, title=self.dir_measurement.name)
-        plotFile.plot_presentations()
+        self.subprocess(cmd="run_1_condense.py", arg=self.dir_measurementtype.name, logfile=self.dir_measurementtype / 'logger_condense.txt')
+
+    def subprocess(self, cmd:str, arg:str, logfile:pathlib.Path):
+        rc = subprocess.call([sys.executable, cmd, arg], cwd=str(self.dir_measurementtype), creationflags=subprocess.CREATE_NEW_CONSOLE)
+        if rc == ExitCode.OK.value:
+            return
+        if rc == ExitCode.CTRL_C.value:
+            ExitCode.CTRL_C.os_exit(f'Pressed <ctrl-c> in "{cmd} {arg}". See logfile: {str(logfile)}')
+        logger.error(f'Command to "{cmd} {arg}" returned {rc}. See logfile: {str(logfile)}')

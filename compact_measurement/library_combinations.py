@@ -93,7 +93,6 @@ class MeasurementType(Enum):
     def __repr__(self):
         return self.name
 
-
 @dataclass
 class Combination:
     measurementtype: MeasurementType
@@ -118,7 +117,7 @@ class Combination:
         return self.channel-1
 
     @property
-    def dirpart(self):
+    def dirpart_measurementtype(self):
         # DAdirect-10V
         if self.measurementtype == MeasurementType.SUPPLY:
             return f"{self.measurementtype.name}_{self.level.supply}"

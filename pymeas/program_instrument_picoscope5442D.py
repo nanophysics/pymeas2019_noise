@@ -7,6 +7,7 @@ import numpy as np
 
 from . import program_configsetup
 from . import program_measurement_stream
+from .library_filelock import ExitCode
 
 logger = logging.getLogger("logger")
 
@@ -181,7 +182,7 @@ class Instrument:
                     logger.info(f"StreamingReady Callback: overviewBuffers={overviewBuffers}, overflow={overflow}, auto_stop={auto_stop}, nValues={nValues}")
                 if auto_stop:
                     self.streaming_done = True
-                    stream.put_EOF()
+                    stream.put_EOF(ExitCode.ERROR)
                     logger.info(r"STOP(time over)")
 
         if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
@@ -197,7 +198,7 @@ class Instrument:
                 queueFull = stream.put(adu_values)
                 if queueFull:
                     self.streaming_done = True
-                    stream.put_EOF()
+                    stream.put_EOF(ExitCode.OK)
                     logger.info("STOP(queue full)")
 
                 if overflow:
@@ -206,16 +207,18 @@ class Instrument:
 
                 self.actual_sample_count += num_samples
 
-                def stop(reason):
+                def stop(exit_code: ExitCode, reason: str):
+                    assert isinstance(exit_code, ExitCode)
+                    assert isinstance(reason, str)
                     self.streaming_done = True
-                    stream.put_EOF()
+                    stream.put_EOF(exit_code=exit_code)
                     logger.info(f"STOP({reason})")
 
                 if filelock_measurement.requested_stop_soft():
-                    stop("<ctrl-c> or softstop")
+                    stop(ExitCode.CTRL_C, "<ctrl-c> or softstop")
 
                 if self.actual_sample_count > total_samples:
-                    stop("time over")
+                    stop(ExitCode.OK, "time over")
 
                 if overflow:
                     logger.warning("!!! Overflow !!!  Voltage to big at input of picoscope. If it stays that way, change input range.")

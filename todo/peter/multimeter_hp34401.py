@@ -14,9 +14,9 @@ print(instrument.write("TRIG:SOUR IMM"))
 
 voltage = 0.0
 for i in range(i_average):
-  string = instrument.query("READ?")
-  voltage += float(string)
-  print('Messung {:d}  Spannung {:.10f} V'.format(i, float(string))) # punkte
+    string = instrument.query("READ?")
+    voltage += float(string)
+    print('Messung {:d}  Spannung {:.10f} V'.format(i, float(string))) # punkte
 voltage = voltage / i_average
 print('Der Mittelwert ist: {:.10f} V\n'.format(voltage))
 

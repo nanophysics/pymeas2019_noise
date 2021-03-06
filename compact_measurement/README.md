@@ -1,4 +1,39 @@
-TODO: Add directory structure
+# Gesamtkontrolle
+
+`run_measurements` ruft subjobs `measure` und `plot` auf.
+
+Wird ein subjob mit <ctrl-C> abgebrochen, so soll auch `run_measurements` abgebrochen werden.
+
+## Dependencies
+
+### Structure
+All filenames below will be build like `stati_<NAME>_done.txt`.
+
+Timescale: downwords
+
+measurements
+  -
+    measurement_DA01
+    plot_DA01
+  -
+    measurement_DA02
+    plot_DA02
+  measurement_DA_DIRECT_10V
+  plot_DA_DIRECT_10V
+
+### Dependencies - depends-on
+plot_DA01 depends-on measurement_DA01
+plot_DA_DIRECT_10V depends-on measurement_DA_DIRECT_10V
+
+==> if LEFT.timestamp < RIGHT.timestamp: process LEFT
+
+### Dependencies - feeds
+measurement_DA01 feeds measurement_DA_DIRECT_10V
+plot_DA_DIRECT_10V feeds measurements
+
+==> process LEFT: remove stati of RIGHT
+
+## Directories
 
 <compact_serial>-<messdatum>-<messung>-<voltage>/<channel>
 

@@ -4,6 +4,8 @@ import queue
 import logging
 import threading
 
+from pymeas.library_filelock import ExitCode
+
 logger = logging.getLogger("logger")
 
 IS64BIT = sys.maxsize > 2 ** 32
@@ -81,7 +83,7 @@ class InThread:  # pylint: disable=too-many-instance-attributes
         try:
             while True:
                 raw_data_in = self.__queue.get()
-                if raw_data_in is None:
+                if isinstance(raw_data_in, ExitCode):
                     self.out.done()
                     break
                 samples = len(raw_data_in)
@@ -104,8 +106,9 @@ class InThread:  # pylint: disable=too-many-instance-attributes
         self.thread = threading.Thread(target=self.worker)
         self.thread.start()
 
-    def put_EOF(self):
-        self.__queue.put(None)
+    def put_EOF(self, exit_code):
+        assert isinstance(exit_code, ExitCode)
+        self.__queue.put(exit_code)
 
     def put(self, raw_data):
         self.__queue.put(raw_data)
@@ -141,7 +144,7 @@ def run():
         _s = 1.0 * np.sin(2 * np.pi * t / 2.0)  # + 0 * cnse
 
         i.put(_s)
-        i.put_EOF()
+        i.put_EOF(ExitCode.OK)
 
     i.join()
     sp.plot()  # pylint: disable=no-member
