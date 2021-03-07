@@ -19,9 +19,10 @@ def postprocess_voltage(measurement):
     expected_V, tol_V = measurement.combination.expected_V
     logger.info(expected_V)
     # min < meas < max, %
-    diff = expected_V - measured_V
-    procent = diff / tol_V
-    logger.info(f'{measured_V:0.3}V {procent*100.0:0.0f}% ({expected_V:0.3f}+/-{tol_V:0.3f}V)')
+    diff_V = expected_V - measured_V
+    diff_relative = diff_V / tol_V
+    logger.info(f'{measured_V:0.3}V {diff_relative*100.0:0.0f}% ({expected_V:0.3f}+/-{tol_V:0.3f}V)')
+    return True
 
 def postprocess(dir_raw):
     isinstance(dir_raw, pathlib.Path)

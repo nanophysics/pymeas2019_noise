@@ -37,21 +37,29 @@ class MeasurementController:
         for combination in Combinations(speed=self.context.speed):
             # print(combination)
             with Measurement(self.context, combination) as measurement:
-                with measurement.stati_meastype_channel_noise as stati:
-                    if stati.requires_to_run:
-                        measurement.create_directory()
-                        measurement.connect_pyboards()
-                        measurement.configure(voltage=True)
-                        measurement.measure_voltage()
-                        measurement.configure(density=True)
-                        measurement.measure_density()
-                        if not self.context.mocked_picoscope:
+                try:
+                    with measurement.stati_meastype_channel_noise as stati:
+                        if stati.requires_to_run:
+                            measurement.create_directory()
+                            measurement.connect_pyboards()
+                            measurement.configure(voltage=True)
+                            measurement.measure_voltage()
+                            measurement.configure(density=True)
+                            measurement.measure_density()
+                            if not self.context.mocked_picoscope:
+                                stati.commit()
+
+                    with measurement.stati_meastype_channel_plot as stati:
+                        if stati.requires_to_run:
+                            measurement.channel_plot()
                             stati.commit()
 
-                with measurement.stati_meastype_channel_plot as stati:
-                    if stati.requires_to_run:
-                        measurement.plot()
-                        stati.commit()
+                    with measurement.stati_meastype_noise as stati:
+                        if stati.requires_to_run:
+                            measurement.meastype_plot()
+                            stati.commit()
+                except Exception as e:  # pylint: disable=broad-except
+                    logger.exception(e)
 
     def run_qualifikation(self) -> None:
         logger.info("****** run_qualifikation()")

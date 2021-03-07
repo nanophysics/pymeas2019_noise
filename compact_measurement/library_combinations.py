@@ -28,7 +28,7 @@ class OutputLevel(Enum):
     def expected_V(self, meastype: 'MeasurementType'):
         '''
         return expected_V, +/-V
-        for example (10, 0.1)
+        For example: (10.0, 0.1)
         '''
         return {
             MeasurementType.DA: {

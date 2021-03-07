@@ -280,15 +280,20 @@ class Measurement:
         if self.context.mocked_picoscope:
             return
 
-        self.subprocess(cmd="run_0_measure.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / "logger_measurement.txt")
+        self.subprocess(args=["run_0_measure.py", self.dir_measurement_channel.name], logfile=self.dir_measurement_channel / "logger_measurement.txt")
 
-    def plot(self):
-        self.subprocess(cmd="run_1_condense.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurementtype / "logger_condense.txt")
+    def channel_plot(self):
+        return self.subprocess(args=["run_1_condense.py", self.dir_measurement_channel.name], logfile=self.dir_measurement_channel / "logger_condense.txt")
 
-    def subprocess(self, cmd: str, arg: str, logfile: pathlib.Path):
-        rc = subprocess.call([sys.executable, cmd, arg], cwd=str(self.dir_measurementtype), creationflags=subprocess.CREATE_NEW_CONSOLE)
+    def meastype_plot(self):
+        return self.subprocess(args=["run_1_condense.py"], logfile=self.dir_measurementtype / "logger_condense.txt")
+
+    def subprocess(self, args: list, logfile: pathlib.Path):
+        assert isinstance(args, list)
+        rc = subprocess.call([sys.executable,]+args, cwd=str(self.dir_measurementtype), creationflags=subprocess.CREATE_NEW_CONSOLE)
         if rc == ExitCode.OK.value:
             return
         if rc == ExitCode.CTRL_C.value:
-            ExitCode.CTRL_C.os_exit(f'Pressed <ctrl-c> in "{cmd} {arg}". See logfile: {str(logfile)}')
-        logger.error(f'Command to "{cmd} {arg}" returned {rc}. See logfile: {str(logfile)}')
+            ExitCode.CTRL_C.os_exit(f'Pressed <ctrl-c> in "{args}". See logfile: {str(logfile)}')
+            return
+        raise Exception(f'Command to "{args}" returned {rc}. See logfile: {str(logfile)}')
