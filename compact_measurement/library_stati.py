@@ -5,9 +5,9 @@ from dataclasses import dataclass
 
 logger = logging.getLogger('logger')
 
-TAG_COMMIT = 'stati: COMMMIT'
-TAG_RUN    = 'stati:    RUN'
-TAG_SKIP   = 'stati:   SKIP'
+TAG_COMMIT = 'stati_COMMMIT'
+TAG_RUN    = 'stati_____RUN'
+TAG_SKIP   = 'stati____SKIP'
 
 @dataclass
 class Stati:

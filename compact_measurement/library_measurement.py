@@ -56,6 +56,20 @@ def get_configsetup():
 """
 
 @dataclass
+class VoltageMeasurement:
+    file: pathlib.Path
+
+    def write(self, value) -> None:
+        assert isinstance(value, float)
+        self.file.parent.mkdir(parents=True, exist_ok=True)
+        self.file.write_text(str(47.11))
+
+    def read(self) -> None:
+        if self.file.exists:
+            return None
+        return float(self.file.read_text())
+
+@dataclass
 class MeasurementContext:  # pylint: disable=too-many-instance-attributes
     compact_serial: str
     measurement_date: str
@@ -68,6 +82,7 @@ class MeasurementContext:  # pylint: disable=too-many-instance-attributes
     mocked_scanner: bool = False
     mocked_compact: bool = False
     mocked_picoscope: bool = False
+    mocked_voltmeter: bool = False
 
     @property
     def stati(self):
@@ -138,6 +153,11 @@ class Measurement:
         return self.dir_measurementtype / f"raw-{self.combination.channel_color_text}"
 
     @property
+    def measurement_channel_voltage(self):
+        # 20201111_03-DAdirect-10V/DA01
+        return VoltageMeasurement(file=self.dir_measurement_channel / 'stati_voltage.txt')
+
+    @property
     def config_measurement(self):
         # 20201111_03-DAdirect-10V/DA01
         return self.dir_measurementtype / "config_measurement.py"
@@ -165,7 +185,9 @@ class Measurement:
         assert path.is_dir()
         sys.path.append(str(path))
 
-    def configure(self):
+    def configure(self, voltage=False, density=False):
+        assert voltage != density
+
         if not self.context.mocked_compact:
             self._add_pythonpath(self.context.compact_pythonpath)
             import compact_2012_driver  # pylint: disable=import-error
@@ -196,18 +218,46 @@ class Measurement:
             self.scanner_2020.reset()
             # pyb_scanner: now connect
             self.combination.configure_pyscan(self.scanner_2020)
+            if voltage:
+                # Spannung mit dem Multimeter messen
+                self.scanner_2020.boards[1].set(20)
 
         if not self.context.mocked_compact:
             # compact: DA voltage
             dict_requested_values[self.combination.channel0] = {'f_DA_OUT_desired_V': self.combination.f_DA_OUT_desired_V}
             self.compact_2012.sync_dac_set_all(dict_requested_values)
 
-        # an dieser Stelle noch self.scanner_2020.boards[1].set(20) und man koennte die Spannung mit dem Multimeter messen.
-        # Fuer die picoscope messung muss Relais 20 aber wieder ausgeschaltet sein.
-        # Koennte also auch anschliessend an picoscopemessung zusaetzlich relais 20 geschaltet werden.
-        # multimeter_hp34401.py
+    def measure_voltage(self):
+        if self.context.mocked_voltmeter:
+            self.measurement_channel_voltage.write(47.11)
+            return
 
-    def measure(self):
+        import visa  # pylint: disable=import-error
+        rm = visa.ResourceManager()
+        try:
+            rm.list_resources()
+            AVERAGE_COUNT = 8
+            instrument = rm.open_resource('GPIB0::12::INSTR')
+            instrument.timeout = 5000
+            instrument.write("*RST")
+            instrument.write("*CLS")
+            instrument.write("CONF:VOLT:DC")
+            instrument.write("INP:IMP:AUTO ON")
+            instrument.write("VOLT:DC:NPLC 10") # NPLC: Integration over powerlinecycles, 0.02 0.2 1 10 100
+            instrument.write("TRIG:SOUR IMM")
+
+            voltage = 0.0
+            for i in range(AVERAGE_COUNT):
+                string = instrument.query("READ?")
+                voltage += float(string)
+                logger.debug(f'Voltmeter: Messung {i}  Spannung {voltage:.10f} V')
+            voltage = voltage / AVERAGE_COUNT
+            logger.debug('Voltmeter: Mittelwert: {voltage:.10f} V')
+            self.measurement_channel_voltage.write(voltage)
+        finally:
+            rm.close()
+
+    def measure_density(self):
         if self.context.mocked_picoscope:
             return
 
@@ -220,7 +270,6 @@ class Measurement:
             if filename.suffix in ('.bat', '.py'):
                 shutil.copyfile(filename, self.dir_measurementtype / filename.name)
 
-        logger.info(f"Measure {self.dir_measurement_channel.relative_to(self.context.topdir)}")
         self.subprocess(cmd="run_0_measure.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / 'logger_measurement.txt')
 
     def plot(self):

@@ -10,7 +10,8 @@ CONTEXT = MeasurementContext(
     speed=Speed.SMOKE,
     mocked_picoscope=False,
     mocked_scanner=True,
-    mocked_compact=True
+    mocked_compact=True,
+    mocked_voltmeter=True
 )
 
 def main():

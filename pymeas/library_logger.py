@@ -6,7 +6,7 @@ DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 LOGGER_NAME = "logger"
 logger = logging.getLogger(LOGGER_NAME)
 
-LOGGING_DEFAULT_FMT = "%(asctime)s - %(name)s - %(threadName)s - %(levelname)5s - %(message)s"
+LOGGING_DEFAULT_FMT = "%(asctime)s - %(name)s - %(threadName)s - %(levelname)7s - %(message)s"
 LOGGING_DEFAULT_DATEFMT = '%Y-%m-%d %H:%M:%S'
 
 class Dummy:

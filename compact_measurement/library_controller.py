@@ -14,20 +14,23 @@ class MeasurementController:
     def init_logger(self):
         # create file handler which logs even debug messages
         self.context.dir_measurements.mkdir(parents=True, exist_ok=True)
-        library_logger.init_logger_append(self.context.dir_measurements / 'logger_measurements.txt', fmt="%(asctime)s %(levelname)5s %(message)s")
+        library_logger.init_logger_append(self.context.dir_measurements / 'logger_measurements.txt', fmt="%(asctime)s %(levelname)7s %(message)s")
 
-    def run(self):
+    def run(self) -> None:
         with self.context.stati as stati:
             self.run_measurements()
             self.run_qualifikation()
             self.run_diagrams()
 
-    def run_measurements(self):
+    def run_measurements(self) -> None:
         logger.info('****** run_measurements()')
         logger.info(f'  context.dir_measurement_date: {self.context.dir_measurement_date}')
         logger.info(f'  context.speed: {self.context.speed.name}')
-        logger.info(f'  context.mocked_scanner: {self.context.mocked_scanner}')
-        logger.info(f'  context.mocked_compact: {self.context.mocked_compact}')
+        for device in ('picoscope', 'voltmeter', 'scanner', 'compact'):
+            name = f'mocked_{device}'
+            mocked = getattr(self.context, name)
+            if mocked:
+                logger.warning(f'  context.{name}: MOCKED')
 
         for combination in Combinations(speed=self.context.speed):
             # print(combination)
@@ -36,8 +39,10 @@ class MeasurementController:
                     if stati.requires_to_run:
                         measurement.create_directory()
                         measurement.connect_pyboards()
-                        measurement.configure()
-                        measurement.measure()
+                        measurement.configure(voltage=True)
+                        measurement.measure_voltage()
+                        measurement.configure(density=True)
+                        measurement.measure_density()
                         if not self.context.mocked_picoscope:
                             stati.commit()
 
@@ -46,8 +51,8 @@ class MeasurementController:
                         measurement.plot()
                         stati.commit()
 
-    def run_qualifikation(self):
-        logger.info('    run_qualifikation()')
+    def run_qualifikation(self) -> None:
+        pass
 
-    def run_diagrams(self):
-        logger.info('    run_diagrams()')
+    def run_diagrams(self) -> None:
+        pass
