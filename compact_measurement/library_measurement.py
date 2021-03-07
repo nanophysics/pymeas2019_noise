@@ -16,14 +16,14 @@ TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
 from library_combinations import Speed, Combination  # pylint: disable=wrong-import-position
 from pymeas.library_filelock import ExitCode  # pylint: disable=wrong-import-position
 
-logger = logging.getLogger('logger')
+logger = logging.getLogger("logger")
 
-MODULE_CONFIG_FILENAME = DIR_MEASUREMENT /  f"config_{socket.gethostname()}.py"
+MODULE_CONFIG_FILENAME = DIR_MEASUREMENT / f"config_{socket.gethostname()}.py"
 if not MODULE_CONFIG_FILENAME.exists():
     print(f"ERROR: Missing file: {MODULE_CONFIG_FILENAME.name}")
     sys.exit(1)
 
-MODULE_CONFIG = __import__(MODULE_CONFIG_FILENAME.with_suffix('').name)
+MODULE_CONFIG = __import__(MODULE_CONFIG_FILENAME.with_suffix("").name)
 
 TEMPLATE = """
 TITLE = "{TITLE}"
@@ -55,6 +55,7 @@ def get_configsetup():
     return config
 """
 
+
 @dataclass
 class VoltageMeasurement:
     file: pathlib.Path
@@ -68,6 +69,7 @@ class VoltageMeasurement:
         if self.file.exists:
             return None
         return float(self.file.read_text())
+
 
 @dataclass
 class MeasurementContext:  # pylint: disable=too-many-instance-attributes
@@ -95,14 +97,15 @@ class MeasurementContext:  # pylint: disable=too-many-instance-attributes
 
     @property
     def dir_measurements(self):
-        return self.topdir / 'compact_measurements'
+        return self.topdir / "compact_measurements"
+
 
 class Measurement:
     def __init__(self, context: MeasurementContext, combination: Combination):
         self.context = context
         self.combination = combination
-        self.query_scanner = pyboard_query.BoardQueryPyboard('scanner_pyb_2020')
-        self.query_compact = pyboard_query.BoardQueryPyboard('compact_2012')
+        self.query_scanner = pyboard_query.BoardQueryPyboard("scanner_pyb_2020")
+        self.query_compact = pyboard_query.BoardQueryPyboard("compact_2012")
         self.compact_2012 = None
         self.scanner_2020 = None
         # 20201111_03-DAdirect-10V/DA01/stati_measurement_done.txt
@@ -140,7 +143,7 @@ class Measurement:
         expected_serial = self.context.compact_serial
         connected_serial = self.query_compact.board.identification.HWSERIAL
         if expected_serial != connected_serial:
-            raise Exception(f'Expected compact_2012 with hw_serial={expected_serial}, but {connected_serial} is connected!')
+            raise Exception(f"Expected compact_2012 with hw_serial={expected_serial}, but {connected_serial} is connected!")
 
     @property
     def dir_measurementtype(self):
@@ -155,7 +158,7 @@ class Measurement:
     @property
     def measurement_channel_voltage(self):
         # 20201111_03-DAdirect-10V/DA01
-        return VoltageMeasurement(file=self.dir_measurement_channel / 'stati_voltage.txt')
+        return VoltageMeasurement(file=self.dir_measurement_channel / "stati_voltage.txt")
 
     @property
     def config_measurement(self):
@@ -177,7 +180,7 @@ class Measurement:
 
         # We expect that the file 'config_measurement' always has the same content
         if config_measurement_text != self.config_measurement.read_text():
-            logger.error(f'Contents changed: {self.config_measurement}')
+            logger.error(f"Contents changed: {self.config_measurement}")
 
     def _add_pythonpath(self, pythonpath):
         path = pathlib.Path(pythonpath).absolute()
@@ -191,11 +194,13 @@ class Measurement:
         if not self.context.mocked_compact:
             self._add_pythonpath(self.context.compact_pythonpath)
             import compact_2012_driver  # pylint: disable=import-error
+
             self.compact_2012 = compact_2012_driver.Compact2012(board=self.query_compact.board)
 
         if not self.context.mocked_scanner:
             self._add_pythonpath(self.context.scanner_pythonpath)
             import scanner_pyb_2020  # pylint: disable=import-error
+
             self.scanner_2020 = scanner_pyb_2020.ScannerPyb2020(board=self.query_scanner.board)
             self.scanner_2020.reset()
 
@@ -204,7 +209,7 @@ class Measurement:
             # compact: all compact DA voltages to 0V
             dict_requested_values = {}
             for dac in range(10):
-                dict_requested_values[dac] = {'f_DA_OUT_desired_V': 0.0}
+                dict_requested_values[dac] = {"f_DA_OUT_desired_V": 0.0}
             self.compact_2012.sync_dac_set_all(dict_requested_values)
 
         if not self.context.mocked_scanner:
@@ -224,7 +229,7 @@ class Measurement:
 
         if not self.context.mocked_compact:
             # compact: DA voltage
-            dict_requested_values[self.combination.channel0] = {'f_DA_OUT_desired_V': self.combination.f_DA_OUT_desired_V}
+            dict_requested_values[self.combination.channel0] = {"f_DA_OUT_desired_V": self.combination.f_DA_OUT_desired_V}
             self.compact_2012.sync_dac_set_all(dict_requested_values)
 
     def measure_voltage(self):
@@ -233,26 +238,27 @@ class Measurement:
             return
 
         import visa  # pylint: disable=import-error
+
         rm = visa.ResourceManager()
         try:
             rm.list_resources()
             AVERAGE_COUNT = 8
-            instrument = rm.open_resource('GPIB0::12::INSTR')
+            instrument = rm.open_resource("GPIB0::12::INSTR")
             instrument.timeout = 5000
             instrument.write("*RST")
             instrument.write("*CLS")
             instrument.write("CONF:VOLT:DC")
             instrument.write("INP:IMP:AUTO ON")
-            instrument.write("VOLT:DC:NPLC 10") # NPLC: Integration over powerlinecycles, 0.02 0.2 1 10 100
+            instrument.write("VOLT:DC:NPLC 10")  # NPLC: Integration over powerlinecycles, 0.02 0.2 1 10 100
             instrument.write("TRIG:SOUR IMM")
 
             voltage = 0.0
             for i in range(AVERAGE_COUNT):
                 string = instrument.query("READ?")
                 voltage += float(string)
-                logger.debug(f'Voltmeter: Messung {i}  Spannung {voltage:.10f} V')
+                logger.debug(f"Voltmeter: Messung {i}  Spannung {voltage:.10f} V")
             voltage = voltage / AVERAGE_COUNT
-            logger.debug('Voltmeter: Mittelwert: {voltage:.10f} V')
+            logger.debug("Voltmeter: Mittelwert: {voltage:.10f} V")
             self.measurement_channel_voltage.write(voltage)
         finally:
             rm.close()
@@ -262,20 +268,20 @@ class Measurement:
             return
 
         # Copy the requires file templates
-        directory_measurement_actual = TOPDIR / 'measurement-actual'
-        for filename in directory_measurement_actual.glob('*.*'):
-            if filename.name == 'config_measurement.py':
+        directory_measurement_actual = TOPDIR / "measurement-actual"
+        for filename in directory_measurement_actual.glob("*.*"):
+            if filename.name == "config_measurement.py":
                 # To not overwrite 'config_measurement.py'!
                 continue
-            if filename.suffix in ('.bat', '.py'):
+            if filename.suffix in (".bat", ".py"):
                 shutil.copyfile(filename, self.dir_measurementtype / filename.name)
 
-        self.subprocess(cmd="run_0_measure.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / 'logger_measurement.txt')
+        self.subprocess(cmd="run_0_measure.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / "logger_measurement.txt")
 
     def plot(self):
-        self.subprocess(cmd="run_1_condense.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurementtype / 'logger_condense.txt')
+        self.subprocess(cmd="run_1_condense.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurementtype / "logger_condense.txt")
 
-    def subprocess(self, cmd:str, arg:str, logfile:pathlib.Path):
+    def subprocess(self, cmd: str, arg: str, logfile: pathlib.Path):
         rc = subprocess.call([sys.executable, cmd, arg], cwd=str(self.dir_measurementtype), creationflags=subprocess.CREATE_NEW_CONSOLE)
         if rc == ExitCode.OK.value:
             return

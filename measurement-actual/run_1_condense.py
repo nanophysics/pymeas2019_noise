@@ -19,7 +19,7 @@ def run():
 
     if len(sys.argv) > 1:
         dir_raw = sys.argv[1]
-        program.run_condense_dir_raw(dir_raw=DIR_MEASUREMENT/dir_raw)
+        program.run_condense_dir_raw(dir_raw=DIR_MEASUREMENT / dir_raw)
         run_2_composite_plots.run(dir_measurement=DIR_MEASUREMENT)
         return
 

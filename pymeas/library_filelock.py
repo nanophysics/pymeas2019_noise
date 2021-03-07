@@ -15,6 +15,7 @@ DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 TOPDIR = DIRECTORY_OF_THIS_FILE.parent
 assert (TOPDIR / "TOPDIR.TXT").exists()
 
+
 class ExitCode(Enum):
     OK = 0
     ERROR_INPUT_NOT_SETTLE = 40
@@ -25,16 +26,18 @@ class ExitCode(Enum):
     def os_exit(self, msg=None):
         os_exit(self, msg=msg)
 
+
 def os_exit(exit_code: ExitCode, msg=None):
     assert isinstance(exit_code, ExitCode)
-    text = f'Exit with {exit_code.name}({exit_code.value}): {msg}'
+    text = f"Exit with {exit_code.name}({exit_code.value}): {msg}"
     if msg is None:
-        text = f'Exit with {exit_code.name}({exit_code.value})'
+        text = f"Exit with {exit_code.name}({exit_code.value})"
     if exit_code == ExitCode.OK:
         logger.info(text)
     else:
         logger.error(text)
     os._exit(exit_code.value)
+
 
 FILENAME_LOCK = TOPDIR / "tmp_filelock_lock.txt"
 FILENAME_STATUS = TOPDIR / "tmp_filelock_status.txt"

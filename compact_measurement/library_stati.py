@@ -3,24 +3,25 @@ import logging
 import pathlib
 from dataclasses import dataclass
 
-logger = logging.getLogger('logger')
+logger = logging.getLogger("logger")
 
-TAG_COMMIT = 'stati_COMMMIT'
-TAG_RUN    = 'stati_____RUN'
-TAG_SKIP   = 'stati____SKIP'
+TAG_COMMIT = "stati_COMMMIT"
+TAG_RUN = "stati_____RUN"
+TAG_SKIP = "stati____SKIP"
+
 
 @dataclass
 class Stati:
-    context: 'MeasurementContext'
+    context: "MeasurementContext"
     filename: pathlib.Path
-    _depends: 'Stati' = None
-    _feeds: 'Stati' = None
+    _depends: "Stati" = None
+    _feeds: "Stati" = None
 
-    def dependson(self, stati: 'Stati'):
+    def dependson(self, stati: "Stati"):
         assert self._depends is None
         self._depends = stati
 
-    def feeds(self, stati: 'Stati'):
+    def feeds(self, stati: "Stati"):
         assert self._feeds is None
         self._feeds = stati
 
@@ -36,12 +37,14 @@ class Stati:
 
     @property
     def requires_to_run(self):
-        '''
-            We require to run, if our stati file does NOT exist.
-            Or if our 'depends' was processed after than we.
-        '''
+        """
+        We require to run, if our stati file does NOT exist.
+        Or if our 'depends' was processed after than we.
+        """
+
         def log(f, tag):
-            f(f'{tag} {self.filename.relative_to(self.context.dir_measurements)}')
+            f(f"{tag} {self.filename.relative_to(self.context.dir_measurements)}")
+
         _requires_to_run = self.__requires_to_run
         if _requires_to_run:
             log(logger.info, TAG_RUN)
@@ -60,29 +63,29 @@ class Stati:
         return False
 
     def commit(self):
-        '''
-            We processed successfully and commit by writing a 'stati_xx' file.
-        '''
+        """
+        We processed successfully and commit by writing a 'stati_xx' file.
+        """
         # logger.info(f'    commit(): {self.filename.relative_to(self.topdir)}')
-        logger.debug(f'{TAG_COMMIT} {self.filename.relative_to(self.context.dir_measurements)}')
+        logger.debug(f"{TAG_COMMIT} {self.filename.relative_to(self.context.dir_measurements)}")
         self.filename.parent.mkdir(parents=True, exist_ok=True)
         self.filename.write_text(str(time.time()))
 
     @property
     def _time_done_s(self) -> float:
-        '''
+        """
         returns the time.time() of the commit
-        '''
+        """
         try:
             return float(self.filename.read_text())
         except FileNotFoundError:
             return -1.0
 
     def reset(self):
-        '''
-            Notify, that our stati has to be reset.
-            Lets say, we and the ones we feed have to be executed again.
-        '''
+        """
+        Notify, that our stati has to be reset.
+        Lets say, we and the ones we feed have to be executed again.
+        """
         if self.filename.exists():
             self.filename.unlink()
         if self._feeds is not None:

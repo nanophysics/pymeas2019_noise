@@ -1,4 +1,5 @@
 import library_path
+
 TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
 
 from library_measurement import MeasurementContext, Speed  # pylint: disable=wrong-import-position
@@ -14,9 +15,11 @@ CONTEXT = MeasurementContext(
     mocked_voltmeter=True
 )
 
+
 def main():
     mc = MeasurementController(CONTEXT)
     mc.run()
+
 
 if __name__ == "__main__":
     main()

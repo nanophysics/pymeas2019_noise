@@ -9,13 +9,13 @@ import scanner_pyb_2020  # pylint: disable=import-error,wrong-import-position
 if __name__ == "__main__":
     board = pyboard_query.ConnectPyboard(hwtype=scanner_pyb_2020.HWTYPE_SCANNER_PYB_2020)
     scanner = scanner_pyb_2020.ScannerPyb2020(board=board)
-    print(f'{board.quickref} with boards {scanner.boards_text}')
+    print(f"{board.quickref} with boards {scanner.boards_text}")
     boardA = scanner.boards[0]
     boardB = scanner.boards[1]
 
     scanner.reset(on=False)
-    #boardB.set(19) # 2k2 resistor
-    boardB.set(11) # short for basenoise
+    # boardB.set(19) # 2k2 resistor
+    boardB.set(11)  # short for basenoise
 
     # while True:
     #     scanner.reset()

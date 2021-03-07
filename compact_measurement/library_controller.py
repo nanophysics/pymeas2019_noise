@@ -4,7 +4,8 @@ from pymeas import library_logger
 from library_combinations import Combinations
 from library_measurement import Measurement
 
-logger = logging.getLogger('logger')
+logger = logging.getLogger("logger")
+
 
 class MeasurementController:
     def __init__(self, context):
@@ -14,7 +15,7 @@ class MeasurementController:
     def init_logger(self):
         # create file handler which logs even debug messages
         self.context.dir_measurements.mkdir(parents=True, exist_ok=True)
-        library_logger.init_logger_append(self.context.dir_measurements / 'logger_measurements.txt', fmt="%(asctime)s %(levelname)7s %(message)s")
+        library_logger.init_logger_append(self.context.dir_measurements / "logger_measurements.txt", fmt="%(asctime)s %(levelname)7s %(message)s")
 
     def run(self) -> None:
         with self.context.stati as stati:
@@ -23,14 +24,14 @@ class MeasurementController:
             self.run_diagrams()
 
     def run_measurements(self) -> None:
-        logger.info('****** run_measurements()')
-        logger.info(f'  context.dir_measurement_date: {self.context.dir_measurement_date}')
-        logger.info(f'  context.speed: {self.context.speed.name}')
-        for device in ('picoscope', 'voltmeter', 'scanner', 'compact'):
-            name = f'mocked_{device}'
+        logger.info("****** run_measurements()")
+        logger.info(f"  context.dir_measurement_date: {self.context.dir_measurement_date}")
+        logger.info(f"  context.speed: {self.context.speed.name}")
+        for device in ("picoscope", "voltmeter", "scanner", "compact"):
+            name = f"mocked_{device}"
             mocked = getattr(self.context, name)
             if mocked:
-                logger.warning(f'  context.{name}: MOCKED')
+                logger.warning(f"  context.{name}: MOCKED")
 
         for combination in Combinations(speed=self.context.speed):
             # print(combination)

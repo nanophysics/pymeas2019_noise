@@ -72,6 +72,7 @@ exponent_settle = 21  # 59 Hz
 exponent_settle = 19  # 238 Hz
 f2_settle_fs_hz = f0_fast_fs_hz / float(2 ** exponent_settle)
 
+
 def get_config_setupPS500A():  # pylint: disable=too-many-statements
     setup = ConfigSetup()
     setup.setup_name = "Measure"

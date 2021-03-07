@@ -9,13 +9,14 @@ COMPACT_HV_FIRST = 11
 COMPACT_HV_LAST = 14
 
 # https://matplotlib.org/2.0.2/examples/color/named_colors.html
-COLOR_HV = ('red', 'green', 'blue', 'orange')
-COLOR_DA = ('blue', 'orange', 'black', 'green', 'red', 'cyan', 'magenta', 'darkgoldenrod', 'purple', 'lime') # yellow
+COLOR_HV = ("red", "green", "blue", "orange")
+COLOR_DA = ("blue", "orange", "black", "green", "red", "cyan", "magenta", "darkgoldenrod", "purple", "lime")  # yellow
 
 
 class Speed(Enum):
     DETAILED = 1
     SMOKE = 2
+
 
 # Compact/Supply output voltages
 class OutputLevel(Enum):
@@ -69,12 +70,14 @@ class OutputLevel(Enum):
 class FilterBase(Enum):
     pass
 
+
 class FilterDA(FilterBase):
     DIRECT = 0
     OUT = 1
 
     def __repr__(self):
         return self.name
+
 
 class FilterHV(FilterBase):
     OUT_DIR = 2
@@ -93,6 +96,7 @@ class MeasurementType(Enum):
     def __repr__(self):
         return self.name
 
+
 @dataclass
 class Combination:
     measurementtype: MeasurementType
@@ -103,10 +107,10 @@ class Combination:
 
     @property
     def channel0(self):
-        '''
+        """
         MeasurementType.DA: channel 0..9 (DA1..DA10)
         MeasurementType.HV: channel 0 (DA1)
-        '''
+        """
         if self.measurementtype == MeasurementType.SUPPLY:
             return 0
         if self.measurementtype == MeasurementType.HV:
@@ -114,7 +118,7 @@ class Combination:
         if self.short:
             return 0
         assert 1 <= self.channel <= 10
-        return self.channel-1
+        return self.channel - 1
 
     @property
     def dirpart_measurementtype(self):
@@ -129,13 +133,13 @@ class Combination:
     @property
     def channel_color_text(self):
         if self.short:
-            return 'grey-BASENOISE'
+            return "grey-BASENOISE"
         if self.measurementtype == MeasurementType.SUPPLY:
             return f"{self.level.color_supply}-{self.level.supply}"
         if self.measurementtype == MeasurementType.HV:
-            color = COLOR_HV[self.channel-COMPACT_HV_FIRST]
+            color = COLOR_HV[self.channel - COMPACT_HV_FIRST]
             return f"{color}-CH{self.channel:02d}"
-        color = COLOR_DA[self.channel-COMPACT_DA_FIRST]
+        color = COLOR_DA[self.channel - COMPACT_DA_FIRST]
         return f"{color}-DA{self.channel:02d}"
 
     @property
@@ -164,7 +168,7 @@ class Combination:
                 board_a.set(self.channel)
                 return
             if self.filter_ == FilterDA.OUT:
-                board_a.set(self.channel+10)
+                board_a.set(self.channel + 10)
                 return
             raise AttributeError()
 
@@ -172,7 +176,7 @@ class Combination:
             # Board B
             # HV.OUT_DIR: 1, 3, 5, 7
             # HV.OUT_FIL: 2, 4, 6, 8
-            channel = 1+(self.channel-COMPACT_HV_FIRST)*2
+            channel = 1 + (self.channel - COMPACT_HV_FIRST) * 2
             assert 1 <= channel <= 7
             if self.filter_ == FilterHV.OUT_FIL:
                 channel += 1
@@ -197,18 +201,19 @@ class Combination:
     @property
     def picoscope_input_Vp(self) -> str:
         if self.measurementtype == MeasurementType.DA:
-            #return "program_config_instrument_picoscope.InputRange.R_5V" # TODO(peter): Remove
+            # return "program_config_instrument_picoscope.InputRange.R_5V" # TODO(peter): Remove
             return "program_config_instrument_picoscope.InputRange.R_100mV"
 
         if self.measurementtype == MeasurementType.HV:
-            #return "program_config_instrument_picoscope.InputRange.R_10V" # TODO(peter): Remove
+            # return "program_config_instrument_picoscope.InputRange.R_10V" # TODO(peter): Remove
             return "program_config_instrument_picoscope.InputRange.R_1V"
 
         if self.measurementtype == MeasurementType.SUPPLY:
-            #return "program_config_instrument_picoscope.InputRange.R_5V" # TODO(peter): Remove
+            # return "program_config_instrument_picoscope.InputRange.R_5V" # TODO(peter): Remove
             return "program_config_instrument_picoscope.InputRange.R_1V"
 
         raise AttributeError()
+
 
 def Combinations(speed):
     # yield Combination(MeasurementType.DA, FilterDA.OUT, OutputLevel.PLUS, short=True)
@@ -239,9 +244,11 @@ def Combinations(speed):
     for level in (OutputLevel.MINUS, OutputLevel.PLUS):
         yield Combination(MeasurementType.SUPPLY, level=level)
 
+
 def print_combinations():
     for combination in Combinations(speed=Speed.SMOKE):
         print(combination)
+
 
 if __name__ == "__main__":
     print_combinations()

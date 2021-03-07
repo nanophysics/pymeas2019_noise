@@ -7,7 +7,8 @@ LOGGER_NAME = "logger"
 logger = logging.getLogger(LOGGER_NAME)
 
 LOGGING_DEFAULT_FMT = "%(asctime)s - %(name)s - %(threadName)s - %(levelname)7s - %(message)s"
-LOGGING_DEFAULT_DATEFMT = '%Y-%m-%d %H:%M:%S'
+LOGGING_DEFAULT_DATEFMT = "%Y-%m-%d %H:%M:%S"
+
 
 class Dummy:
     INITIALIZED = False
@@ -30,6 +31,7 @@ def init_logger_measurement(directory):
     if directory is None:
         directory = DIRECTORY_OF_THIS_FILE
     init_logger(directory, ("logger_measurement.txt",))
+
 
 def init_logger_append(filename, fmt=LOGGING_DEFAULT_FMT, datefmt=LOGGING_DEFAULT_DATEFMT):
     print(f"logging to {str(filename)}")
