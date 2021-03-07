@@ -11,14 +11,12 @@ from mp import pyboard_query
 import library_path
 from library_stati import Stati
 
-from library_combinations import Speed, Combination
-
 TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
 
+from library_combinations import Speed, Combination  # pylint: disable=wrong-import-position
 from pymeas.library_filelock import ExitCode  # pylint: disable=wrong-import-position
-from pymeas import library_logger  # pylint: disable=wrong-import-position
 
-logger = logging.getLogger(library_logger.LOGGER_NAME)
+logger = logging.getLogger('logger')
 
 MODULE_CONFIG_FILENAME = DIR_MEASUREMENT /  f"config_{socket.gethostname()}.py"
 if not MODULE_CONFIG_FILENAME.exists():
@@ -57,8 +55,6 @@ def get_configsetup():
     return config
 """
 
-
-
 @dataclass
 class MeasurementContext:  # pylint: disable=too-many-instance-attributes
     compact_serial: str
@@ -72,6 +68,10 @@ class MeasurementContext:  # pylint: disable=too-many-instance-attributes
     mocked_scanner: bool = False
     mocked_compact: bool = False
     mocked_picoscope: bool = False
+
+    @property
+    def stati(self):
+        return Stati(self, self.dir_measurement_date / "stati_measurements_done.txt")
 
     @property
     def dir_measurement_date(self):
@@ -91,8 +91,15 @@ class Measurement:
         self.compact_2012 = None
         self.scanner_2020 = None
         # 20201111_03-DAdirect-10V/DA01/stati_measurement_done.txt
-        self.stati_measurement = Stati(self.context.dir_measurements, self.dir_measurement_channel / "stati_measurement_done.txt")
-        self.stati_plot = Stati(self.context.dir_measurements, self.dir_measurementtype / "stati_plot_done.txt")
+        self.stati_meastype_noise = Stati(self.context, self.dir_measurementtype / "stati_noise_done.txt")
+        self.stati_meastype_plot = Stati(self.context, self.dir_measurementtype / "stati_plot_done.txt")
+        self.stati_meastype_channel_noise = Stati(self.context, self.dir_measurement_channel / "stati_noise_done.txt")
+        self.stati_meastype_channel_plot = Stati(self.context, self.dir_measurement_channel / "stati_plot_done.txt")
+
+        self.stati_meastype_channel_plot.dependson(self.stati_meastype_noise)
+        self.stati_meastype_plot.dependson(self.stati_meastype_noise)
+        self.stati_meastype_channel_noise.feeds(self.stati_meastype_noise)
+        self.stati_meastype_plot.feeds(self.stati_meastype_plot)
 
     def __enter__(self):
         return self
@@ -217,7 +224,7 @@ class Measurement:
         self.subprocess(cmd="run_0_measure.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / 'logger_measurement.txt')
 
     def plot(self):
-        self.subprocess(cmd="run_1_condense.py", arg=self.dir_measurementtype.name, logfile=self.dir_measurementtype / 'logger_condense.txt')
+        self.subprocess(cmd="run_1_condense.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurementtype / 'logger_condense.txt')
 
     def subprocess(self, cmd:str, arg:str, logfile:pathlib.Path):
         rc = subprocess.call([sys.executable, cmd, arg], cwd=str(self.dir_measurementtype), creationflags=subprocess.CREATE_NEW_CONSOLE)

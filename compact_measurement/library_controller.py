@@ -1,15 +1,10 @@
 import logging
 
-import library_path
+from pymeas import library_logger
 from library_combinations import Combinations
 from library_measurement import Measurement
 
-TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
-
-from pymeas import library_logger  # pylint: disable=wrong-import-position
-
-logger = logging.getLogger(library_logger.LOGGER_NAME)
-
+logger = logging.getLogger('logger')
 
 class MeasurementController:
     def __init__(self, context):
@@ -19,7 +14,13 @@ class MeasurementController:
     def init_logger(self):
         # create file handler which logs even debug messages
         self.context.dir_measurements.mkdir(parents=True, exist_ok=True)
-        library_logger.init_logger_append(self.context.dir_measurements / 'logger_measurements.txt')
+        library_logger.init_logger_append(self.context.dir_measurements / 'logger_measurements.txt', fmt="%(asctime)s %(levelname)5s %(message)s")
+
+    def run(self):
+        with self.context.stati as stati:
+            self.run_measurements()
+            self.run_qualifikation()
+            self.run_diagrams()
 
     def run_measurements(self):
         logger.info('****** run_measurements()')
@@ -31,19 +32,19 @@ class MeasurementController:
         for combination in Combinations(speed=self.context.speed):
             # print(combination)
             with Measurement(self.context, combination) as measurement:
-                if measurement.stati_measurement.requires_to_run:
-                    logger.info(f'    {measurement.dir_measurement_channel.relative_to(self.context.dir_measurements)}')
-                    measurement.stati_measurement.reset()
-                    measurement.create_directory()
-                    measurement.connect_pyboards()
-                    measurement.configure()
-                    measurement.measure()
-                    if not self.context.mocked_picoscope:
-                        measurement.stati_measurement.commit()
+                with measurement.stati_meastype_channel_noise as stati:
+                    if stati.requires_to_run:
+                        measurement.create_directory()
+                        measurement.connect_pyboards()
+                        measurement.configure()
+                        measurement.measure()
+                        if not self.context.mocked_picoscope:
+                            stati.commit()
 
-                if measurement.stati_plot.requires_to_run:
-                    measurement.plot()
-                    measurement.stati_plot.commit()
+                with measurement.stati_meastype_channel_plot as stati:
+                    if stati.requires_to_run:
+                        measurement.plot()
+                        stati.commit()
 
     def run_qualifikation(self):
         logger.info('    run_qualifikation()')

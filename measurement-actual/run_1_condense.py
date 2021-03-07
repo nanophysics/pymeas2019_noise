@@ -1,3 +1,4 @@
+import sys
 import library_path
 
 TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
@@ -15,6 +16,12 @@ def reload_if_changed(dir_raw):
 
 def run():
     library_logger.init_logger_condense(DIR_MEASUREMENT)
+
+    if len(sys.argv) > 1:
+        dir_raw = sys.argv[1]
+        program.run_condense_dir_raw(dir_raw=DIR_MEASUREMENT/dir_raw)
+        run_2_composite_plots.run(dir_measurement=DIR_MEASUREMENT)
+        return
 
     program.run_condense(dir_measurement=DIR_MEASUREMENT)
     run_2_composite_plots.run(dir_measurement=DIR_MEASUREMENT)

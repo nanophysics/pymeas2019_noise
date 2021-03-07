@@ -6,6 +6,8 @@ DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 LOGGER_NAME = "logger"
 logger = logging.getLogger(LOGGER_NAME)
 
+LOGGING_DEFAULT_FMT = "%(asctime)s - %(name)s - %(threadName)s - %(levelname)5s - %(message)s"
+LOGGING_DEFAULT_DATEFMT = '%Y-%m-%d %H:%M:%S'
 
 class Dummy:
     INITIALIZED = False
@@ -29,10 +31,10 @@ def init_logger_measurement(directory):
         directory = DIRECTORY_OF_THIS_FILE
     init_logger(directory, ("logger_measurement.txt",))
 
-
-def init_logger_append(filename):
+def init_logger_append(filename, fmt=LOGGING_DEFAULT_FMT, datefmt=LOGGING_DEFAULT_DATEFMT):
     print(f"logging to {str(filename)}")
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
+
     # create file handler which logs even debug messages
     fh = logging.FileHandler(filename=filename)
     fh.setLevel(logging.DEBUG)
@@ -42,7 +44,7 @@ def init_logger_append(filename):
     ch.setLevel(logging.INFO)
 
     # create formatter and add it to the handlers
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(threadName)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
     ch.setFormatter(formatter)
     fh.setFormatter(formatter)
 

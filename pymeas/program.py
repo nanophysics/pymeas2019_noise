@@ -91,7 +91,6 @@ def run_condense(dir_measurement):
     # dir_result = dir_measurement / DIRECTORY_RESULT
     # if not dir_result.exists():
     #   dir_result.mkdir()
-
     for dir_raw in iter_dir_raw(dir_measurement):
         run_condense_dir_raw(dir_raw)
 
