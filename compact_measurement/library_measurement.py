@@ -63,12 +63,12 @@ class VoltageMeasurement:
     def write(self, value) -> None:
         assert isinstance(value, float)
         self.file.parent.mkdir(parents=True, exist_ok=True)
-        self.file.write_text(str(47.11))
+        self.file.write_text(str(value))
 
     def read(self) -> None:
-        if self.file.exists:
-            return None
-        return float(self.file.read_text())
+        if self.file.exists():
+            return float(self.file.read_text())
+        return None
 
 
 @dataclass
@@ -108,16 +108,20 @@ class Measurement:
         self.query_compact = pyboard_query.BoardQueryPyboard("compact_2012")
         self.compact_2012 = None
         self.scanner_2020 = None
-        # 20201111_03-DAdirect-10V/DA01/stati_measurement_done.txt
+
+        # compact_measurements/20000101_01-20201130a/DA_OUT_+10V/stati_noise_done.txt
         self.stati_meastype_noise = Stati(self.context, self.dir_measurementtype / "stati_noise_done.txt")
+        # compact_measurements/20000101_01-20201130a/DA_OUT_+10V/stati_plot_done.txt
         self.stati_meastype_plot = Stati(self.context, self.dir_measurementtype / "stati_plot_done.txt")
+        # compact_measurements/20000101_01-20201130a/DA_OUT_+10V/DA01/stati_noise_done.txt
         self.stati_meastype_channel_noise = Stati(self.context, self.dir_measurement_channel / "stati_noise_done.txt")
+        # compact_measurements/20000101_01-20201130a/DA_OUT_+10V/DA01/stati_plot_done.txt
         self.stati_meastype_channel_plot = Stati(self.context, self.dir_measurement_channel / "stati_plot_done.txt")
 
-        self.stati_meastype_channel_plot.dependson(self.stati_meastype_noise)
+        self.stati_meastype_channel_plot.dependson(self.stati_meastype_channel_noise)
         self.stati_meastype_plot.dependson(self.stati_meastype_noise)
         self.stati_meastype_channel_noise.feeds(self.stati_meastype_noise)
-        self.stati_meastype_plot.feeds(self.stati_meastype_plot)
+        self.stati_meastype_channel_plot.feeds(self.stati_meastype_plot)
 
     def __enter__(self):
         return self
@@ -152,13 +156,13 @@ class Measurement:
 
     @property
     def dir_measurement_channel(self):
-        # 20201111_03-DAdirect-10V/DA01
+        # compact_measurements/20000101_01-20201130a/DA_OUT_+10V/DA01
         return self.dir_measurementtype / f"raw-{self.combination.channel_color_text}"
 
     @property
     def measurement_channel_voltage(self):
-        # 20201111_03-DAdirect-10V/DA01
-        return VoltageMeasurement(file=self.dir_measurement_channel / "stati_voltage.txt")
+        # compact_measurements/20000101_01-20201130a/DA_OUT_+10V/DA01/stati_voltage.txt
+        return VoltageMeasurement(file=self.dir_measurementtype / f"stati_{self.combination.channel_color_text}_voltage.txt")
 
     @property
     def config_measurement(self):
@@ -171,7 +175,7 @@ class Measurement:
         dict_template = {
             "TITLE": self.dir_measurementtype.name,
             "input_Vp": self.combination.picoscope_input_Vp,
-            "SMOKE": (self.context.speed == Speed.SMOKE),
+            "SMOKE": (self.context.speed != Speed.DETAILED),
         }
 
         config_measurement_text = TEMPLATE.format(**dict_template)
@@ -181,6 +185,15 @@ class Measurement:
         # We expect that the file 'config_measurement' always has the same content
         if config_measurement_text != self.config_measurement.read_text():
             logger.error(f"Contents changed: {self.config_measurement}")
+
+        # Copy the requires file templates
+        directory_measurement_actual = TOPDIR / "measurement-actual"
+        for filename in directory_measurement_actual.glob("*.*"):
+            if filename.name == "config_measurement.py":
+                # To not overwrite 'config_measurement.py'!
+                continue
+            if filename.suffix in (".bat", ".py"):
+                shutil.copyfile(filename, self.dir_measurementtype / filename.name)
 
     def _add_pythonpath(self, pythonpath):
         path = pathlib.Path(pythonpath).absolute()
@@ -266,15 +279,6 @@ class Measurement:
     def measure_density(self):
         if self.context.mocked_picoscope:
             return
-
-        # Copy the requires file templates
-        directory_measurement_actual = TOPDIR / "measurement-actual"
-        for filename in directory_measurement_actual.glob("*.*"):
-            if filename.name == "config_measurement.py":
-                # To not overwrite 'config_measurement.py'!
-                continue
-            if filename.suffix in (".bat", ".py"):
-                shutil.copyfile(filename, self.dir_measurementtype / filename.name)
 
         self.subprocess(cmd="run_0_measure.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / "logger_measurement.txt")
 

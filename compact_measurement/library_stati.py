@@ -5,9 +5,9 @@ from dataclasses import dataclass
 
 logger = logging.getLogger("logger")
 
-TAG_COMMIT = "stati_COMMMIT"
-TAG_RUN = "stati_____RUN"
-TAG_SKIP = "stati____SKIP"
+TAG_COMMIT = "statiCOMMIT"
+TAG_RUN = "   statiRUN"
+TAG_SKIP = "  statiSKIP"
 
 
 @dataclass
@@ -43,7 +43,7 @@ class Stati:
         """
 
         def log(f, tag):
-            f(f"{tag} {self.filename.relative_to(self.context.dir_measurements)}")
+            f(f"{tag}: {self.filename.relative_to(self.context.dir_measurements)}")
 
         _requires_to_run = self.__requires_to_run
         if _requires_to_run:
@@ -67,7 +67,7 @@ class Stati:
         We processed successfully and commit by writing a 'stati_xx' file.
         """
         # logger.info(f'    commit(): {self.filename.relative_to(self.topdir)}')
-        logger.debug(f"{TAG_COMMIT} {self.filename.relative_to(self.context.dir_measurements)}")
+        logger.debug(f"{TAG_COMMIT}: {self.filename.relative_to(self.context.dir_measurements)}")
         self.filename.parent.mkdir(parents=True, exist_ok=True)
         self.filename.write_text(str(time.time()))
 

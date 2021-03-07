@@ -1,8 +1,9 @@
 import logging
 
 from pymeas import library_logger
-from library_combinations import Combinations
+from library_combinations import Combinations, Speed
 from library_measurement import Measurement
+import library_qualification
 
 logger = logging.getLogger("logger")
 
@@ -21,17 +22,17 @@ class MeasurementController:
         with self.context.stati as stati:
             self.run_measurements()
             self.run_qualifikation()
-            self.run_diagrams()
 
     def run_measurements(self) -> None:
         logger.info("****** run_measurements()")
-        logger.info(f"  context.dir_measurement_date: {self.context.dir_measurement_date}")
-        logger.info(f"  context.speed: {self.context.speed.name}")
+        logger.info(f"context.dir_measurement_date: {self.context.dir_measurement_date}")
+        if self.context.speed != Speed.DETAILED:
+            logger.warning(f"context.speed: {self.context.speed.name}")
         for device in ("picoscope", "voltmeter", "scanner", "compact"):
             name = f"mocked_{device}"
             mocked = getattr(self.context, name)
             if mocked:
-                logger.warning(f"  context.{name}: MOCKED")
+                logger.warning(f"context.{name}: MOCKED")
 
         for combination in Combinations(speed=self.context.speed):
             # print(combination)
@@ -53,7 +54,9 @@ class MeasurementController:
                         stati.commit()
 
     def run_qualifikation(self) -> None:
-        pass
-
-    def run_diagrams(self) -> None:
-        pass
+        logger.info("****** run_qualifikation()")
+        for combination in Combinations(speed=self.context.speed):
+            # print(combination)
+            with Measurement(self.context, combination) as measurement:
+                library_qualification.postprocess_voltage(measurement=measurement)
+                library_qualification.postprocess(measurement.dir_measurement_channel)

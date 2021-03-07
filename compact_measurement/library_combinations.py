@@ -16,6 +16,7 @@ COLOR_DA = ("blue", "orange", "black", "green", "red", "cyan", "magenta", "darkg
 class Speed(Enum):
     DETAILED = 1
     SMOKE = 2
+    BLIP = 3
 
 
 # Compact/Supply output voltages
@@ -23,6 +24,28 @@ class OutputLevel(Enum):
     MINUS = 0
     ZERO = 1
     PLUS = 2
+
+    def expected_V(self, meastype: 'MeasurementType'):
+        '''
+        return expected_V, +/-V
+        for example (10, 0.1)
+        '''
+        return {
+            MeasurementType.DA: {
+                OutputLevel.MINUS: (-10.0, 0.1),
+                OutputLevel.ZERO: (0.0, 0.1),
+                OutputLevel.PLUS: (+10.0, 0.1),
+            },
+            MeasurementType.HV: {
+                OutputLevel.MINUS: (-100.0, 2.0),
+                OutputLevel.ZERO: (0.0, 2.0),
+                OutputLevel.PLUS: (+100.0, 2.0),
+            },
+            MeasurementType.SUPPLY: {
+                OutputLevel.MINUS: (-14.0, 0.1),
+                OutputLevel.PLUS: (+14.0, 0.1),
+            },
+        }[meastype][self]
 
     @property
     def f_DA_OUT_desired_V(self) -> float:
@@ -214,11 +237,19 @@ class Combination:
 
         raise AttributeError()
 
+    @property
+    def expected_V(self) -> float:
+        return self.level.expected_V(meastype=self.measurementtype)
 
 def Combinations(speed):
     # yield Combination(MeasurementType.DA, FilterDA.OUT, OutputLevel.PLUS, short=True)
     # yield Combination(MeasurementType.DA, FilterDA.OUT, OutputLevel.PLUS, COMPACT_DA_FIRST)
     # return
+    if speed == Speed.BLIP:
+        yield Combination(MeasurementType.DA, FilterDA.OUT, OutputLevel.PLUS, short=True)
+        yield Combination(MeasurementType.DA, FilterDA.OUT, OutputLevel.PLUS, COMPACT_DA_FIRST)
+        return
+
     if speed == Speed.SMOKE:
         yield Combination(MeasurementType.DA, FilterDA.OUT, OutputLevel.PLUS, short=True)
         yield Combination(MeasurementType.DA, FilterDA.OUT, OutputLevel.PLUS, COMPACT_DA_FIRST)
