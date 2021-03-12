@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import shutil
@@ -91,13 +92,13 @@ class MeasurementContext:  # pylint: disable=too-many-instance-attributes
         return Stati(self, self.dir_measurement_date / "stati_measurements_done.txt")
 
     @property
+    def dir_measurements(self):
+        return self.topdir / "compact_measurements"
+
+    @property
     def dir_measurement_date(self):
         # 20201111_03
         return self.dir_measurements / f"{self.compact_serial}-{self.measurement_date}"
-
-    @property
-    def dir_measurements(self):
-        return self.topdir / "compact_measurements"
 
 
 class Measurement:
@@ -199,7 +200,7 @@ class Measurement:
         path = pathlib.Path(pythonpath).absolute()
         assert path.exists()
         assert path.is_dir()
-        sys.path.append(str(path))
+        sys.path.insert(0, str(path))
 
     def configure(self, voltage=False, density=False):
         assert voltage != density
@@ -280,20 +281,22 @@ class Measurement:
         if self.context.mocked_picoscope:
             return
 
-        self.subprocess(args=["run_0_measure.py", self.dir_measurement_channel.name], logfile=self.dir_measurement_channel / "logger_measurement.txt")
+        self.subprocess(cmd="run_0_measure.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / "logger_measurement.txt")
 
     def channel_plot(self):
-        return self.subprocess(args=["run_1_condense.py", self.dir_measurement_channel.name], logfile=self.dir_measurement_channel / "logger_condense.txt")
+        return self.subprocess(cmd="run_1_condense.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / "logger_condense.txt")
 
     def meastype_plot(self):
-        return self.subprocess(args=["run_1_condense.py"], logfile=self.dir_measurementtype / "logger_condense.txt")
+        return self.subprocess(cmd="run_1_condense.py", arg="TOPONLY", logfile=self.dir_measurementtype / "logger_condense.txt")
 
-    def subprocess(self, args: list, logfile: pathlib.Path):
-        assert isinstance(args, list)
-        rc = subprocess.call([sys.executable,]+args, cwd=str(self.dir_measurementtype), creationflags=subprocess.CREATE_NEW_CONSOLE)
+    def subprocess(self, cmd: str, arg: str, logfile: pathlib.Path):
+        # Redundant - may be removed...
+        shutil.copyfile(TOPDIR / "measurement-actual" / cmd, self.dir_measurementtype / cmd)
+
+        rc = subprocess.call([sys.executable, cmd, arg], cwd=str(self.dir_measurementtype), creationflags=subprocess.CREATE_NEW_CONSOLE)
         if rc == ExitCode.OK.value:
             return
         if rc == ExitCode.CTRL_C.value:
-            ExitCode.CTRL_C.os_exit(f'Pressed <ctrl-c> in "{args}". See logfile: {str(logfile)}')
+            ExitCode.CTRL_C.os_exit(f'Pressed <ctrl-c> in "{cmd} {arg}". See logfile: {str(logfile)}')
             return
-        raise Exception(f'Command to "{args}" returned {rc}. See logfile: {str(logfile)}')
+        raise Exception(f'Command to "{cmd} {arg}" returned {rc}. See logfile: {str(logfile)}')

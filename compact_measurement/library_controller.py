@@ -1,3 +1,4 @@
+import time
 import logging
 
 from pymeas import library_logger
@@ -11,6 +12,7 @@ logger = logging.getLogger("logger")
 class MeasurementController:
     def __init__(self, context):
         self.context = context
+        self.start_s = time.time()
         self.init_logger()
 
     def init_logger(self):
@@ -22,6 +24,9 @@ class MeasurementController:
         with self.context.stati as stati:
             self.run_measurements()
             self.run_qualifikation()
+
+    def print_duration(self) -> None:
+        logger.info(f"Duration: {time.time()-self.start_s:0.0f}s")
 
     def run_measurements(self) -> None:
         logger.info("****** run_measurements()")
@@ -54,7 +59,7 @@ class MeasurementController:
                             measurement.channel_plot()
                             stati.commit()
 
-                    with measurement.stati_meastype_noise as stati:
+                    with measurement.stati_meastype_plot as stati:
                         if stati.requires_to_run:
                             measurement.meastype_plot()
                             stati.commit()
@@ -63,8 +68,11 @@ class MeasurementController:
 
     def run_qualifikation(self) -> None:
         logger.info("****** run_qualifikation()")
+
+        qualification = library_qualification.Qualification(dir_measurement_date=self.context.dir_measurement_date)
         for combination in Combinations(speed=self.context.speed):
             # print(combination)
             with Measurement(self.context, combination) as measurement:
-                library_qualification.postprocess_voltage(measurement=measurement)
-                library_qualification.postprocess(measurement.dir_measurement_channel)
+                qualification.voltage(measurement=measurement)
+                qualification.postprocess(measurement.dir_measurement_channel)
+                qualification.write_qualification()
