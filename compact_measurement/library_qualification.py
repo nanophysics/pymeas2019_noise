@@ -7,6 +7,7 @@
 import math
 import logging
 import pathlib
+from library_measurement import Measurement
 
 from library_qualification_data import Line
 
@@ -23,34 +24,35 @@ class Qualification:
         file_qualification = self.dir_measurement_date / "result_qualification.csv"
         with file_qualification.open("w") as f:
             Line.writeheader(f)
+            # TODO: Move to data class
+            self.list_results.sort(key=lambda m: (m.measurement_date, m.measurement_type, m.subtype, m.channel2))
             for result in self.list_results:
                 result.writeline(f)
 
     def voltage(self, measurement):
+        assert isinstance(measurement, Measurement)
         measured_V = measurement.measurement_channel_voltage.read()
         if measured_V is None:
             logger.warning(f"{measurement.combination}: NO VOLTAGE")
             return False
-        logger.info(f"{measurement.combination}: Voltage {measured_V}")
-        expected_V, tol_V = measurement.combination.expected_V
-        logger.info(expected_V)
+        logger.debug(f"{measurement.combination}: Voltage {measured_V}")
+        limit_V, tol_V = measurement.combination.limit_V
         # min < meas < max, %
-        diff_V = expected_V - measured_V
-        diff_relative = diff_V / tol_V
-        logger.info(f"{measured_V:0.3}V {diff_relative*100.0:0.0f}% ({expected_V:0.3f}+/-{tol_V:0.3f}V)")
+        diff_V = limit_V - measured_V
         self.list_results.append(Line(
             measurement_date=self.dir_measurement_date.name,
             measurement_type=measurement.combination.dirpart_measurementtype,
+            subtype="DC voltage",
             channel=measurement.combination.channel,
             unit="V",
-            min=expected_V-tol_V,
-            max=expected_V+tol_V,
-            measured=measured_V
+            min=limit_V-tol_V,
+            max=limit_V+tol_V,
+            measured=measured_V,
         ))
-        return True
 
-    def postprocess(self, dir_raw):
-        isinstance(dir_raw, pathlib.Path)
+    def flickernoise(self, measurement):
+        assert isinstance(measurement, Measurement)
+        dir_raw = measurement.dir_measurement_channel
         # evaluate flicker noise
         filename = dir_raw / "result_presentation.txt"
         with filename.open("r") as fin:
@@ -68,16 +70,36 @@ class Qualification:
                 n += 1
                 if f > f_high - 1e-3:
                     break
+
+        flickernoise_Vrms = math.sqrt(P_sum)
+        limit_flickernoise_min_Vrms, limit_flickernoise_max_Vrms = measurement.combination.limit_flickernoise_Vrms
+        comment = ""
         if n != 24:
-            logger.warning("Flickernoise: not enough values to calculate.")
-            return
-        flicker_noise_Vrms = math.sqrt(P_sum)
-        flicker_noise_limit_Vrms = 1.0e-6
-        logger.info("")
-        logger.info(f"Flickernoise: 0.1 Hz to 10 Hz is {flicker_noise_Vrms:0.3E} Vrms")
-        if flicker_noise_Vrms < flicker_noise_limit_Vrms:
-            logger.info(f"This flickernoise is below the limit of {flicker_noise_limit_Vrms:0.3E} Vrms")
-            logger.info("Good component")
-        else:
-            logger.warning(f"This flickernoise is above the limit of {flicker_noise_limit_Vrms:0.3E} Vrms")
-            logger.warning(f"Bad component")
+            flickernoise_Vrms = 42.0
+            comment = "Flickernoise: not enough values to calculate."
+
+        # if n != 24:
+        #     logger.warning("Flickernoise: not enough values to calculate.")
+        #     return
+        # flickernoise_Vrms = math.sqrt(P_sum)
+        # flicker_noise_limit_Vrms = 1.0e-6
+        # logger.debug("")
+        # logger.debug(f"Flickernoise: 0.1 Hz to 10 Hz is {flickernoise_Vrms:0.3E} Vrms")
+        # if flickernoise_Vrms < flicker_noise_limit_Vrms:
+        #     logger.debug(f"This flickernoise is below the limit of {flicker_noise_limit_Vrms:0.3E} Vrms")
+        #     logger.debug("Good component")
+        # else:
+        #     logger.warning(f"This flickernoise is above the limit of {flicker_noise_limit_Vrms:0.3E} Vrms")
+        #     logger.warning(f"Bad component")
+
+        self.list_results.append(Line(
+            measurement_date=self.dir_measurement_date.name,
+            measurement_type=measurement.combination.dirpart_measurementtype,
+            subtype="Flickernoise",
+            channel=measurement.combination.channel,
+            unit="Vrms",
+            min=limit_flickernoise_min_Vrms,
+            max=limit_flickernoise_max_Vrms,
+            measured=flickernoise_Vrms,
+            comment=comment,
+        ))

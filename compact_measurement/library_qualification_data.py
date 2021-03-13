@@ -8,11 +8,13 @@ logger = logging.getLogger("logger")
 class Line:
     measurement_date: str
     measurement_type: str
+    subtype: str
     channel: int
     unit: str
     min: float
     max: float
     measured: float
+    comment: str = ''
 
     @staticmethod
     def writeheader(f):
@@ -21,6 +23,7 @@ class Line:
                 (
                     "Serial-Date",
                     "Type",
+                    "Subtype",
                     "Channel",
                     "Unit",
                     "min",
@@ -28,6 +31,7 @@ class Line:
                     "measured",
                     "percent",
                     "abs(percent)",
+                    "comment",
                 )
             )
         )
@@ -39,13 +43,15 @@ class Line:
                 (
                     self.measurement_date,
                     self.measurement_type,
+                    self.subtype,
                     self.channel2,
                     self.unit,
-                    f"{self.min:0.6f}",
-                    f"{self.max:0.6f}",
-                    f"{self.measured:0.6f}",
+                    f"{self.min:0.6e}",
+                    f"{self.max:0.6e}",
+                    f"{self.measured:0.6e}",
                     f"{self.error_relative:0.6f}",
                     f"{self.error_relative_abs:0.6f}",
+                    self.comment,
                 )
             )
         )

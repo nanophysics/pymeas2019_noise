@@ -74,5 +74,5 @@ class MeasurementController:
             # print(combination)
             with Measurement(self.context, combination) as measurement:
                 qualification.voltage(measurement=measurement)
-                qualification.postprocess(measurement.dir_measurement_channel)
+                qualification.flickernoise(measurement=measurement)
                 qualification.write_qualification()
