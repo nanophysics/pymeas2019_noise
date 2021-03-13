@@ -13,9 +13,9 @@ CONTEXT = MeasurementContext(
     measurement_date="20210310a",
     speed=Speed.DETAILED,
     mocked_picoscope=False,
-    mocked_scanner=True,
-    mocked_compact=True,
-    mocked_voltmeter=True
+    mocked_scanner=False,
+    mocked_compact=False,
+    mocked_voltmeter=False
 )
 
 

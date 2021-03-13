@@ -250,14 +250,13 @@ class Measurement:
         if self.context.mocked_voltmeter:
             self.measurement_channel_voltage.write(47.11)
             return
-
         import visa  # pylint: disable=import-error
-
+        connection = "GPIB0::12::INSTR"
         rm = visa.ResourceManager()
         try:
             rm.list_resources()
             AVERAGE_COUNT = 8
-            instrument = rm.open_resource("GPIB0::12::INSTR")
+            instrument = rm.open_resource(connection)
             instrument.timeout = 5000
             instrument.write("*RST")
             instrument.write("*CLS")
@@ -266,16 +265,24 @@ class Measurement:
             instrument.write("VOLT:DC:NPLC 10")  # NPLC: Integration over powerlinecycles, 0.02 0.2 1 10 100
             instrument.write("TRIG:SOUR IMM")
 
+
+            for i in range(30): # voltage has to settle, low pass filter in some configurations, discard first measurements
+                string = instrument.query("READ?")
+                logger.debug(f"Discard first values, Voltage {float(string):.10f} V")
             voltage = 0.0
             for i in range(AVERAGE_COUNT):
                 string = instrument.query("READ?")
                 voltage += float(string)
-                logger.debug(f"Voltmeter: Messung {i}  Spannung {voltage:.10f} V")
-            voltage = voltage / AVERAGE_COUNT
-            logger.debug("Voltmeter: Mittelwert: {voltage:.10f} V")
+                logger.debug(f"Voltmeter: Measurement {i}  Spannung {float(string):.10f} V")
+            voltage = voltage / float(AVERAGE_COUNT)
+            logger.debug(f"Voltmeter: Average: {voltage:.10f} V")
             self.measurement_channel_voltage.write(voltage)
-        finally:
-            rm.close()
+            instrument.close()
+        except visa.VisaIOError as e:
+            logger.error(f"Error connecting {connection}: {e}")
+            logger.error(f"Available devices {rm.list_resources()}")
+            raise
+            
 
     def measure_density(self):
         if self.context.mocked_picoscope:
