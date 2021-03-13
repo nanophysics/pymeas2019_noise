@@ -93,7 +93,9 @@ def run_condense_dir_raw(dir_raw, do_plot=True):
     plotData = library_topic.PlotDataSingleDirectory(dir_raw)
     write_presentation_summary_file(plotData, dir_raw)
     if do_plot:
-        plotFile = library_plot.PlotFile(plotData=plotData, write_files_directory=dir_raw)
+        title = dir_raw.parent.name
+        plotFile = library_plot.PlotFile(plotData=plotData, write_files_directory=dir_raw, title=title)
+
         plotFile.plot_presentations()
 
     try:
@@ -129,7 +131,8 @@ def run_condense_0to1(dir_raw, trace=False, do_plot=True):
 
     if do_plot:
         file_tag = "_trace" if trace else ""
-        lsd_summary.plot(file_tag=file_tag)
+        title = dir_raw.parent.name
+        lsd_summary.plot(file_tag=file_tag, title=title)
 
 
 class SpecializedPrettyPrint:

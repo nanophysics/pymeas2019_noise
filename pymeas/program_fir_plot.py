@@ -412,7 +412,7 @@ class LsdSummary:
         enbw = [dp.enbw for dp in self.__list_density_points if not dp.skip]
         library_topic.PickleResultSummary.save(self.__directory, f, d, enbw, self.__dict_stages)
 
-    def plot(self, file_tag=""):  # pylint: disable=too-many-locals
+    def plot(self, file_tag="", title=""):  # pylint: disable=too-many-locals
         fig, ax = plt.subplots()
 
         # https://matplotlib.org/3.1.1/api/markers_api.html
@@ -446,6 +446,8 @@ class LsdSummary:
         plt.grid(True, which="major", axis="both", linestyle="-", color="gray", linewidth=0.5)
         plt.grid(True, which="minor", axis="both", linestyle="-", color="silver", linewidth=0.1)
         ax.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=30))
+        if title:
+            plt.title(title)
         filebase = f"{self.__directory}/result_summary_LSD{file_tag}"
         logger.info(f" Summary LSD {filebase}")
         fig.savefig(filebase + ".png", dpi=300)

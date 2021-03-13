@@ -2,10 +2,10 @@ Dependency testen von Plot Channel, Plot Measuretype
 
 Logger: stdout und file...
 
-C:\Projekte\ETH-Fir\pymeas2019_noise\compact_measurements\20000101_01-20210310a\DA_DIRECT_+10V\result_INTEGRAL.png
-   Warum "Noise Demo Title"?
+DONE: C:\Projekte\ETH-Fir\pymeas2019_noise\compact_measurements\20000101_01-20210310a\DA_DIRECT_+10V\result_INTEGRAL.png
+DONE:    Warum "Noise Demo Title"?
 
-Output reloadable in excel sheet
+DONE: Output reloadable in excel sheet
 
 
 
