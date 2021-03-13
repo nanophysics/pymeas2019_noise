@@ -7,12 +7,12 @@ from library_controller import MeasurementController  # pylint: disable=wrong-im
 
 CONTEXT = MeasurementContext(
     compact_serial="20000101_01",
-    measurement_date="20210306a",
-    speed=Speed.SMOKE,
+    measurement_date="20210311a",
+    speed=Speed.DETAILED,
     mocked_picoscope=False,
-    mocked_scanner=True,
-    mocked_compact=True,
-    mocked_voltmeter=True
+    mocked_scanner=False,
+    mocked_compact=False,
+    mocked_voltmeter=False
 )
 
 
