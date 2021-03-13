@@ -6,7 +6,6 @@ import numpy as np
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 
 # pylint: disable=wrong-import-position
-from pymeas import program
 from pymeas import program_fir
 from pymeas import program_configsetup
 
@@ -57,7 +56,7 @@ def main():
     config.duration_s = 10.0
     config.validate()
 
-    sp = program_fir.SamplingProcess(config=config, directory_raw=program.MEASUREMENT_ACTUAL / "raw-green-synthetic")
+    sp = program_fir.SamplingProcess(config=config, directory_raw=DIRECTORY_OF_THIS_FILE / "measurement-actual" / "raw-green-synthetic")
     i = program_fir.InSynthetic(sp.output, signal=signal, dt_s=DT_S, time_total_s=10.0)
     i.process()
     logger.info("Done")

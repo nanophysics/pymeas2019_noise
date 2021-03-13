@@ -5,17 +5,6 @@ import sys
 import logging
 import pathlib
 
-import library_path
-
-TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
-
-MSL_EQUIPMENT_PATH = TOPDIR / "libraries" / "msl-equipment"
-assert (MSL_EQUIPMENT_PATH / "README.rst").is_file(), f"Subrepo is missing (did you clone with --recursive?): {MSL_EQUIPMENT_PATH}"
-sys.path.insert(0, str(MSL_EQUIPMENT_PATH))
-
-MEASUREMENT_ACTUAL = TOPDIR / "measurement-actual"
-sys.path.insert(0, str(MEASUREMENT_ACTUAL))
-
 logger = logging.getLogger("logger")
 
 try:

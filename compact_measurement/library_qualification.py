@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 logger = logging.getLogger("logger")
 
+
 @dataclass
 class Line:
     measurement_date: str
@@ -23,31 +24,39 @@ class Line:
 
     @staticmethod
     def writeheader(f):
-        f.write("\t".join((
-            "Serial-Date",
-            "Type",
-            "Channel",
-            "Unit",
-            "min",
-            "max",
-            "measured",
-            "percent",
-            "abs(percent)",
-        )))
+        f.write(
+            "\t".join(
+                (
+                    "Serial-Date",
+                    "Type",
+                    "Channel",
+                    "Unit",
+                    "min",
+                    "max",
+                    "measured",
+                    "percent",
+                    "abs(percent)",
+                )
+            )
+        )
         f.write("\n")
 
     def writeline(self, f):
-        f.write("\t".join((
-            self.measurement_date,
-            self.measurement_type,
-            self.channel2,
-            self.unit,
-            f'{self.min:0.6f}',
-            f'{self.max:0.6f}',
-            f'{self.measured:0.6f}',
-            f'{self.error_relative:0.6f}',
-            f'{self.error_relative_abs:0.6f}',
-        )))
+        f.write(
+            "\t".join(
+                (
+                    self.measurement_date,
+                    self.measurement_type,
+                    self.channel2,
+                    self.unit,
+                    f"{self.min:0.6f}",
+                    f"{self.max:0.6f}",
+                    f"{self.measured:0.6f}",
+                    f"{self.error_relative:0.6f}",
+                    f"{self.error_relative_abs:0.6f}",
+                )
+            )
+        )
         f.write("\n")
 
     @property
@@ -58,22 +67,23 @@ class Line:
 
     @property
     def error_relative(self) -> str:
-        diff = self.measured - (self.min+self.max)/2.0
+        diff = self.measured - (self.min + self.max) / 2.0
         return diff / (self.max - self.min)
 
     @property
     def error_relative_abs(self) -> str:
         return math.fabs(self.error_relative)
 
-class Qualification():
+
+class Qualification:
     def __init__(self, dir_measurement_date: pathlib.Path):
         assert isinstance(dir_measurement_date, pathlib.Path)
         self.dir_measurement_date = dir_measurement_date
         self.list_results = []
 
     def write_qualification(self):
-        file_qualification = self.dir_measurement_date / 'result_qualification.csv'
-        with file_qualification.open('w') as f:
+        file_qualification = self.dir_measurement_date / "result_qualification.csv"
+        with file_qualification.open("w") as f:
             Line.writeheader(f)
             for result in self.list_results:
                 result.writeline(f)
@@ -81,15 +91,15 @@ class Qualification():
     def voltage(self, measurement):
         measured_V = measurement.measurement_channel_voltage.read()
         if measured_V is None:
-            logger.warning(f'{measurement.combination}: NO VOLTAGE')
+            logger.warning(f"{measurement.combination}: NO VOLTAGE")
             return False
-        logger.info(f'{measurement.combination}: Voltage {measured_V}')
+        logger.info(f"{measurement.combination}: Voltage {measured_V}")
         expected_V, tol_V = measurement.combination.expected_V
         logger.info(expected_V)
         # min < meas < max, %
         diff_V = expected_V - measured_V
         diff_relative = diff_V / tol_V
-        logger.info(f'{measured_V:0.3}V {diff_relative*100.0:0.0f}% ({expected_V:0.3f}+/-{tol_V:0.3f}V)')
+        logger.info(f"{measured_V:0.3}V {diff_relative*100.0:0.0f}% ({expected_V:0.3f}+/-{tol_V:0.3f}V)")
         self.list_results.append(Line(
             measurement_date=self.dir_measurement_date.name,
             measurement_type=measurement.combination.dirpart_measurementtype,

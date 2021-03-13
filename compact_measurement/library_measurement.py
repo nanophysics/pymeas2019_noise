@@ -1,4 +1,3 @@
-import os
 import sys
 import time
 import shutil
@@ -12,14 +11,12 @@ from mp import pyboard_query
 import library_path
 from library_stati import Stati
 
-TOPDIR, DIR_MEASUREMENT = library_path.find_append_path()
-
 from library_combinations import Speed, Combination  # pylint: disable=wrong-import-position
 from pymeas.library_filelock import ExitCode  # pylint: disable=wrong-import-position
 
 logger = logging.getLogger("logger")
 
-MODULE_CONFIG_FILENAME = DIR_MEASUREMENT / f"config_{socket.gethostname()}.py"
+MODULE_CONFIG_FILENAME = library_path.DIR_MEASUREMENT / f"config_{socket.gethostname()}.py"
 if not MODULE_CONFIG_FILENAME.exists():
     print(f"ERROR: Missing file: {MODULE_CONFIG_FILENAME.name}")
     sys.exit(1)
@@ -76,7 +73,7 @@ class VoltageMeasurement:
 class MeasurementContext:  # pylint: disable=too-many-instance-attributes
     compact_serial: str
     measurement_date: str
-    topdir: pathlib.Path = TOPDIR
+    topdir: pathlib.Path
     compact_pythonpath: str = MODULE_CONFIG.COMPACT_PYTHONPATH
     scanner_pythonpath: str = MODULE_CONFIG.SCANNER_PYTHONPATH
     compact_2012 = None
@@ -187,8 +184,11 @@ class Measurement:
         if config_measurement_text != self.config_measurement.read_text():
             logger.error(f"Contents changed: {self.config_measurement}")
 
+        self.copy_file_templates()
+
+    def copy_file_templates(self):
         # Copy the requires file templates
-        directory_measurement_actual = TOPDIR / "measurement-actual"
+        directory_measurement_actual = library_path.TOPDIR / "measurement-actual"
         for filename in directory_measurement_actual.glob("*.*"):
             if filename.name == "config_measurement.py":
                 # To not overwrite 'config_measurement.py'!
@@ -283,6 +283,11 @@ class Measurement:
 
         self.subprocess(cmd="run_0_measure.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / "logger_measurement.txt")
 
+    # def _copy_file(self, filename):
+    #     assert isinstance(filename, str)
+    #     # Redundant - may be removed...
+    #     shutil.copyfile(library_path.TOPDIR / "measurement-actual" / filename, self.dir_measurementtype / filename)
+
     def channel_plot(self):
         return self.subprocess(cmd="run_1_condense.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / "logger_condense.txt")
 
@@ -290,8 +295,9 @@ class Measurement:
         return self.subprocess(cmd="run_1_condense.py", arg="TOPONLY", logfile=self.dir_measurementtype / "logger_condense.txt")
 
     def subprocess(self, cmd: str, arg: str, logfile: pathlib.Path):
-        # Redundant - may be removed...
-        shutil.copyfile(TOPDIR / "measurement-actual" / cmd, self.dir_measurementtype / cmd)
+        # self._copy_file(filename="library_path.py")
+        # self._copy_file(filename=cmd)
+        self.copy_file_templates()
 
         rc = subprocess.call([sys.executable, cmd, arg], cwd=str(self.dir_measurementtype), creationflags=subprocess.CREATE_NEW_CONSOLE)
         if rc == ExitCode.OK.value:

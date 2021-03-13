@@ -25,11 +25,11 @@ class OutputLevel(Enum):
     ZERO = 1
     PLUS = 2
 
-    def expected_V(self, meastype: 'MeasurementType'):
-        '''
+    def expected_V(self, meastype: "MeasurementType"):
+        """
         return expected_V, +/-V
         For example: (10.0, 0.1)
-        '''
+        """
         return {
             MeasurementType.DA: {
                 OutputLevel.MINUS: (-10.0, 0.1),
@@ -240,6 +240,7 @@ class Combination:
     @property
     def expected_V(self) -> float:
         return self.level.expected_V(meastype=self.measurementtype)
+
 
 def Combinations(speed):
     # yield Combination(MeasurementType.DA, FilterDA.OUT, OutputLevel.PLUS, short=True)

@@ -2,7 +2,7 @@ import pathlib
 
 import library_path
 
-library_path.find_append_path()
+library_path.init(__file__)
 
 # pylint: disable=wrong-import-position
 from pymeas import library_topic
