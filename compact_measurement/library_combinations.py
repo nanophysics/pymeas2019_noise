@@ -1,4 +1,5 @@
 from enum import Enum
+import typing
 from dataclasses import dataclass
 
 # Compact DA channels
@@ -18,6 +19,12 @@ class Speed(Enum):
     SMOKE = 2
     BLIP = 3
 
+@dataclass
+class NoiseBandLSD:
+    f_min_Hz: float
+    f_max_Hz: float
+    min_noise: float
+    max_noise: float
 
 # Compact/Supply output voltages
 class OutputLevel(Enum):
@@ -91,6 +98,15 @@ class OutputLevel(Enum):
                 },
             },
         }[meastype][filter_][self]
+
+    def list_band_LSD(self, meastype: "MeasurementType", short, filter_) -> typing.List[NoiseBandLSD]:
+        """
+        return List of NoiseBandLSD
+        """
+        assert isinstance(meastype, MeasurementType)
+        assert isinstance(short, bool)
+        assert isinstance(filter_, (type(None), FilterBase))
+        return []
 
     @property
     def f_DA_OUT_desired_V(self) -> float:
@@ -289,6 +305,10 @@ class Combination:
     @property
     def limit_flickernoise_Vrms(self) -> float:
         return self.level.limit_flickernoise_Vrms(meastype=self.measurementtype, short=self.short, filter_=self.filter_)
+
+    @property
+    def list_band_LSD(self) -> float:
+        return self.level.list_band_LSD(meastype=self.measurementtype, short=self.short, filter_=self.filter_)
 
 
 def Combinations(speed):

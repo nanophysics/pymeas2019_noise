@@ -50,10 +50,20 @@ class Qualification:
             measured=measured_V,
         ))
 
+    def band_LSD(self, measurement):
+        # list_bands = (
+        # f_min_Hz
+        # f_max_Hz
+        # min_noise
+        # max_noise
+        list_band_LSD = measurement.combination.list_band_LSD
+
+        pass
+
     def flickernoise(self, measurement):
+        # evaluate flicker noise
         assert isinstance(measurement, Measurement)
         dir_raw = measurement.dir_measurement_channel
-        # evaluate flicker noise
         filename = dir_raw / "result_presentation.txt"
         with filename.open("r") as fin:
             dict_file = eval(fin.read())  # pylint: disable=eval-used
@@ -77,20 +87,6 @@ class Qualification:
         if n != 24:
             flickernoise_Vrms = 42.0
             comment = "Flickernoise: not enough values to calculate."
-
-        # if n != 24:
-        #     logger.warning("Flickernoise: not enough values to calculate.")
-        #     return
-        # flickernoise_Vrms = math.sqrt(P_sum)
-        # flicker_noise_limit_Vrms = 1.0e-6
-        # logger.debug("")
-        # logger.debug(f"Flickernoise: 0.1 Hz to 10 Hz is {flickernoise_Vrms:0.3E} Vrms")
-        # if flickernoise_Vrms < flicker_noise_limit_Vrms:
-        #     logger.debug(f"This flickernoise is below the limit of {flicker_noise_limit_Vrms:0.3E} Vrms")
-        #     logger.debug("Good component")
-        # else:
-        #     logger.warning(f"This flickernoise is above the limit of {flicker_noise_limit_Vrms:0.3E} Vrms")
-        #     logger.warning(f"Bad component")
 
         self.list_results.append(Line(
             measurement_date=self.dir_measurement_date.name,
