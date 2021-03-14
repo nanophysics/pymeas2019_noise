@@ -76,8 +76,18 @@
             "type": "python",
             "request": "launch",
             "justMyCode": false,
-            "program": "${workspaceFolder}/compact_measurements/20000101_01-20210310b/DA_OUT_+10V/run_1_condense.py",
-            "cwd": "${workspaceFolder}/compact_measurements/20000101_01-20210310b/DA_OUT_+10V",
+            "program": "${workspaceFolder}/compact_measurements/20000101_01-20210310a/DA_DIRECT_+10V/run_1_condense.py",
+            "cwd": "${workspaceFolder}/compact_measurements/20000101_01-20210310a/DA_DIRECT_+10V",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: COMPACT_MEASUREMENTS run_1_condense.py TOPONLY",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "program": "${workspaceFolder}/compact_measurements/20000101_01-20210310a/DA_DIRECT_+10V/run_1_condense.py",
+            "cwd": "${workspaceFolder}/compact_measurements/20000101_01-20210310a/DA_DIRECT_+10V",
+            "args": ["TOPONLY"],
             "console": "integratedTerminal"
         },
         {

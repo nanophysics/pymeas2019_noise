@@ -11,7 +11,6 @@ logger = logging.getLogger("logger")
 
 DIRECTORY_NAME_RAW_PREFIX = "raw-"
 
-
 class ResultAttributes:
     RESULT_DIR_PATTERN = "raw-*"
     REG_DIR = re.compile(r"^raw-(?P<color>.+?)-(?P<topic>.+)$")
@@ -113,17 +112,23 @@ class PickleResultSummary:
 
 class Stage:
     # TODO(Hans): Why no reuse 'class Densityplot'?
-    def __init__(self, dict_stage):
+    def __init__(self, topic, dict_stage):
+        assert isinstance(topic, Topic)
+        self.__topic = topic
         self.stage = dict_stage["stage"]
         self.dt_s = dict_stage["dt_s"]
         self.stepsize_bins_V = dict_stage["stepsize_bins_V"]
         self.stepsize_bins_count = dict_stage["stepsize_bins_count"]
         self.samples_V = dict_stage["samples_V"]
+        assert isinstance(self.stage, int)
+        assert isinstance(self.dt_s, float)
 
     @property
     def label(self):
         return f"{self.stage}/dt={self.dt_s:0.2e}s"
 
+    def belongs_to_topic(self, topic):
+        return self.__topic == topic
 
 class TopicMinuxBasenoise:
     """
@@ -187,6 +192,11 @@ class Topic:  # pylint: disable=too-many-public-methods
     def reset_plot_line(self):
         self.__plot_line = None
 
+    def remove_line(self):
+        assert self.__plot_line is not None
+        self.__plot_line.remove()
+        self.__plot_line = None
+
     def set_plot_line(self, plot_line):
         assert self.__plot_line is None
         self.__plot_line = plot_line
@@ -244,14 +254,27 @@ class Topic:  # pylint: disable=too-many-public-methods
 
     @property
     def stages(self) -> list:
-        l = [Stage(dict_stage) for dict_stage in self.__prs.dict_stages.values()]
+        l = [Stage(self, dict_stage) for dict_stage in self.__prs.dict_stages.values()]
         l.sort(key=lambda stage: stage.stage)
         return l
 
-    def get_stepsize(self, stage):
-        assert isinstance(stage, (type(None), Stage))
+    def find_stage(self, stage):
+        stage_100ms = 0.09
         if stage is None:
-            return ((), ())
+            for _stage in self.stages:
+                if _stage.dt_s > stage_100ms:
+                    return _stage
+            return None
+        # This is a stage of another topic.
+        # Find the corresponding stage of our topic
+        for _stage in self.stages:
+            if stage.stage == _stage.stage:
+                return _stage
+        return None
+
+    def get_stepsize(self, stage):
+        assert isinstance(stage, Stage)
+        assert stage.belongs_to_topic(self)
         stepsize_bins_count = stage.stepsize_bins_count
         stepsize_bins_V = stage.stepsize_bins_V
         # Mask all array-elements with bins_count == 0
@@ -263,15 +286,8 @@ class Topic:  # pylint: disable=too-many-public-methods
         return (stepsize_bins_V, stepsize_bins_count)
 
     def get_timeserie(self, stage):
-        assert isinstance(stage, (type(None), Stage))
-        if stage is None:
-            stages = self.stages
-            if len(stages) == 0:
-                return ((), ())
-            logger.warning("No stage specified, use the first one. Should we create a TIMESERIES diagram for every stage?")
-            stage = stages[0]
-
         assert isinstance(stage, Stage)
+        assert stage.belongs_to_topic(self)
         # TODO(Hans): Cache this array
         x = np.linspace(start=0.0, stop=stage.dt_s * len(stage.samples_V), num=len(stage.samples_V))
         return (x, stage.samples_V)
@@ -409,8 +425,10 @@ class Presentation:
         return self.__xy_func(topic, stage)
 
     def get_as_dict(self, topic):
-        # TODO(Hans): Remove None below
-        x, y = self.get_xy(topic=topic, stage=None)
+        stage = None
+        if self.requires_stage:
+            stage = topic.find_stage(None)
+        x, y = self.get_xy(topic=topic, stage=stage)
         return dict(
             tag=self.tag,
             help_text=self.help_text,
@@ -424,10 +442,15 @@ class Presentation:
     def title(self):
         return f"{self.tag}: {self.y_label}"
 
+    @property
+    def requires_stage(self):
+        return self.tag in (PRESENTATION_STEPSIZE, PRESENTATION_TIMESERIE)
+
 
 X_LABEL = "Frequency [Hz]"
 DEFAULT_PRESENTATION = "LSD"
 PRESENTATION_TIMESERIE = "TIMESERIE"
+PRESENTATION_STEPSIZE = "STEPSIZE"
 
 
 class Presentations:
@@ -441,8 +464,22 @@ class Presentations:
                 help_text="linear spectral density [V/Hz^0.5] represents the noise density. Useful to describe random noise.",
                 xy_func=lambda topic, stage: (topic.f, topic.scaling_LSD),
             ),
-            Presentation(tag="PSD", supports_diff_basenoise=True, x_label=X_LABEL, y_label="power spectral density [V^2/Hz]", help_text="power spectral density [V^2/Hz] ist just the square of the LSD. This representation of random noise is useful if you want to sum up the signal over a given frequency interval. ", xy_func=lambda topic, stage: (topic.f, topic.scaling_PSD)),
-            Presentation(tag="LS", supports_diff_basenoise=False, x_label=X_LABEL, y_label="linear spectrum [V rms]", help_text="linear spectrum [V rms] represents the voltage in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.", xy_func=lambda topic, stage: (topic.f, topic.scaling_LS)),
+            Presentation(
+                tag="PSD",
+                supports_diff_basenoise=True,
+                x_label=X_LABEL,
+                y_label="power spectral density [V^2/Hz]",
+                help_text="power spectral density [V^2/Hz] ist just the square of the LSD. This representation of random noise is useful if you want to sum up the signal over a given frequency interval. ",
+                xy_func=lambda topic, stage: (topic.f, topic.scaling_PSD)
+            ),
+            Presentation(
+                tag="LS",
+                supports_diff_basenoise=False,
+                x_label=X_LABEL,
+                y_label="linear spectrum [V rms]",
+                help_text="linear spectrum [V rms] represents the voltage in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.",
+                xy_func=lambda topic, stage: (topic.f, topic.scaling_LS)
+            ),
             Presentation(
                 tag="PS",
                 supports_diff_basenoise=False,
@@ -459,9 +496,31 @@ class Presentations:
                 help_text="integral [V rms] represents the integrated voltage from the lowest measured frequency up to the actual frequency. Example: Value at 1 kHz: is the voltage between 0.01 Hz and 1 kHz.",
                 xy_func=lambda topic, stage: (topic.f, topic.scaling_INTEGRAL),
             ),
-            Presentation(tag="DECADE", supports_diff_basenoise=False, x_label=X_LABEL, y_label="decade left of the point [V rms]", help_text="decade left of the point [V rms] Example: The value at 100 Hz represents the voltage between 100Hz/10 = 10 Hz and 100 Hz.", xy_func=lambda topic, stage: topic.decade_f_d),
-            Presentation(tag="STEPSIZE", supports_diff_basenoise=False, x_label="stepsize [V]", y_label="count samples [samples/s]", help_text="TODO.", xy_func=lambda topic, stage: topic.get_stepsize(stage)),
-            Presentation(tag=PRESENTATION_TIMESERIE, supports_diff_basenoise=False, x_label="timeserie [s]", y_label="sample [V]", help_text="TODO.", xy_func=lambda topic, stage: topic.get_timeserie(stage), logarithmic_scales=False),
+            Presentation(
+                tag="DECADE",
+                supports_diff_basenoise=False,
+                x_label=X_LABEL,
+                y_label="decade left of the point [V rms]",
+                help_text="decade left of the point [V rms] Example: The value at 100 Hz represents the voltage between 100Hz/10 = 10 Hz and 100 Hz.",
+                xy_func=lambda topic, stage: topic.decade_f_d
+            ),
+            Presentation(
+                tag=PRESENTATION_STEPSIZE,
+                supports_diff_basenoise=False,
+                x_label="stepsize [V]",
+                y_label="count samples [samples/s]",
+                help_text="TODO-PRESENTATION_STEPSIZE",
+                xy_func=lambda topic, stage: topic.get_stepsize(stage)
+            ),
+            Presentation(
+                tag=PRESENTATION_TIMESERIE,
+                supports_diff_basenoise=False,
+                x_label="timeserie [s]",
+                y_label="sample [V]",
+                help_text="TODO-PRESENTATION_TIMESERIE",
+                xy_func=lambda topic, stage: topic.get_timeserie(stage),
+                logarithmic_scales=False
+            ),
         )
 
         self.tags = [p.tag for p in self.list]

@@ -303,14 +303,8 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
             return None
         return self.combo_box_display_stage.GetClientData(selection)
 
-    @property
-    def is_presentation_timeseries(self):
-        return self.presentation.tag == library_topic.PRESENTATION_TIMESERIE
-
     def __enable_display_stage(self):
-        enabled = False
-        if self.is_presentation_timeseries:
-            enabled = self.topic is not None
+        enabled = self.presentation.requires_stage
         assert isinstance(enabled, bool)
         self.button_display_reload_stage.Enabled = enabled
         self.combo_box_display_stage.Enabled = enabled

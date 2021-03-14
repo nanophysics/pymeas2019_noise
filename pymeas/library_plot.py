@@ -59,7 +59,9 @@ class PlotContext:
         Updates the plot: scales and lines
         """
         for topic in self.list_selected_topics:
-            x, y = self.__presentation.get_xy(topic=topic, stage=self.__stage)
+            # Just a dummy plot line to be able to add axes and scale
+            x = (0, 1)
+            y = (0, 1)
             assert len(x) == len(y)
             (plot_line,) = self.__ax.plot(x, y, linestyle="none", linewidth=0.1, marker=".", markersize=3, color=topic.color, label=topic.topic_basenoise(self.__presentation))
             scale = "log" if self.__presentation.logarithmic_scales else "linear"
@@ -92,11 +94,26 @@ class PlotContext:
             self.clear_figure()
             self.initialize_plot_lines()
 
-        plt.xlabel(self.__presentation.x_label)
-        plt.ylabel(self.__presentation.title)
+        label_stepsize = set()
 
         for topic in self.list_selected_topics:
-            topic.recalculate_data(presentation=self.__presentation, stage=self.__stage)
+            stage = self.__stage
+            if self.__presentation.requires_stage:
+                stage = topic.find_stage(stage)
+                if stage is None:
+                    topic.remove_line()
+                    logger.warning(f"No stage stored for topic {topic}")
+                    continue
+                if stage is not None:
+                    label_stepsize.add(stage.label)
+            topic.recalculate_data(presentation=self.__presentation, stage=stage)
+
+        x_label = self.__presentation.x_label
+        if len(label_stepsize) > 0:
+            x_label += "  "
+            x_label += ", ".join(sorted(label_stepsize))
+        plt.xlabel(x_label)
+        plt.ylabel(self.__presentation.title)
 
         for ax in self.__fig.get_axes():
             ax.relim()
@@ -153,7 +170,11 @@ class PlotContext:
     def iter_stages(self, topic):
         assert isinstance(topic, (type(None), library_topic.Topic))
         if topic is None:
-            yield "-", None
+            # If topic is not defined. This may happen if ALL topics have been selected.
+            # In this case, we return the stages of the first topic
+            _topic = self.plotData.list_topics[0]
+            for stage in _topic.stages:
+                yield stage.label, stage
             return
 
         for _topic in self.plotData.list_topics:
@@ -211,8 +232,6 @@ class PlotFile:
         Print all presentation (LSD, LS, PS, etc.)
         """
         for presentation in library_topic.PRESENTATIONS.list:
-            if presentation.tag == library_topic.PRESENTATION_TIMESERIE:
-                continue
             self.plot_presentation(presentation=presentation)
 
     def plot_presentation(self, presentation):
