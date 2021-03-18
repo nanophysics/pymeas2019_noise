@@ -125,7 +125,7 @@ class Stage:
 
     @property
     def label(self):
-        return f"{self.stage}/dt={self.dt_s:0.2e}s"
+        return f"{self.stage} dt={self.dt_s:0.2e}s"
 
     def belongs_to_topic(self, topic):
         return self.__topic == topic
@@ -277,6 +277,8 @@ class Topic:  # pylint: disable=too-many-public-methods
         assert stage.belongs_to_topic(self)
         stepsize_bins_count = stage.stepsize_bins_count
         stepsize_bins_V = stage.stepsize_bins_V
+        bins_total_count = np.sum(stepsize_bins_count)
+        stepsize_bins_count = stepsize_bins_count / (stage.dt_s * bins_total_count)
         # Mask all array-elements with bins_count == 0
         # stepsize_bins_count = np.ma.masked_equal(stepsize_bins_count, 0)
         stepsize_bins_V = np.ma.masked_where(stepsize_bins_count == 0, stepsize_bins_V)
