@@ -5,13 +5,29 @@
 # Just start run_0_measure.bat and observe the result
 
 import math
-import logging
+from enum import Enum
 import pathlib
+import logging
+
 from library_measurement import Measurement
+import library_combinations
+from compact_measurement.pyspreadsheet import ExcelReader, Row
 
 from library_qualification_data import Line
 
 logger = logging.getLogger("logger")
+
+
+class Bool(Enum):
+    TRUE = True
+    FALSE = False
+
+
+class Filter(Enum):
+    FilterDA_DIRECT = library_combinations.FilterDA.DIRECT.value
+    FilterDA_OUT = library_combinations.FilterDA.OUT.value
+    FilterHV_OUT_DIR = library_combinations.FilterHV.OUT_DIR.value
+    FilterHV_OUT_FIL = library_combinations.FilterHV.OUT_FIL.value
 
 
 class Qualification:
@@ -20,53 +36,122 @@ class Qualification:
         self.dir_measurement_date = dir_measurement_date
         self.list_results = []
 
+        excel_file = pathlib.Path(__file__).absolute().parent / "library_qualification_tolerances.xlsx"
+
+        excel = ExcelReader(excel_file)
+        self.qualification_rows = excel.tables.Qualification.rows
+
+
+    def _iter_enum(self, cell, enum_class):
+        if cell.text == "":
+            yield from enum_class
+            return
+
+        if enum_class == library_combinations.OutputLevel:
+            if cell.text == "MINUS/PLUS":
+                yield library_combinations.OutputLevel.MINUS
+                yield library_combinations.OutputLevel.PLUS
+                return
+
+        yield cell.asenum(enum_class)
+
+
+    def _iter_rows(self, combination):
+        assert isinstance(combination, library_combinations.Combination)
+
+        def eq(a, b):
+            assert type(a) is type(b)
+            return a == b
+
+        for row in self.qualification_rows:  # pylint: disable=too-many-nested-blocks
+            short = row.cols.Short.asenum(Bool)
+            if eq(short.value, combination.short):
+                for measurementtype in self._iter_enum(row.cols.MeasurementType, library_combinations.MeasurementType):
+                    if eq(measurementtype, combination.measurementtype):
+                        for level in self._iter_enum(row.cols.OutputLevel, library_combinations.OutputLevel):
+                            if eq(level, combination.level):
+                                if combination.filter_ is None:
+                                    yield row
+                                    continue
+                                for filter_ in self._iter_enum(row.cols.Filter, Filter):
+                                    if eq(filter_.value, combination.filter_.value):
+                                        yield row
+
+    def qualify_using_calc(self, measurement):
+        assert isinstance(measurement, Measurement)
+
+        for row in self._iter_rows(measurement.combination):
+            functionname = row.cols.PythonFunction.text
+            f = getattr(self, functionname)
+            f(row, measurement)
+
     def write_qualification(self):
         file_qualification = self.dir_measurement_date / "result_qualification.csv"
         with file_qualification.open("w") as f:
             Line.writeheader(f)
             # TODO: Move to data class
-            self.list_results.sort(key=lambda m: (m.measurement_date, m.measurement_type, m.subtype, m.channel2))
+            self.list_results.sort(key=lambda m: (m.measurement_date, m.measurement_type, m.pythonfunction, m.channel2))
             for result in self.list_results:
                 result.writeline(f)
 
-    def voltage(self, measurement):
+    def _append(self, row, measurement, measured, comment=""):
+        assert isinstance(row, Row)
+        assert isinstance(measurement, Measurement)
+        assert isinstance(measured, float)
+        assert isinstance(comment, str)
+        self.list_results.append(
+            Line(
+                measurement_date=self.dir_measurement_date.name,
+                measurement_type=measurement.combination.dirpart_measurementtype,
+                pythonfunction=row.cols.PythonFunction.text,
+                channel=measurement.combination.channel,
+                unit=row.cols.Unit.text,
+                min=row.cols.limit_min.float,
+                max=row.cols.limit_max.float,
+                measured=measured,
+                comment=comment,
+            )
+        )
+
+    def qual_voltage(self, row, measurement):
+        assert isinstance(row, Row)
         assert isinstance(measurement, Measurement)
         measured_V = measurement.measurement_channel_voltage.read()
         if measured_V is None:
             logger.warning(f"{measurement.combination}: NO VOLTAGE")
-            return False
+            return
         logger.debug(f"{measurement.combination}: Voltage {measured_V}")
-        limit_V, tol_V = measurement.combination.limit_V
-        # min < meas < max, %
-        diff_V = limit_V - measured_V
-        self.list_results.append(Line(
-            measurement_date=self.dir_measurement_date.name,
-            measurement_type=measurement.combination.dirpart_measurementtype,
-            subtype="DC voltage",
-            channel=measurement.combination.channel,
-            unit="V",
-            min=limit_V-tol_V,
-            max=limit_V+tol_V,
-            measured=measured_V,
-        ))
+        self._append(row, measurement, measured=measured_V)
 
-    def band_LSD(self, measurement):
-        # list_bands = (
-        # f_min_Hz
-        # f_max_Hz
-        # min_noise
-        # max_noise
-        list_band_LSD = measurement.combination.list_band_LSD
+    def qual_band_LSD(self, row, measurement):
+        assert isinstance(row, Row)
+        assert isinstance(measurement, Measurement)
+        range_lower = row.cols.lower.float
+        range_upper = row.cols.upper.float
+        comment = f'{range_lower}<x<{range_upper} {row.cols.UnitRange.text}'
 
-        pass
+        dict_file = self._get_result_presentation(measurement)
+        LSD = dict_file["presentations"]["LSD"]
 
-    def flickernoise(self, measurement):
-        # evaluate flicker noise
+        max_value = -1000.0
+        for x, y in zip(LSD['x'], LSD['y']):
+            if range_lower < x < range_upper:
+                max_value = max(y, max_value)
+
+        self._append(row, measurement, measured=max_value, comment=comment)
+
+    def _get_result_presentation(self, measurement):
         assert isinstance(measurement, Measurement)
         dir_raw = measurement.dir_measurement_channel
         filename = dir_raw / "result_presentation.txt"
         with filename.open("r") as fin:
-            dict_file = eval(fin.read())  # pylint: disable=eval-used
+            return eval(fin.read())  # pylint: disable=eval-used
+
+    def qual_flickernoise(self, row, measurement):
+        assert isinstance(row, Row)
+        assert isinstance(measurement, Measurement)
+        # evaluate flicker noise
+        dict_file = self._get_result_presentation(measurement)
 
         PS = dict_file["presentations"]["PS"]
 
@@ -82,20 +167,27 @@ class Qualification:
                     break
 
         flickernoise_Vrms = math.sqrt(P_sum)
-        limit_flickernoise_min_Vrms, limit_flickernoise_max_Vrms = measurement.combination.limit_flickernoise_Vrms
         comment = ""
         if n != 24:
             flickernoise_Vrms = 42.0
             comment = "Flickernoise: not enough values to calculate."
 
-        self.list_results.append(Line(
-            measurement_date=self.dir_measurement_date.name,
-            measurement_type=measurement.combination.dirpart_measurementtype,
-            subtype="Flickernoise",
-            channel=measurement.combination.channel,
-            unit="Vrms",
-            min=limit_flickernoise_min_Vrms,
-            max=limit_flickernoise_max_Vrms,
-            measured=flickernoise_Vrms,
-            comment=comment,
-        ))
+        self._append(row, measurement, measured=flickernoise_Vrms, comment=comment)
+
+    def qual_step_size(self, row, measurement):
+        assert isinstance(row, Row)
+        assert isinstance(measurement, Measurement)
+
+        dict_file = self._get_result_presentation(measurement)
+
+        stepsize = dict_file["presentations"]["STEPSIZE"]
+        range_lower = row.cols.lower.float
+        comment = f'range_lower={range_lower} {row.cols.UnitRange.text}'
+
+        _sum = 0.0
+        for x, y in zip(stepsize['x'], stepsize['y']):
+            if x < range_lower:
+                continue
+            _sum += y
+
+        self._append(row, measurement, measured=_sum, comment=comment)

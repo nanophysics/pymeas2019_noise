@@ -251,6 +251,7 @@ class Measurement:
             self.measurement_channel_voltage.write(47.11)
             return
         import visa  # pylint: disable=import-error
+
         connection = "GPIB0::12::INSTR"
         rm = visa.ResourceManager()
         try:
@@ -265,8 +266,7 @@ class Measurement:
             instrument.write("VOLT:DC:NPLC 10")  # NPLC: Integration over powerlinecycles, 0.02 0.2 1 10 100
             instrument.write("TRIG:SOUR IMM")
 
-
-            for i in range(30): # voltage has to settle, low pass filter in some configurations, discard first measurements
+            for i in range(30):  # voltage has to settle, low pass filter in some configurations, discard first measurements
                 string = instrument.query("READ?")
                 logger.debug(f"Discard first values, Voltage {float(string):.10f} V")
             voltage = 0.0
@@ -282,7 +282,6 @@ class Measurement:
             logger.error(f"Error connecting {connection}: {e}")
             logger.error(f"Available devices {rm.list_resources()}")
             raise
-            
 
     def measure_density(self):
         if self.context.mocked_picoscope:

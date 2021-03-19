@@ -265,10 +265,10 @@ class Density:  # pylint: disable=too-many-instance-attributes
         for stepsize_V in stepsizes_V:
             self.__stepsize_bins.add(stepsize_V)
 
-        _filenameFull = program_fir_plot.DensityPlot.save(config=self.__config, directory=self.__directory, stage=self.__stage, dt_s=self.__dt_s, frequencies=self.frequencies, Pxx_n=self.__Pxx_n, Pxx_sum=self.__Pxx_sum, stepsize_bins_count=self.__stepsize_bins.count, stepsize_bins_V=self.__stepsize_bins.V, samples_V=array)
+        bins_total_count = np.sum(self.__stepsize_bins.count)
+        stepsize_bins_count = self.__stepsize_bins.count / (self.__dt_s * bins_total_count)
 
-        # if self.stage > 8:
-        #   logger.debug(f'{self.stage} ')
+        _filenameFull = program_fir_plot.DensityPlot.save(config=self.__config, directory=self.__directory, stage=self.__stage, dt_s=self.__dt_s, frequencies=self.frequencies, Pxx_n=self.__Pxx_n, Pxx_sum=self.__Pxx_sum, stepsize_bins_count=stepsize_bins_count, stepsize_bins_V=self.__stepsize_bins.V, samples_V=array)
 
 
 class OutTrash:

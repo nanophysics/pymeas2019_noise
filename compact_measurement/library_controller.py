@@ -73,7 +73,5 @@ class MeasurementController:
         for combination in Combinations(speed=self.context.speed):
             # print(combination)
             with Measurement(self.context, combination) as measurement:
-                qualification.voltage(measurement=measurement)
-                qualification.band_LSD(measurement=measurement)
-                qualification.flickernoise(measurement=measurement)
-                qualification.write_qualification()
+                qualification.qualify_using_calc(measurement=measurement)
+        qualification.write_qualification()

@@ -4,17 +4,18 @@ from dataclasses import dataclass
 
 logger = logging.getLogger("logger")
 
+
 @dataclass
 class Line:
     measurement_date: str
     measurement_type: str
-    subtype: str
+    pythonfunction: str
     channel: int
     unit: str
     min: float
     max: float
     measured: float
-    comment: str = ''
+    comment: str = ""
 
     @staticmethod
     def writeheader(f):
@@ -23,7 +24,7 @@ class Line:
                 (
                     "Serial-Date",
                     "Type",
-                    "Subtype",
+                    "PythonFunction",
                     "Channel",
                     "Unit",
                     "min",
@@ -43,7 +44,7 @@ class Line:
                 (
                     self.measurement_date,
                     self.measurement_type,
-                    self.subtype,
+                    self.pythonfunction,
                     self.channel2,
                     self.unit,
                     f"{self.min:0.6e}",

@@ -1,5 +1,4 @@
 from enum import Enum
-import typing
 from dataclasses import dataclass
 
 # Compact DA channels
@@ -19,6 +18,7 @@ class Speed(Enum):
     SMOKE = 2
     BLIP = 3
 
+
 @dataclass
 class NoiseBandLSD:
     f_min_Hz: float
@@ -26,87 +26,12 @@ class NoiseBandLSD:
     min_noise: float
     max_noise: float
 
+
 # Compact/Supply output voltages
 class OutputLevel(Enum):
     MINUS = 0
     ZERO = 1
     PLUS = 2
-
-    def limit_V(self, meastype: "MeasurementType", short):
-        """
-        return limit_V, +/-V
-        For example: (10.0, 0.1)
-        """
-        if short:
-            return (0.0, 0.001)
-        return {
-            MeasurementType.DA: {
-                OutputLevel.MINUS: (-10.0, 0.05),
-                OutputLevel.ZERO: (0.0, 0.003),
-                OutputLevel.PLUS: (+10.0, 0.05),
-            },
-            MeasurementType.HV: {
-                OutputLevel.MINUS: (-100.0, 0.5),
-                OutputLevel.ZERO: (0.0, 0.01),
-                OutputLevel.PLUS: (+100.0, 0.5),
-            },
-            MeasurementType.SUPPLY: {
-                OutputLevel.MINUS: (-14.0, 0.1),
-                OutputLevel.PLUS: (+14.0, 0.1),
-            },
-        }[meastype][self]
-
-    def limit_flickernoise_Vrms(self, meastype: "MeasurementType", short, filter_):
-        """
-        return limit_min_Vrms, limit_max_Vrms
-        For example: (1e-3, 1e-2)
-        """
-        assert isinstance(meastype, MeasurementType)
-        assert isinstance(short, bool)
-        assert isinstance(filter_, (type(None), FilterBase))
-
-        if short:
-            return (0.0, 1e-6)
-        if meastype == MeasurementType.SUPPLY:
-            return {
-                OutputLevel.MINUS: (0.0, 20e-5),
-                OutputLevel.PLUS: (0.0, 20e-5),
-            }[self]
-        return {
-            MeasurementType.DA: {
-                FilterDA.DIRECT: {
-                    OutputLevel.MINUS: (0.0, 3e-7),
-                    OutputLevel.ZERO: (0.0, 3e-7),
-                    OutputLevel.PLUS: (0.0, 3e-7),
-                },
-                FilterDA.OUT: {
-                    OutputLevel.MINUS: (0.0, 3e-7),
-                    OutputLevel.ZERO: (0.0, 3e-7),
-                    OutputLevel.PLUS: (0.0, 3e-7),
-                },
-            },
-            MeasurementType.HV: {
-                FilterHV.OUT_DIR: {
-                    OutputLevel.MINUS: (0.0, 3e-6),
-                    OutputLevel.ZERO: (0.0, 3e-6),
-                    OutputLevel.PLUS: (0.0, 3e-6),
-                },
-                FilterHV.OUT_FIL: {
-                    OutputLevel.MINUS: (0.0, 3e-6),
-                    OutputLevel.ZERO: (0.0, 3e-6),
-                    OutputLevel.PLUS: (0.0, 3e-6),
-                },
-            },
-        }[meastype][filter_][self]
-
-    def list_band_LSD(self, meastype: "MeasurementType", short, filter_) -> typing.List[NoiseBandLSD]:
-        """
-        return List of NoiseBandLSD
-        """
-        assert isinstance(meastype, MeasurementType)
-        assert isinstance(short, bool)
-        assert isinstance(filter_, (type(None), FilterBase))
-        return []
 
     @property
     def f_DA_OUT_desired_V(self) -> float:
@@ -297,18 +222,6 @@ class Combination:
             return "program_config_instrument_picoscope.InputRange.R_1V"
 
         raise AttributeError()
-
-    @property
-    def limit_V(self) -> float:
-        return self.level.limit_V(meastype=self.measurementtype, short=self.short)
-
-    @property
-    def limit_flickernoise_Vrms(self) -> float:
-        return self.level.limit_flickernoise_Vrms(meastype=self.measurementtype, short=self.short, filter_=self.filter_)
-
-    @property
-    def list_band_LSD(self) -> float:
-        return self.level.list_band_LSD(meastype=self.measurementtype, short=self.short, filter_=self.filter_)
 
 
 def Combinations(speed):
