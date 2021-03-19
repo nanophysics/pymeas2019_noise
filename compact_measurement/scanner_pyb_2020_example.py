@@ -15,6 +15,7 @@ if __name__ == "__main__":
 
     scanner.reset(on=False)
     # boardB.set(19) # 2k2 resistor
+    # boardB.set(10)  # 14V SUPPLY
     boardB.set(11)  # short for basenoise
 
     # while True:
