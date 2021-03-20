@@ -9,6 +9,7 @@ from enum import Enum
 import pathlib
 import logging
 
+from pymeas.library_topic import Topic, PRESENTATIONS
 from library_measurement import Measurement
 import library_combinations
 from compact_measurement.pyspreadsheet import ExcelReader, Row
@@ -130,30 +131,36 @@ class Qualification:
         range_upper = row.cols.upper.float
         comment = f'{range_lower}<x<{range_upper} {row.cols.UnitRange.text}'
 
-        dict_file = self._get_result_presentation(measurement)
-        LSD = dict_file["presentations"]["LSD"]
+        topic = self._read_topic(measurement)
+        LSD = PRESENTATIONS.dict["LSD"].get_as_dict(topic)
 
         max_value = -1000.0
         for x, y in zip(LSD['x'], LSD['y']):
+            x = float(x)
+            y = float(y)
             if range_lower < x < range_upper:
                 max_value = max(y, max_value)
 
         self._append(row, measurement, measured=max_value, comment=comment)
 
-    def _get_result_presentation(self, measurement):
+    def _read_topic(self, measurement):
         assert isinstance(measurement, Measurement)
+
+        # basenoise
         dir_raw = measurement.dir_measurement_channel
-        filename = dir_raw / "result_presentation.txt"
-        with filename.open("r") as fin:
-            return eval(fin.read())  # pylint: disable=eval-used
+        dir_raw_basenoise = dir_raw.parent / 'raw-grey-BASENOISE'
+        topic_basenoise = Topic.load(dir_raw=dir_raw_basenoise)
+
+        topic = Topic.load(dir_raw=dir_raw)
+        topic.set_basenoise(topic_basenoise)
+        return topic
 
     def qual_flickernoise(self, row, measurement):
         assert isinstance(row, Row)
         assert isinstance(measurement, Measurement)
-        # evaluate flicker noise
-        dict_file = self._get_result_presentation(measurement)
 
-        PS = dict_file["presentations"]["PS"]
+        topic = self._read_topic(measurement)
+        PS = PRESENTATIONS.dict["PS"].get_as_dict(topic)
 
         f_low = 0.1
         f_high = 10.0
@@ -178,14 +185,16 @@ class Qualification:
         assert isinstance(row, Row)
         assert isinstance(measurement, Measurement)
 
-        dict_file = self._get_result_presentation(measurement)
+        topic = self._read_topic(measurement)
+        stepsize = PRESENTATIONS.dict["STEPSIZE"].get_as_dict(topic)
 
-        stepsize = dict_file["presentations"]["STEPSIZE"]
         range_lower = row.cols.lower.float
         comment = f'range_lower={range_lower} {row.cols.UnitRange.text}'
 
         _sum = 0.0
         for x, y in zip(stepsize['x'], stepsize['y']):
+            x = float(x)
+            y = float(y)
             if x < range_lower:
                 continue
             _sum += y

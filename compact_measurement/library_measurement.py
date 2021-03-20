@@ -292,7 +292,7 @@ class Measurement:
             try:
                 self.subprocess(cmd="run_0_measure.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / "logger_measurement.txt")
                 break
-            except Exception as ex:
+            except Exception as ex:  # pylint: disable=broad-except
                 logger.error(f"Failed to measure: {ex}")
                 if retry >= 3:
                     raise

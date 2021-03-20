@@ -132,11 +132,11 @@ class Stage:
         return self.__topic == topic
 
 
-class TopicMinuxBasenoise:
+class TopicMinusBasenoise:
     """
     This is a small wrapper around 'Topic'.
-    I there is a basenoise which has to be subtracted, this wrapper
-    caches the difference between noise and base noise in
+    If there is a basenoise which has to be subtracted, this wrapper
+    caches the difference between noise and base noise.
     """
 
     def __init__(self, topic):
@@ -178,7 +178,7 @@ class Topic:  # pylint: disable=too-many-public-methods
 
     @property
     def topic_minus_basenoise(self):
-        return TopicMinuxBasenoise(self)
+        return TopicMinusBasenoise(self)
 
     def get_as_dict(self):
         return dict(
