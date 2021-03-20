@@ -287,7 +287,17 @@ class Measurement:
         if self.context.mocked_picoscope:
             return
 
-        self.subprocess(cmd="run_0_measure.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / "logger_measurement.txt")
+        retry = 0
+        while True:
+            try:
+                self.subprocess(cmd="run_0_measure.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / "logger_measurement.txt")
+                break
+            except Exception as ex:
+                logger.error(f"Failed to measure: {ex}")
+                if retry >= 3:
+                    raise
+                retry += 1
+                logger.error(f"Retry {retry}")
 
     # def _copy_file(self, filename):
     #     assert isinstance(filename, str)

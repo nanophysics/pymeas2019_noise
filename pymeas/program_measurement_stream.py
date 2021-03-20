@@ -101,6 +101,7 @@ class InThread:  # pylint: disable=too-many-instance-attributes
             self.done = True
         except Exception as ex:  # pylint: disable=broad-except
             logger.exception(ex)
+            raise
 
     def start(self):
         self.thread = threading.Thread(target=self.worker)
