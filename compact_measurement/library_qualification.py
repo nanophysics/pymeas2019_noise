@@ -134,25 +134,33 @@ class Qualification:
         topic = self._read_topic(measurement)
         LSD = PRESENTATIONS.dict["LSD"].get_as_dict(topic)
 
-        max_value = -1000.0
+        MIN = -1000.0
+        max_value = MIN
         for x, y in zip(LSD['x'], LSD['y']):
             x = float(x)
             y = float(y)
             if range_lower < x < range_upper:
                 max_value = max(y, max_value)
 
+        if max_value < -1.0:
+            logger.error(f'No measurements found in range {comment}')
+            return
+
         self._append(row, measurement, measured=max_value, comment=comment)
 
     def _read_topic(self, measurement):
         assert isinstance(measurement, Measurement)
 
-        # basenoise
-        dir_raw = measurement.dir_measurement_channel
-        dir_raw_basenoise = dir_raw.parent / 'raw-grey-BASENOISE'
-        topic_basenoise = Topic.load(dir_raw=dir_raw_basenoise)
 
+        dir_raw = measurement.dir_measurement_channel
         topic = Topic.load(dir_raw=dir_raw)
-        topic.set_basenoise(topic_basenoise)
+
+        # basenoise
+        dir_raw_basenoise = dir_raw.parent / 'raw-grey-BASENOISE'
+        if dir_raw_basenoise.exists():
+            topic_basenoise = Topic.load(dir_raw=dir_raw_basenoise)
+            topic.set_basenoise(topic_basenoise)
+
         return topic
 
     def qual_flickernoise(self, row, measurement):
