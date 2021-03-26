@@ -19,3 +19,4 @@ versuche/*
 .vscode/.ropeproject/*
 measurement-actual/logger_condense.txt
 compact_measurements/*
+hidden/

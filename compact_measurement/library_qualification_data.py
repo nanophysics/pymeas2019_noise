@@ -67,7 +67,7 @@ class Line:
     @property
     def error_relative(self) -> str:
         diff = self.measured - (self.min + self.max) / 2.0
-        return diff / (self.max - self.min)
+        return diff / (self.max - self.min) * 2.0
 
     @property
     def error_relative_abs(self) -> str:

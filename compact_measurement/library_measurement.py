@@ -36,7 +36,7 @@ def get_configsetup():
     config.step_0_settle.duration_s = config.step_0_settle.settle_time_ok_s + 8.0 * 60.0 # maximale Zeit bis Fehler
     config.step_0_settle.settle_input_part = 0.5
     #config.step_3_slow.duration_s = 5.0 * 60.0 # bei 0.1 Hz noch recht verrauscht
-    config.step_3_slow.duration_s = 10.0 * 60.0 # bei 0.1 Hz noch recht verrauscht
+    config.step_3_slow.duration_s = 11.0 * 60.0 # bei 0.1 Hz noch recht verrauscht, fuer die Beurteilung der Stepsize braucht es mindestens 9 Minuten
 
     if {SMOKE}:
         # Smoke test: Reduce times to a minimum
@@ -268,14 +268,14 @@ class Measurement:
 
             for i in range(30):  # voltage has to settle, low pass filter in some configurations, discard first measurements
                 string = instrument.query("READ?")
-                logger.debug(f"Discard first values, Voltage {float(string):.10f} V")
+                #logger.debug(f"Discard first values, Voltage {float(string):.10f} V")
             voltage = 0.0
             for i in range(AVERAGE_COUNT):
                 string = instrument.query("READ?")
                 voltage += float(string)
-                logger.debug(f"Voltmeter: Measurement {i}  Spannung {float(string):.10f} V")
+                #logger.debug(f"Voltmeter: Measurement {i}  Spannung {float(string):.10f} V")
             voltage = voltage / float(AVERAGE_COUNT)
-            logger.debug(f"Voltmeter: Average: {voltage:.10f} V")
+            #logger.debug(f"Voltmeter: Average: {voltage:.10f} V")
             self.measurement_channel_voltage.write(voltage)
             instrument.close()
         except visa.VisaIOError as e:

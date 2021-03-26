@@ -68,6 +68,7 @@ class InThread:  # pylint: disable=too-many-instance-attributes
         self.out = out
         self.dt_s = dt_s
         self.done = False
+        self.exitcode = ExitCode.OK
         self.__func_convert = func_convert
         self.list_overflow = []
         self.thread = None
@@ -101,7 +102,8 @@ class InThread:  # pylint: disable=too-many-instance-attributes
             self.done = True
         except Exception as ex:  # pylint: disable=broad-except
             logger.exception(ex)
-            raise
+            self.exitcode = ExitCode.ERROR
+            self.done = True
 
     def start(self):
         self.thread = threading.Thread(target=self.worker)

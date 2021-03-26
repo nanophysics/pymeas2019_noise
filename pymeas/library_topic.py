@@ -266,7 +266,11 @@ class Topic:  # pylint: disable=too-many-public-methods
             for _stage in self.stages:
                 if _stage.dt_s > stage_100ms:
                     return _stage
-            return None
+            __stage = self.stages[-1]
+            msg = f'{str(self.dir_raw)}: No stage with dt_s {stage_100ms:0.5f}s. The latest stage has dt_s {__stage.dt_s:0.5f}s.'
+            raise Exception(msg)
+            # logger.warning(f'topic {self.__ra.topic}: No stage with dt_s {stage_100ms:0.5f}s. Use the latest stage with dt_s {__stage.dt_s:0.5f}s instead.')
+            # return __stage
         # This is a stage of another topic.
         # Find the corresponding stage of our topic
         for _stage in self.stages:
