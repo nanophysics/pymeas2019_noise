@@ -1,3 +1,12 @@
+
+qualifikation auf werde minus BASENOISE und nicht auf die direkt gemessenen
+
+C:\data\pymeas2019_noise_git\compact_measurements\20000101_01-20210319a\DA_DIRECT_-10V\raw-red-DA05
+stück im diagramm fehlt, erkennen, nochmals probieren?
+
+
+
+
 falls noch gar keine Messung im Ordner 
 C:\data\pymeas2019_noise_git\measurement-actual
 

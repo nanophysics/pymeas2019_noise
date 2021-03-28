@@ -132,11 +132,11 @@ class Stage:
         return self.__topic == topic
 
 
-class TopicMinuxBasenoise:
+class TopicMinusBasenoise:
     """
     This is a small wrapper around 'Topic'.
-    I there is a basenoise which has to be subtracted, this wrapper
-    caches the difference between noise and base noise in
+    If there is a basenoise which has to be subtracted, this wrapper
+    caches the difference between noise and base noise.
     """
 
     def __init__(self, topic):
@@ -178,7 +178,7 @@ class Topic:  # pylint: disable=too-many-public-methods
 
     @property
     def topic_minus_basenoise(self):
-        return TopicMinuxBasenoise(self)
+        return TopicMinusBasenoise(self)
 
     def get_as_dict(self):
         return dict(
@@ -266,7 +266,11 @@ class Topic:  # pylint: disable=too-many-public-methods
             for _stage in self.stages:
                 if _stage.dt_s > stage_100ms:
                     return _stage
-            return None
+            __stage = self.stages[-1]
+            msg = f'{str(self.dir_raw)}: No stage with dt_s {stage_100ms:0.5f}s. The latest stage has dt_s {__stage.dt_s:0.5f}s.'
+            raise Exception(msg)
+            # logger.warning(f'topic {self.__ra.topic}: No stage with dt_s {stage_100ms:0.5f}s. Use the latest stage with dt_s {__stage.dt_s:0.5f}s instead.')
+            # return __stage
         # This is a stage of another topic.
         # Find the corresponding stage of our topic
         for _stage in self.stages:

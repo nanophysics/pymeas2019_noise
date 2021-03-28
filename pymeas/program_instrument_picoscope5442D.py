@@ -246,6 +246,10 @@ class Instrument:
         self.scope.stop()
         self.close()
 
+        if stream.exitcode != ExitCode.OK:
+            logger.error(f"Error in WorkerThread {stream.exitcode}")
+            sys.exit(stream.exitcode)
+
         logger.info("")
         logger.info(f"Time spent in aquisition {time.time()-start_s:1.1f}s")
         logger.info("Waiting for thread to finish calculations...")
