@@ -69,6 +69,7 @@ click start
       You may still run this script when the folder is moved away. \
       This will loop over all `raw-xxx` directoriehttps://stackoverflow.com/jobs/companies?so_medium=StackOverflow&so_source=SiteNavs and read `raw-xxx\result_summary.pickle`.
 
+
 ## Usecase: Measure noise of a voltage-reference
 ![input filter channel B](file://images/usecase_voltage_reference.jpg)
 A voltage reference has 10V at the output. An AC coupling network only passes higher frequencies to a preamplifier. After the noise is amplified, it passes to channel A and trough an input filter to channel B. The input filter is used as an antialiasing filter because we sample slow at input B. Channel A is sampled at 125 MHz without bandwith limitation and 62.5 MHz with build in bandwith limitation at 20 MHz.
