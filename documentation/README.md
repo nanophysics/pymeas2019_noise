@@ -5,7 +5,7 @@
 * Measures noise from 56 MHz down to very low frequencies. Just start a measurement and observe lower frequencies apearing over time. Stop the measurement when you are satisfied. (in comparison: with other instruments you have to choose a time window, then you wait until the time is over and then you see what you got. Playing around at low frequencies this is very inefficient and boring.)
 * Measuring over many decades of frequency. (in comparison: this is normally not possible as the number of samples is limited to 10M for example. In addition: if you want to measure at a low frequency, you have to reduce the samplerate acordingly to get long aquisition time. Now, with the low samplerate, you get in trouble with the nyquist theorem. You need low frequency antialiasing filters: this can be very tricky.)
 * Frequency points have equally distance in logaritmic scale: 12 bins in one decade for example. You get diagrams over a many decades of frequency. (in coparison: normally the frequency spacing is constant, 1 Hz for example. At high frequencies the bin size is very small and the noise corresponding high. Useless presentation if you show data, especially if you show data in logaritmic scale.)
-* Presentation as LSD, PSD, LS or PS.
+* Presentation as LSD, PSD, LS or PS, Integral, Decade, Stepsize, Timeserie.
 * Cheap setup, around 1000 USD for the oscilloscope.
 
 
@@ -74,7 +74,7 @@ click start
 A voltage reference has 10V at the output. An AC coupling network only passes higher frequencies to a preamplifier. After the noise is amplified, it passes to channel A and trough an input filter to channel B. The input filter is used as an antialiasing filter because we sample slow at input B. Channel A is sampled at 125 MHz without bandwith limitation and 62.5 MHz with build in bandwith limitation at 20 MHz.
 This setup is useful to characterize the noise between 0.1 Hz and 100 kHz for example.
 
-![input filter channel B](images/input_filter_channel_b.jpg)
+![input filter channel B](file://images/input_filter_channel_b.jpg)
 
 You need
 * voltage referece
@@ -95,16 +95,16 @@ duration_slow_s=1*3600.0, # maximum time
 skalierungsfaktor=1.0E-3 # -> gain of the preamplifier
 ```
 
-doubleclick run_2_composite_plot_interactive.py
+doubleclick run_0_plot_interactive.bat
 
-![](images/start_background.png)
+![](file://images/start_background.png)
 
 click start
 
 give name 'short' as the input of the AC coupling stage is shorted.
 give color 'green'.
 
-![](images/start_background_2.png)
+![](file://images/start_background_2.png)
 
 start
 
@@ -112,7 +112,7 @@ after one minute, cmd window, stop with ctrl-c.
 Close the cmd window yourself.
 
 
-![](images/start_background_3.png)
+![](file://images/start_background_3.png)
 
 * you can see 1/f region (0.01 Hz to 1 Hz)
 * you can see the white noise region (10 Hz to 10k Hz)
@@ -129,7 +129,7 @@ start
 
 The background noise of the measuring setup 'short' is well below the noise measurement. If this would not be the case, the background noise would have an influence on the result. To be able to compare these values it is important to measure the background noise with exactly the same settings as the measurement itself.
 
-![](images/start_reference_1.png)
+![](file://images/start_reference_1.png)
 
 
 You could:
@@ -157,24 +157,24 @@ ax.set_xlim(1e-1, 1e4)
 
 restart run_0_plot_interactive.bat
 
-![](images/start_reference_1_lim.png)
+![](file://images/start_reference_1_lim.png)
 
 We see the useful range between 0.1 Hz and 1 Hz. The reference voltage noise is well above the 'short' noise. The measurement therefore is useful. A lot of 'dirt' is between 10 Hz and 1000 Hz.
 
 We press the button 'Presentation' and choose LS: linear spectrum.
 
-![](images/start_reference_LS.png)
+![](file://images/start_reference_LS.png)
 
 We move the curser to the point at 50 Hz
 
-![](images/50hz.png)
+![](file://images/50hz.png)
 
 and can read the 50 Hz sinusoidal signal is about 7 uV rms. 
 (if the signal is spread over multiple points its more complicate to measure the voltage...)
 
 We press the button 'Presentation' and choose INTEGRAL.
 
-![](images/integral.png)
+![](file://images/integral.png)
 
 We now want to know the noise voltage in the range between 0.1Hz and 10kHz.
 * At 0.1 Hz we have about 1.3 uV rms
@@ -182,8 +182,24 @@ We now want to know the noise voltage in the range between 0.1Hz and 10kHz.
 * We calculate the difference:
 sqrt(43uV^2 - 1.3uV^2) = 43 uV rms (assuming we have only random noise what is not completely true)
 
+We press the button 'Display' and choose STEPSIZE
+
+![](file://images/stepsize.png)
+
+
+We press the button 'Display' and choose TIMESERIE
+
+![](file://images/timeserie.png)
+
+We can see a swing into.
+
+Settle of the input highpass filter
+* Press Start to start a new measurement
+* Press Stopp to stop the measurement
+* Press Skip Settle to force the measurement to start even though the voltage may not have been settled 
+
 ## Usecase: Measuring the Noise of two voltage-references
-![](images/usecase_voltage_references.jpg)
+![](file://images/usecase_voltage_references.jpg)
 
 If you want to go to below 0.1 Hz with your measurement an easy trick is to measure the difference of two references. As long as the noise of the references is not correlated (and this is normally not the case as long as you do not have to much mains noise coupled to your setup) you can expect about sqrt(2) times the noise of a single reference.
 
@@ -196,7 +212,7 @@ f_lowest = 1 / (1.3 * aquisition_time)
 
 ## Noise Picoscope
 
-![](images/PS_5442D_MSO_noise.png)
+![](file://images/PS_5442D_MSO_noise.png)
 
 With a preamplifier with a gain of 1000 we measured this noise contribution of the picoscope. The noise level could be quite different from device to device.
 The 100mV range shows about the same noise as the ranges below. Therefore you should use the 100mV range or above.
