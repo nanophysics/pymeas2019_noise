@@ -198,6 +198,13 @@ Settle of the input highpass filter
 * Press Stopp to stop the measurement
 * Press Skip Settle to force the measurement to start even though the voltage may not have been settled 
 
+Basenoise
+If you name a measurement BASENOISE, this measurement represents the noise of the Setup. The BASENOISE is then substracted from the other measurements.
+
+Example: You want to measure the noise of a voltage A. First, you measure the noise with the input of your Amplifier shortet and you name this measurement BASENOISE. Then you connect the input of your Amplifier to the voltage A. You name this measurement "voltage A". Now you can see the BASENOISE and Voltage A - BASENOISE.
+Take care: the noise of your setup depends on the input range of the picoscope. If you change the input range, you should repeat the BASENOISE measurement.
+The BASENOISE should be significant lower than the noise you want to measure.
+
 ## Usecase: Measuring the Noise of two voltage-references
 ![](images/usecase_voltage_references.jpg)
 
