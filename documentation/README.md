@@ -5,7 +5,7 @@
 * Measures noise from 56 MHz down to very low frequencies. Just start a measurement and observe lower frequencies apearing over time. Stop the measurement when you are satisfied. (in comparison: with other instruments you have to choose a time window, then you wait until the time is over and then you see what you got. Playing around at low frequencies this is very inefficient and boring.)
 * Measuring over many decades of frequency. (in comparison: this is normally not possible as the number of samples is limited to 10M for example. In addition: if you want to measure at a low frequency, you have to reduce the samplerate acordingly to get long aquisition time. Now, with the low samplerate, you get in trouble with the nyquist theorem. You need low frequency antialiasing filters: this can be very tricky.)
 * Frequency points have equally distance in logaritmic scale: 12 bins in one decade for example. You get diagrams over a many decades of frequency. (in coparison: normally the frequency spacing is constant, 1 Hz for example. At high frequencies the bin size is very small and the noise corresponding high. Useless presentation if you show data, especially if you show data in logaritmic scale.)
-* Presentation as LSD, PSD, LS or PS.
+* Presentation as LSD, PSD, LS or PS, Integral, Decade, Stepsize, Timeserie.
 * Cheap setup, around 1000 USD for the oscilloscope.
 
 
@@ -67,7 +67,7 @@ click start
 
     - `run_0_plot_interactive.bat` \
       You may still run this script when the folder is moved away. \
-      This will loop over all `raw-xxx` directories and read `raw-xxx\result_summary.pickle`.
+      This will loop over all `raw-xxx` directoriehttps://stackoverflow.com/jobs/companies?so_medium=StackOverflow&so_source=SiteNavs and read `raw-xxx\result_summary.pickle`.
 
 ## Usecase: Measure noise of a voltage-reference
 ![input filter channel B](images/usecase_voltage_reference.jpg)
@@ -95,7 +95,7 @@ duration_slow_s=1*3600.0, # maximum time
 skalierungsfaktor=1.0E-3 # -> gain of the preamplifier
 ```
 
-doubleclick run_2_composite_plot_interactive.py
+doubleclick run_0_plot_interactive.bat
 
 ![](images/start_background.png)
 
@@ -181,6 +181,33 @@ We now want to know the noise voltage in the range between 0.1Hz and 10kHz.
 * At 10 kHz we have about 43 uV rms
 * We calculate the difference:
 sqrt(43uV^2 - 1.3uV^2) = 43 uV rms (assuming we have only random noise what is not completely true)
+
+We press the button 'Display' and choose STEPSIZE
+
+![](images/stepsize.png)
+
+
+We press the button 'Display' and choose TIMESERIE
+
+![](images/timeserie.png)
+
+We can see a swing into.
+
+Settle of the input highpass filter
+* Press Start to start a new measurement
+* Press Stopp to stop the measurement
+* Press Skip Settle to force the measurement to start even though the voltage may not have been settled 
+
+Basenoise
+
+If you name a measurement BASENOISE, this measurement represents the noise of the Setup. The BASENOISE is then substracted from the other measurements.
+
+![](images/basenoise.png)
+
+Example: You want to measure the noise of a voltage A. First, you measure the noise with the input of your amplifier shortet and you name this measurement BASENOISE. Then you connect the input of your amplifier to the voltage A. You name this measurement "voltage A". Now you can see the BASENOISE and voltage A - BASENOISE.
+
+Take care: the noise of your setup depends on the input range of the picoscope. If you change the input range, you should repeat the BASENOISE measurement.
+The BASENOISE should be significant lower than the noise you want to measure.
 
 ## Usecase: Measuring the Noise of two voltage-references
 ![](images/usecase_voltage_references.jpg)
