@@ -10,7 +10,7 @@
             "request": "launch",
             "module": "pylint",
             "cwd": "${workspaceFolder}",
-            "args": ["--rcfile=${workspaceFolder}/.pylintrc", "--verbose", "*.py", "pymeas", "compact_measurement", "measurement-actual"],
+            "args": ["--rcfile=${workspaceFolder}/.pylintrc", "--verbose", "pymeas", "compact_measurement", "measurement-actual"],
             "console": "integratedTerminal"
         },
         {
@@ -58,8 +58,9 @@
             "type": "python",
             "request": "launch",
             "justMyCode": false,
-            "program": "${workspaceFolder}/measurement-actual/run_1_condense.py",
-            "cwd": "${workspaceFolder}/measurement-actual",
+            "program": "${workspaceFolder}/compact_measurements/20000101_01-20210322a/HV_OUT_FIL_0V/run_1_condense.py",
+            "cwd": "${workspaceFolder}/compact_measurements/20000101_01-20210322a/HV_OUT_FIL_0V",
+            "args": ["raw-red-CH11"],
             "console": "integratedTerminal"
         },
         {

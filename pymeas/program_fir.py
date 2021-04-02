@@ -238,12 +238,12 @@ class Density:  # pylint: disable=too-many-instance-attributes
 
         assert len(array_in) >= SAMPLES_DENSITY
         self.__fifo = array_in[:SAMPLES_DENSITY]
-        logger.debug(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array_in)={len(array_in)}")
+        # logger.debug(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array_in)={len(array_in)}")
 
         return None
 
     def density(self, array):
-        logger.debug(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array)={len(array)} calculation")
+        # logger.debug(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array)={len(array)} calculation")
 
         self.frequencies, Pxx = scipy.signal.periodogram(array, 1 / self.__dt_s, window="hamming", detrend="linear")  # Hz, V^2/Hz
 

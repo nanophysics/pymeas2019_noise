@@ -58,6 +58,7 @@ class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-ma
         self.resolution: str = LockingMixin.TO_BE_SET
         self.duration_s: float = LockingMixin.TO_BE_SET
         self.dt_s: float = LockingMixin.TO_BE_SET
+        self.skip: bool = False
 
         self._lock()
 
@@ -79,6 +80,7 @@ class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-ma
         assert isinstance(self.resolution, str)
         assert isinstance(self.duration_s, float)
         assert isinstance(self.dt_s, float)
+        assert isinstance(self.skip, bool)
 
         self._freeze()
 
@@ -148,6 +150,8 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
         _lock = FilelockMeasurement()
 
         for configstep in self.configsteps:
+            if configstep.skip:
+                continue
             _lock.update_status(f"Measuring: {dir_raw.name} / {configstep.stepname}")
             picoscope = self.module_instrument.Instrument(configstep)  # pylint: disable=no-member
             picoscope.connect()

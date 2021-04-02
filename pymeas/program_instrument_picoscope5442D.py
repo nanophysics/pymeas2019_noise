@@ -250,10 +250,10 @@ class Instrument:
         logger.info("Waiting for thread to finish calculations...")
         stream.join()
 
-        for i in range(5):
+        for i in range(2):
             time.sleep(0.5)
             unreachable_objects = gc.collect()
-            logger.info(f"Garbage collection... (unreachable_objects={unreachable_objects})")
+            logger.debug(f"Garbage collection... (unreachable_objects={unreachable_objects})")
 
         logger.info("Done")
 

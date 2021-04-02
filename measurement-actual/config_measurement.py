@@ -15,4 +15,10 @@ def get_configsetup():
         # To choose the best input range, see the description in 'program_config_instrument_picoscope'.
         step.input_Vp = program_config_instrument_picoscope.InputRange.R_100mV
         step.skalierungsfaktor = 1.0e-3
+
+    # config.step_0_settle.skip = True
+    # config.step_1_fast.skip = True
+    # config.step_2_medium.skip = True
+    # config.step_3_slow.skip = True
+
     return config
