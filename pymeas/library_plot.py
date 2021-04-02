@@ -172,6 +172,8 @@ class PlotContext:
         if topic is None:
             # If topic is not defined. This may happen if ALL topics have been selected.
             # In this case, we return the stages of the first topic
+            if len(self.plotData.list_topics) == 0:
+                return
             _topic = self.plotData.list_topics[0]
             for stage in _topic.stages:
                 yield stage.label, stage
