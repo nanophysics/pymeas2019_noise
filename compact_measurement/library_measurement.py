@@ -202,6 +202,11 @@ class Measurement:
         assert path.is_dir()
         sys.path.insert(0, str(path))
 
+    def _log_temperature(self):
+        if self.scanner_2020:
+            temp_C = self.scanner_2020.measure_temp_C()
+            logger.info(f"Temperature on scanner {temp_C:0.3f}C")
+
     def configure(self, voltage=False, density=False):
         assert voltage != density
 
@@ -287,13 +292,17 @@ class Measurement:
         if self.context.mocked_picoscope:
             return
 
+        self._log_temperature()
+
         retry = 0
         while True:
             try:
                 self.subprocess(cmd="run_0_measure.py", arg=self.dir_measurement_channel.name, logfile=self.dir_measurement_channel / "logger_measurement.txt")
+                self._log_temperature()
                 break
             except Exception as ex:  # pylint: disable=broad-except
                 logger.error(f"Failed to measure: {ex}")
+                self._log_temperature()
                 if retry >= 3:
                     raise
                 retry += 1
