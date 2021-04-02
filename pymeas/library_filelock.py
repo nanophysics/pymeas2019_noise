@@ -20,8 +20,9 @@ class ExitCode(Enum):
     OK = 0
     ERROR_INPUT_NOT_SETTLE = 40
     ERROR_PICOSCOPE = 41
-    ERROR = 42
-    CTRL_C = 43
+    ERROR_QUEUE_FULL = 42
+    ERROR = 43
+    CTRL_C = 44
 
     def os_exit(self, msg=None):
         os_exit(self, msg=msg)

@@ -189,23 +189,6 @@ class Instrument:
 
             @callbacks.ps5000aStreamingReady
             def my_streaming_ready(handle, num_samples, start_index, overflow, trigger_at, triggered, auto_stop, p_parameter):  # pylint: disable=too-many-arguments
-                if False:
-                    logger.info(f"StreamingReady Callback: handle={handle}, num_samples={num_samples}, start_index={start_index}, overflow={overflow}, trigger_at={trigger_at}, " "triggered={triggered}, auto_stop={auto_stop}, p_parameter={p_parameter}")
-
-                # self.stream.put(channel_raw[start_index:start_index+num_samples])
-                # See: def volts(self):
-                adu_values = channel.raw[start_index : start_index + num_samples]
-                queueFull = stream.put(adu_values)
-                if queueFull:
-                    self.streaming_done = True
-                    stream.put_EOF(ExitCode.OK)
-                    logger.info("STOP(queue full)")
-
-                if overflow:
-                    # logfile.write(f'Overflow: {self.actual_sample_count+start_index}\n')
-                    stream.list_overflow.append(self.actual_sample_count + start_index)
-
-                self.actual_sample_count += num_samples
 
                 def stop(exit_code: ExitCode, reason: str):
                     assert isinstance(exit_code, ExitCode)
@@ -213,6 +196,18 @@ class Instrument:
                     self.streaming_done = True
                     stream.put_EOF(exit_code=exit_code)
                     logger.info(f"STOP({reason})")
+
+                adu_values = channel.raw[start_index : start_index + num_samples]
+                queueFull = stream.put(adu_values)
+                if queueFull:
+                    # 'duration_s' is give. 'queue full' is not allowed
+                    stop(ExitCode.ERROR_QUEUE_FULL, "unexpected queue full")
+
+                if overflow:
+                    # logfile.write(f'Overflow: {self.actual_sample_count+start_index}\n')
+                    stream.list_overflow.append(self.actual_sample_count + start_index)
+
+                self.actual_sample_count += num_samples
 
                 if filelock_measurement.requested_stop_soft():
                     stop(ExitCode.CTRL_C, "<ctrl-c> or softstop")
