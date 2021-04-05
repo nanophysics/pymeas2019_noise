@@ -98,6 +98,44 @@ class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-ma
         c.duration_s = self.duration_s
         return c
 
+class InputRangeKeysight34401A(enum.Enum):
+    RANGE_100mV = "0.1"
+    RANGE_1V = "1"
+    RANGE_10V = "10"
+    RANGE_100V = "100"
+    RANGE_1000V = "1000"
+
+    @property
+    def V(self):
+        return {
+            InputRangeKeysight34401A.RANGE_100mV: 0.1,
+            InputRangeKeysight34401A.RANGE_1V: 1.0,
+            InputRangeKeysight34401A.RANGE_10V: 10.0,
+            InputRangeKeysight34401A.RANGE_100V: 100.0,
+            InputRangeKeysight34401A.RANGE_1000V: 1000.0,
+        }[self]
+
+class ConfigStepKeysight34401A(ConfigStep):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
+    def __init__(self):
+        super().__init__()
+        self.input_channel: str = "42"
+        self.input_Vp: enum.Enum = InputRangeKeysight34401A.RANGE_100V
+        self.bandwitdth: str = "42"
+        self.offset: float = 42.0
+        self.resolution: str = "42"
+
+class ConfigStepSkip(ConfigStep):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
+    def __init__(self):
+        super().__init__()
+        self.skalierungsfaktor: float = 42.0
+        self.input_channel: str = "42"
+        self.input_Vp: enum.Enum = InputRangeKeysight34401A.RANGE_100V
+        self.bandwitdth: str = "42"
+        self.offset: float = 42.0
+        self.resolution: str = "42"
+        self.duration_s: float = 42.0
+        self.dt_s: float = 42.0
+        self.skip: bool = True
 
 class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
     def __init__(self):
@@ -161,3 +199,22 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
 
             if _lock.requested_stop_soft():
                 return
+
+class ConfigSetupKeysight34401A(ConfigSetup):  # pylint: disable=too-few-public-methods
+    def __init__(self):
+        super().__init__()
+        step = ConfigStepSkip()
+        step.stepname = "0_settle"
+        self.step_0_settle = step
+
+        step = ConfigStepSkip()
+        step.stepname = "1_fast"
+        self.step_1_fast = step
+
+        step = ConfigStepSkip()
+        step.stepname = "2_medium"
+        self.step_2_medium = step
+
+    @property
+    def configsteps(self):
+        yield self.step_3_slow

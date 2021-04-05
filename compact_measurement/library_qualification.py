@@ -25,10 +25,10 @@ class Bool(Enum):
 
 
 class Filter(Enum):
-    FilterDA_DIRECT = library_combinations.FilterDA.DIRECT.value
-    FilterDA_OUT = library_combinations.FilterDA.OUT.value
-    FilterHV_OUT_DIR = library_combinations.FilterHV.OUT_DIR.value
-    FilterHV_OUT_FIL = library_combinations.FilterHV.OUT_FIL.value
+    FilterDA_DIRECT = library_combinations.FilterDA.DIRECT.value  # pylint: disable=no-member 
+    FilterDA_OUT = library_combinations.FilterDA.OUT.value  # pylint: disable=no-member 
+    FilterHV_OUT_DIR = library_combinations.FilterHV.OUT_DIR.value  # pylint: disable=no-member 
+    FilterHV_OUT_FIL = library_combinations.FilterHV.OUT_FIL.value  # pylint: disable=no-member 
 
 
 class Qualification:
