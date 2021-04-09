@@ -93,6 +93,7 @@ class Instrument:
 
             if filelock_measurement.requested_stop_soft():
                 stop(ExitCode.CTRL_C, "<ctrl-c> or softstop")
+                break
 
         self.instrument.close()
         stop(ExitCode.OK, "time over")
