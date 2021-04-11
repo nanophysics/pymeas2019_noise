@@ -131,7 +131,8 @@ class Qualification:
         range_upper = row.cols.upper.float
         comment = f'{range_lower}<x<{range_upper} {row.cols.UnitRange.text}'
 
-        topic = self._read_topic(measurement)
+        subtract_basenoise = measurement.combination.channel is not None
+        topic = self._read_topic(measurement=measurement, subtract_basenoise=subtract_basenoise)
         LSD = PRESENTATIONS.dict["LSD"].get_as_dict(topic)
 
         MIN = -1000.0
@@ -148,18 +149,18 @@ class Qualification:
 
         self._append(row, measurement, measured=max_value, comment=comment)
 
-    def _read_topic(self, measurement):
+    def _read_topic(self, measurement, subtract_basenoise=True):
         assert isinstance(measurement, Measurement)
-
 
         dir_raw = measurement.dir_measurement_channel
         topic = Topic.load(dir_raw=dir_raw)
 
         # basenoise
-        dir_raw_basenoise = dir_raw.parent / 'raw-grey-BASENOISE'
-        if dir_raw_basenoise.exists():
-            topic_basenoise = Topic.load(dir_raw=dir_raw_basenoise)
-            topic.set_basenoise(topic_basenoise)
+        if subtract_basenoise:
+            dir_raw_basenoise = dir_raw.parent / 'raw-grey-BASENOISE'
+            if dir_raw_basenoise.exists():
+                topic_basenoise = Topic.load(dir_raw=dir_raw_basenoise)
+                topic.set_basenoise(topic_basenoise)
 
         return topic
 
