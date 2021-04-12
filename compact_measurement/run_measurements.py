@@ -9,8 +9,8 @@ DIR_MEASUREMENT = library_path.DIR_MEASUREMENT
 
 CONTEXT = MeasurementContext(
     topdir=library_path.TOPDIR,
-    compact_serial="20000101_01",
-    measurement_date="20210326a",
+    compact_serial="20200918_83",
+    measurement_date="20210412a",
     speed=Speed.DETAILED,
     mocked_picoscope=False,
     mocked_scanner=False,
