@@ -353,9 +353,20 @@ class Topic:  # pylint: disable=too-many-public-methods
     def scaling_PS(self):
         return np.multiply(self.scaling_PSD, self.enbw)
 
+    def _integral_index_start(self):
+        fHz = 0.1
+        for i,f in enumerate(self.f):
+            if fHz*0.99 < f < fHz*1.01:
+                return i
+        raise Exception(f"Frequency {fHz} not found")
+
+    @property
+    def f_INTEGRAL(self):
+        return self.__prs.f[self._integral_index_start():]
+
     @property
     def scaling_INTEGRAL(self):
-        return np.sqrt(np.cumsum(self.scaling_PS))  # todo: start sum above frequency_complete_low_limit
+        return np.sqrt(np.cumsum(self.scaling_PS[self._integral_index_start():]))  # todo: start sum above frequency_complete_low_limit
 
     @property
     def decade_f_d(self):
@@ -527,7 +538,7 @@ class Presentations:
                 x_label=X_LABEL,
                 y_label="integral [V rms]",
                 help_text="integral [V rms] represents the integrated voltage from the lowest measured frequency up to the actual frequency. Example: Value at 1 kHz: is the voltage between 0.01 Hz and 1 kHz.",
-                xy_func=lambda topic, stage: (topic.f, topic.scaling_INTEGRAL),
+                xy_func=lambda topic, stage: (topic.f_INTEGRAL, topic.scaling_INTEGRAL),
             ),
             Presentation(
                 tag="DECADE",

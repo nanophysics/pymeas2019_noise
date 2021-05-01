@@ -25,7 +25,7 @@ class Progress:
         self.__print_update_interval_s = 10.0
         self.__next_update_s = self.__start_s + 2 * self.__print_update_interval_s
 
-    def tick(self, samples):
+    def tick(self, samples, now_V):
         now_s = time.time()
         if now_s < self.__next_update_s:
             return
@@ -36,7 +36,7 @@ class Progress:
         str_spent_s = self.__time(spent_s)
         str_remaining_s = self.__time(remaining_s)
         str_samples = f"{samples:,d}".replace(",", "'")
-        msg = f"Spent: {str_spent_s}, remaining_s: {str_remaining_s}, collected samples {str_samples}, type Ctrl-C to abort"
+        msg = f"Spent: {str_spent_s}, remaining_s: {str_remaining_s}, collected samples {str_samples}, now {now_V:0.2e}V, type Ctrl-C to abort"
         logger.info(msg)
 
     def __time(self, s):
@@ -95,7 +95,7 @@ class InThread:  # pylint: disable=too-many-instance-attributes
                 # logger.info('push: ', end='')
                 array_in = self.__func_convert(raw_data_in)
                 rc = self.out.push(array_in)
-                self.__progress.tick(self.__samples_processed)
+                self.__progress.tick(self.__samples_processed, now_V=array_in[-1])
                 assert rc is None
         except StopIteration as ex:
             logger.info(f"worker: StopIteration received: {ex}")
