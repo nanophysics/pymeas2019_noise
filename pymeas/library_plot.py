@@ -234,20 +234,24 @@ class PlotFile:
         Print all presentation (LSD, LS, PS, etc.)
         """
         for presentation in library_topic.PRESENTATIONS.list:
-            self.plot_presentation(presentation=presentation)
+            try:
+                self.plot_presentation(presentation=presentation)
+            except library_topic.Stage100msNotFoundException as exc:
+                logger.error(f"Presentation {presentation.tag}: {exc}")
 
     def plot_presentation(self, presentation):
         plot_context = PlotContext(plotData=self.plotData)
+        try:
+            if self.title:
+                plt.title(self.title)
 
-        if self.title:
-            plt.title(self.title)
+            plot_context.set_presentation(presentation=presentation)
+            plot_context.update_presentation()
 
-        plot_context.set_presentation(presentation=presentation)
-        plot_context.update_presentation()
+            for ext in self.write_files:
+                filename = self.write_files_directory / f"result_{plot_context.presentation_tag}.{ext}"
+                logger.info(filename)
+                plot_context.savefig(filename=filename, dpi=300)
 
-        for ext in self.write_files:
-            filename = self.write_files_directory / f"result_{plot_context.presentation_tag}.{ext}"
-            logger.info(filename)
-            plot_context.savefig(filename=filename, dpi=300)
-
-        plot_context.close()
+        finally:
+            plot_context.close()

@@ -11,6 +11,8 @@ logger = logging.getLogger("logger")
 
 DIRECTORY_NAME_RAW_PREFIX = "raw-"
 
+class Stage100msNotFoundException(Exception):
+    pass
 
 class ResultAttributes:
     RESULT_DIR_PATTERN = "raw-*"
@@ -141,11 +143,16 @@ class TopicMinusBasenoise:
 
     def __init__(self, topic):
         assert topic.basenoise is not None
+        self._topic = topic
         self.resized_f_d = ResizedArrays(topic.f, topic.basenoise.f, topic.d, topic.basenoise.d)
 
     @property
     def f(self):
         return self.resized_f_d.f
+
+    @property
+    def decade_f_d(self):
+        return self._topic.decade_f_d
 
     @property
     def scaling_LSD(self):
@@ -159,6 +166,26 @@ class TopicMinusBasenoise:
         # subtrahieren
         m = np.square(self.resized_f_d.y) - np.square(self.resized_f_d.base_y)
         return m.clip(min=0)
+
+    # @property
+    # def scaling_LS(self):
+        # Peter: soll nicht implementiert werden weil es keinen Sinn macht.
+    #     return self.scaling_LSD
+
+    # @property
+    # def scaling_PS(self):
+        # Peter: soll nicht implementiert werden weil es keinen Sinn macht.
+    #     return self.scaling_PSD
+
+    # @property
+    # def scaling_INTEGRAL(self):
+        # Peter: soll nicht implementiert werden weil es schwierig zu interpretieren ist.
+    #     return self.scaling_LSD
+
+    # @property
+    # def scaling_DECADE(self):
+    #     # Peter: soll nicht implementiert werden weil es schwierig zu interpretieren ist.
+    #     return self.scaling_LSD
 
 
 class Topic:  # pylint: disable=too-many-public-methods
@@ -268,7 +295,7 @@ class Topic:  # pylint: disable=too-many-public-methods
                     return _stage
             __stage = self.stages[-1]
             msg = f'{str(self.dir_raw)}: No stage with dt_s {stage_100ms:0.5f}s. The latest stage has dt_s {__stage.dt_s:0.5f}s.'
-            raise Exception(msg)
+            raise Stage100msNotFoundException(msg)
             # logger.warning(f'topic {self.__ra.topic}: No stage with dt_s {stage_100ms:0.5f}s. Use the latest stage with dt_s {__stage.dt_s:0.5f}s instead.')
             # return __stage
         # This is a stage of another topic.
@@ -480,7 +507,7 @@ class Presentations:
             ),
             Presentation(
                 tag="LS",
-                supports_diff_basenoise=False,
+                supports_diff_basenoise=False, # Peter: abz Basenoise macht nicht viel Sinn weil LS typisch fuer eine Frequenz, z.B. 50 Hz gebraucht wird. Je nach Phasenlage ist das subtrahieren irrefuehrend. Daher nicht implementieren.
                 x_label=X_LABEL,
                 y_label="linear spectrum [V rms]",
                 help_text="linear spectrum [V rms] represents the voltage in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.",
@@ -539,7 +566,13 @@ class Presentations:
             raise Exception(f"Presentation {tag} not found! Choose one of {self.tags}.")
 
     def get_as_dict(self, topic):
-        return {p.tag: p.get_as_dict(topic) for p in self.list}
+        d = {}
+        for p in self.list:
+            try:
+                d[p.tag] = p.get_as_dict(topic)
+            except Stage100msNotFoundException as exc:
+                logger.error(f"Presentation {p.tag}: {exc}")
+        return d
 
 
 PRESENTATIONS = Presentations()

@@ -38,6 +38,16 @@ COLORS = (
     "red",
     "cyan",
     "magenta",
+    "cornflowerblue",
+    "navy",
+    "purple",
+    "lime",
+    "red",
+    "turquoise",
+    "gold",
+    "chocolate",
+    "gray",
+    "limegreen",
 )
 
 

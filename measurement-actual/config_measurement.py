@@ -1,4 +1,4 @@
-TITLE = "Noise Demo Title"
+TITLE = "Zenerdiode noise"
 
 
 def get_configsetup():
@@ -14,6 +14,7 @@ def get_configsetup():
     for step in config.configsteps:
         # To choose the best input range, see the description in 'program_config_instrument_picoscope'.
         step.input_Vp = program_config_instrument_picoscope.InputRange.R_100mV
+        # step.input_Vp = program_config_instrument_picoscope.InputRange.R_500mV
         step.skalierungsfaktor = 1.0e-3
 
     # config.step_0_settle.skip = True

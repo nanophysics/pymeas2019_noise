@@ -3,7 +3,7 @@ import numpy as np
 
 
 def eseries(series="E12", minimal=0.01, maximal=300, borders=False):
-    assert minimal > 10 ** -10
+    assert minimal > 10 ** -20
     assert maximal < 10 ** 20
     minimal *= 0.99999
     maximal *= 1.00001

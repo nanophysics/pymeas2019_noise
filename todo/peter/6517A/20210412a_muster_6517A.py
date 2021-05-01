@@ -17,22 +17,39 @@ print(instrument.write("SOUR:VOLT %f" % fvoltage))
 print(instrument.write("SOUR:VOLT:MCON ON"))
 print(instrument.write("RES:MAN:VSO:OPER ON"))
 print(instrument.write("CURR:DAMP OFF"))
-print(instrument.write("CURR:NPLC 1")) # 0.01 to 10
 print(instrument.write("curr:dc:rang 2E-9")) # 20E-12 200E-12 2E-9 20E-9 200E-9 2E-6 20E-6 200E-6 2E-3 20E-3
 print(instrument.write("SYST:ZCH OFF"))
 print(instrument.write("INIT:CONT ON"))
+print(instrument.write("FORM:ELEM READ"))
+print(instrument.write("CURR:NPLC 10")) # 0.01 to 10
 
 time.sleep(3.0)
 print(instrument.write("TRIG:SOUR IMM"))
+print(instrument.write("TRIG:DEL 0"))
 
 print("espected @ 100GOhm: ", fvoltage/100E9, " A")
 time.sleep(1.0)
 print(instrument.query("READ?"))
 
 
+print(instrument.query("TRAC:POIN:ACT?"))
+print(instrument.write("TRAC:CLE"))
+print(instrument.query("TRAC:POIN:ACT?"))
 
+print("nochmals")
+print(instrument.write("TRAC:POIN 5"))
+print(instrument.write("TRAC:CLE"))
+print(instrument.write("INIT:CONT ON"))
+time.sleep(0.1)
 
+for i in range(3):
+    print(instrument.write("TRAC:FEED:CONT NEXT"))
+    stringvalues = instrument.query("TRAC:DATA?")
+    stringlist = stringvalues.split(",")
+    valuesA = [float(i) for i in stringlist]
+    print(len(valuesA))
 
+print("fertig")
 
 
 

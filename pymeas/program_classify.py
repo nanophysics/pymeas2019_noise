@@ -4,7 +4,7 @@ from . import program_eseries
 
 
 class Classify:
-    def __init__(self, series="E12", minimal=1e-9, maximal=1e2):
+    def __init__(self, series="E12", minimal=1e-12, maximal=1e2): # current, pA possible
         self.eseries = program_eseries.eseries(series=series, minimal=minimal, maximal=maximal, borders=True)
         # Take all right borders
         borders = [x[2] for x in self.eseries]

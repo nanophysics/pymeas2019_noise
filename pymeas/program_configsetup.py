@@ -124,6 +124,15 @@ class ConfigStepKeysight34401A(ConfigStep):  # pylint: disable=too-few-public-me
         self.offset: float = 42.0
         self.resolution: str = "42"
 
+class ConfigStepKeithley6517A(ConfigStep):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
+    def __init__(self):
+        super().__init__()
+        self.input_channel: str = "42"
+        self.input_Vp: enum.Enum = InputRangeKeysight34401A.RANGE_100V
+        self.bandwitdth: str = "42"
+        self.offset: float = 42.0
+        self.resolution: str = "42"
+
 class ConfigStepSkip(ConfigStep):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):
         super().__init__()
