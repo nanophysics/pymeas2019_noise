@@ -1,5 +1,6 @@
 import re
 import sys
+import math
 import time
 import types
 import pickle
@@ -394,6 +395,38 @@ class Topic:  # pylint: disable=too-many-public-methods
                 last_value = value
         return f_decade, value_decade
 
+    def flickernoise(self):
+        "return Vrms and commentj"
+        PS = PRESENTATIONS.dict["PS"].get_as_dict(self)
+
+        f_low = 0.1
+        f_high = 10.0
+        P_sum = 0.0
+        n = 0
+        for f, p in zip(PS["x"], PS["y"]):
+            if f > f_low * 1.001:
+                P_sum += p
+                n += 1
+                if f > f_high * 0.999:
+                    break
+
+        flickernoise_minus_basenoise_Vrms = flickernoise_Vrms = math.sqrt(P_sum)
+        comment = ""
+        if n != 24:
+            flickernoise_Vrms = 42.0
+            comment = "Flickernoise: not enough values to calculate."
+
+        if self.is_basenoise:
+            # We are the basenoise
+            flickernoise_minus_basenoise_Vrms = 0.0
+        else:
+            if self.basenoise is not None:
+                assert not self.is_basenoise
+                # A basenoise exists. Get the flickernoise and subtract
+                _flickernoise_basenoise_Vrms, _dummy_Vrms, _comment = self.basenoise.flickernoise()
+                flickernoise_minus_basenoise_Vrms = math.sqrt(max(0.0, flickernoise_Vrms**2 - _flickernoise_basenoise_Vrms**2))
+
+        return flickernoise_Vrms, flickernoise_minus_basenoise_Vrms, comment
 
 class ResizedArrays:
     """

@@ -4,7 +4,6 @@
 # The measurement time could be set to 60s for example.
 # Just start run_0_measure.bat and observe the result
 
-import math
 from enum import Enum
 import pathlib
 import logging
@@ -25,10 +24,10 @@ class Bool(Enum):
 
 
 class Filter(Enum):
-    FilterDA_DIRECT = library_combinations.FilterDA.DIRECT.value  # pylint: disable=no-member 
-    FilterDA_OUT = library_combinations.FilterDA.OUT.value  # pylint: disable=no-member 
-    FilterHV_OUT_DIR = library_combinations.FilterHV.OUT_DIR.value  # pylint: disable=no-member 
-    FilterHV_OUT_FIL = library_combinations.FilterHV.OUT_FIL.value  # pylint: disable=no-member 
+    FilterDA_DIRECT = library_combinations.FilterDA.DIRECT.value  # pylint: disable=no-member
+    FilterDA_OUT = library_combinations.FilterDA.OUT.value  # pylint: disable=no-member
+    FilterHV_OUT_DIR = library_combinations.FilterHV.OUT_DIR.value  # pylint: disable=no-member
+    FilterHV_OUT_FIL = library_combinations.FilterHV.OUT_FIL.value  # pylint: disable=no-member
 
 
 class Qualification:
@@ -169,26 +168,10 @@ class Qualification:
         assert isinstance(measurement, Measurement)
 
         topic = self._read_topic(measurement)
-        PS = PRESENTATIONS.dict["PS"].get_as_dict(topic)
 
-        f_low = 0.1
-        f_high = 10.0
-        P_sum = 0.0
-        n = 0
-        for f, p in zip(PS["x"], PS["y"]):
-            if f > f_low:
-                P_sum += p
-                n += 1
-                if f > f_high - 1e-3:
-                    break
+        _flickernoise_Vrms, flickernoise_minus_basenoise_Vrms, comment = topic.flickernoise()
 
-        flickernoise_Vrms = math.sqrt(P_sum)
-        comment = ""
-        if n != 24:
-            flickernoise_Vrms = 42.0
-            comment = "Flickernoise: not enough values to calculate."
-
-        self._append(row, measurement, measured=flickernoise_Vrms, comment=comment)
+        self._append(row, measurement, measured=flickernoise_minus_basenoise_Vrms, comment=comment)
 
     def qual_step_size(self, row, measurement):
         assert isinstance(row, Row)

@@ -98,14 +98,6 @@ def run_condense_dir_raw(dir_raw, do_plot=True):
 
         plotFile.plot_presentations()
 
-    try:
-        import library_1_postprocess
-    except ModuleNotFoundError:
-        logger.error("No library_1_postprocess...")
-        return
-    logger.info(f"library_1_postprocess.postprocess({dir_raw})")
-    library_1_postprocess.postprocess(dir_raw)
-
 
 def write_presentation_summary_file(plotData, directory):
     assert len(plotData.list_topics) == 1
