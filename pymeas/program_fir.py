@@ -1,3 +1,4 @@
+import math
 import pathlib
 import logging
 
@@ -33,6 +34,7 @@ assert SAMPLES_LEFT % DECIMATE_FACTOR == 0
 assert SAMPLES_RIGHT % DECIMATE_FACTOR == 0
 
 
+l = (2, 4, 8, 16, 32)
 class PushCalculator:
     """
     >>> [PushCalculator(dt_s).push_size_samples for dt_s in (1.0/125e6, 1.0/1953125.0, 1.0)]
@@ -47,8 +49,9 @@ class PushCalculator:
 
     def __calulcate_push_size_samples(self):
         push_size = 1.0 / self.dt_s / 1953125 * 2097152 / 2.0
-        push_size = int(push_size + 0.5)
-        push_size = max(push_size, SAMPLES_DENSITY // PERIODOGRAM_OVERLAP)
+        push_size = 2**int(math.log2(push_size + 0.5))
+        # push_size = max(push_size, SAMPLES_DENSITY // PERIODOGRAM_OVERLAP)
+        push_size = max(push_size, 16)
         push_size = min(push_size, SAMPLES_SELECT_MAX // 2)
         return push_size
 
@@ -171,7 +174,7 @@ class Density:  # pylint: disable=too-many-instance-attributes
         self.__stepsize_bins = classify_stepsize.bins_factory()
 
         self.frequencies = None
-        self.__Pxx_sum = None
+        self.__Pxx_sum = np.zeros(SAMPLES_DENSITY//2+1, dtype=np.float32)
         self.__Pxx_n = 0
         self.__stage = None
         self.__dt_s = None
@@ -210,8 +213,15 @@ class Density:  # pylint: disable=too-many-instance-attributes
           Return: None
         """
         if array_in is None:
-            if (self.__fifo is None) or (len(self.__fifo) < SAMPLES_DENSITY):
+            if self.__fifo is None:
+                return self.out.push(None)
+
+            if len(self.__fifo) < SAMPLES_DENSITY:
                 # Not sufficient data
+                if len(self.__fifo) > 0:
+                    if self.__Pxx_n == 0:
+                        # Preview should not overwrite real data.
+                        self.density_preview(self.__fifo)
                 return self.out.push(None)
 
             # Time is over. Calculate density
@@ -248,18 +258,9 @@ class Density:  # pylint: disable=too-many-instance-attributes
         self.frequencies, Pxx = scipy.signal.periodogram(array, 1 / self.__dt_s, window="hamming", detrend="linear")  # Hz, V^2/Hz
 
         # Averaging
-        do_averaging = True
-        if do_averaging:
-            self.__Pxx_n += 1
-            if self.__Pxx_sum is None:
-                self.__Pxx_sum = Pxx
-            else:
-                assert len(self.__Pxx_sum) == len(Pxx)
-                self.__Pxx_sum += Pxx
-        else:
-            self.__Pxx_n = 1
-            self.__Pxx_sum = Pxx
-
+        assert len(self.__Pxx_sum) == len(Pxx)
+        self.__Pxx_sum += Pxx
+        self.__Pxx_n += 1
         # Stepsize statistics
         stepsizes_V = np.abs(np.diff(array))
         for stepsize_V in stepsizes_V:
@@ -269,6 +270,13 @@ class Density:  # pylint: disable=too-many-instance-attributes
         stepsize_bins_count = self.__stepsize_bins.count / (self.__dt_s * bins_total_count)
 
         _filenameFull = program_fir_plot.DensityPlot.save(config=self.__config, directory=self.__directory, stage=self.__stage, dt_s=self.__dt_s, frequencies=self.frequencies, Pxx_n=self.__Pxx_n, Pxx_sum=self.__Pxx_sum, stepsize_bins_count=stepsize_bins_count, stepsize_bins_V=self.__stepsize_bins.V, samples_V=array)
+
+
+    def density_preview(self, array):
+        self.frequencies, Pxx = scipy.signal.periodogram(array, 1 / self.__dt_s, window="hamming", detrend="linear")  # Hz, V^2/Hz
+
+        _filenameFull = program_fir_plot.DensityPlot.save(config=self.__config, directory=self.__directory, stage=self.__stage, dt_s=self.__dt_s, frequencies=self.frequencies, Pxx_n=1, Pxx_sum=Pxx, stepsize_bins_count=self.__stepsize_bins.count, stepsize_bins_V=self.__stepsize_bins.V, samples_V=array)
+
 
 
 class OutTrash:
