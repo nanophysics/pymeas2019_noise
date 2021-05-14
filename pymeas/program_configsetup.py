@@ -53,7 +53,7 @@ class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-ma
         self.fir_count_skipped: int = 0
         self.input_channel: str = LockingMixin.TO_BE_SET
         self.input_Vp: enum.Enum = LockingMixin.TO_BE_SET
-        self.bandwitdth: str = LockingMixin.TO_BE_SET
+        self.bandwidth: str = LockingMixin.TO_BE_SET
         self.offset: float = LockingMixin.TO_BE_SET
         self.resolution: str = LockingMixin.TO_BE_SET
         self.duration_s: float = LockingMixin.TO_BE_SET
@@ -75,7 +75,7 @@ class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-ma
         assert isinstance(self.fir_count_skipped, int)
         assert isinstance(self.input_channel, str)
         assert isinstance(self.input_Vp, enum.Enum)
-        assert isinstance(self.bandwitdth, str)
+        assert isinstance(self.bandwidth, str)
         assert isinstance(self.offset, float)
         assert isinstance(self.resolution, str)
         assert isinstance(self.duration_s, float)
@@ -98,6 +98,7 @@ class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-ma
         c.duration_s = self.duration_s
         return c
 
+
 class InputRangeKeysight34401A(enum.Enum):
     RANGE_100mV = "0.1"
     RANGE_1V = "1"
@@ -115,23 +116,26 @@ class InputRangeKeysight34401A(enum.Enum):
             InputRangeKeysight34401A.RANGE_1000V: 1000.0,
         }[self]
 
+
 class ConfigStepKeysight34401A(ConfigStep):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):
         super().__init__()
         self.input_channel: str = "42"
         self.input_Vp: enum.Enum = InputRangeKeysight34401A.RANGE_100V
-        self.bandwitdth: str = "42"
+        self.bandwidth: str = "42"
         self.offset: float = 42.0
         self.resolution: str = "42"
+
 
 class ConfigStepKeithley6517A(ConfigStep):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):
         super().__init__()
         self.input_channel: str = "42"
         self.input_Vp: enum.Enum = InputRangeKeysight34401A.RANGE_100V
-        self.bandwitdth: str = "42"
+        self.bandwidth: str = "42"
         self.offset: float = 42.0
         self.resolution: str = "42"
+
 
 class ConfigStepSkip(ConfigStep):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):
@@ -139,12 +143,13 @@ class ConfigStepSkip(ConfigStep):  # pylint: disable=too-few-public-methods,too-
         self.skalierungsfaktor: float = 42.0
         self.input_channel: str = "42"
         self.input_Vp: enum.Enum = InputRangeKeysight34401A.RANGE_100V
-        self.bandwitdth: str = "42"
+        self.bandwidth: str = "42"
         self.offset: float = 42.0
         self.resolution: str = "42"
         self.duration_s: float = 42.0
         self.dt_s: float = 42.0
         self.skip: bool = True
+
 
 class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
     def __init__(self):
@@ -208,6 +213,7 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
 
             if _lock.requested_stop_soft():
                 return
+
 
 class ConfigSetupKeysight34401A(ConfigSetup):  # pylint: disable=too-few-public-methods
     def __init__(self):

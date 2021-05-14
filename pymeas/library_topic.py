@@ -12,8 +12,10 @@ logger = logging.getLogger("logger")
 
 DIRECTORY_NAME_RAW_PREFIX = "raw-"
 
+
 class Stage100msNotFoundException(Exception):
     pass
+
 
 class ResultAttributes:
     RESULT_DIR_PATTERN = "raw-*"
@@ -170,17 +172,17 @@ class TopicMinusBasenoise:
 
     # @property
     # def scaling_LS(self):
-        # Peter: soll nicht implementiert werden weil es keinen Sinn macht.
+    # Peter: soll nicht implementiert werden weil es keinen Sinn macht.
     #     return self.scaling_LSD
 
     # @property
     # def scaling_PS(self):
-        # Peter: soll nicht implementiert werden weil es keinen Sinn macht.
+    # Peter: soll nicht implementiert werden weil es keinen Sinn macht.
     #     return self.scaling_PSD
 
     # @property
     # def scaling_INTEGRAL(self):
-        # Peter: soll nicht implementiert werden weil es schwierig zu interpretieren ist.
+    # Peter: soll nicht implementiert werden weil es schwierig zu interpretieren ist.
     #     return self.scaling_LSD
 
     # @property
@@ -295,7 +297,7 @@ class Topic:  # pylint: disable=too-many-public-methods
                 if _stage.dt_s > stage_100ms:
                     return _stage
             __stage = self.stages[-1]
-            msg = f'{str(self.dir_raw)}: No stage with dt_s {stage_100ms:0.5f}s. The latest stage has dt_s {__stage.dt_s:0.5f}s.'
+            msg = f"{str(self.dir_raw)}: No stage with dt_s {stage_100ms:0.5f}s. The latest stage has dt_s {__stage.dt_s:0.5f}s."
             raise Stage100msNotFoundException(msg)
             # logger.warning(f'topic {self.__ra.topic}: No stage with dt_s {stage_100ms:0.5f}s. Use the latest stage with dt_s {__stage.dt_s:0.5f}s instead.')
             # return __stage
@@ -356,18 +358,18 @@ class Topic:  # pylint: disable=too-many-public-methods
 
     def _integral_index_start(self):
         fHz = 0.1
-        for i,f in enumerate(self.f):
-            if fHz*0.99 < f < fHz*1.01:
+        for i, f in enumerate(self.f):
+            if fHz * 0.99 < f < fHz * 1.01:
                 return i
         raise Exception(f"Frequency {fHz} not found")
 
     @property
     def f_INTEGRAL(self):
-        return self.__prs.f[self._integral_index_start():]
+        return self.__prs.f[self._integral_index_start() :]
 
     @property
     def scaling_INTEGRAL(self):
-        return np.sqrt(np.cumsum(self.scaling_PS[self._integral_index_start():]))  # todo: start sum above frequency_complete_low_limit
+        return np.sqrt(np.cumsum(self.scaling_PS[self._integral_index_start() :]))  # todo: start sum above frequency_complete_low_limit
 
     @property
     def decade_f_d(self):
@@ -424,9 +426,10 @@ class Topic:  # pylint: disable=too-many-public-methods
                 assert not self.is_basenoise
                 # A basenoise exists. Get the flickernoise and subtract
                 _flickernoise_basenoise_Vrms, _dummy_Vrms, _comment = self.basenoise.flickernoise()
-                flickernoise_minus_basenoise_Vrms = math.sqrt(max(0.0, flickernoise_Vrms**2 - _flickernoise_basenoise_Vrms**2))
+                flickernoise_minus_basenoise_Vrms = math.sqrt(max(0.0, flickernoise_Vrms ** 2 - _flickernoise_basenoise_Vrms ** 2))
 
         return flickernoise_Vrms, flickernoise_minus_basenoise_Vrms, comment
+
 
 class ResizedArrays:
     """

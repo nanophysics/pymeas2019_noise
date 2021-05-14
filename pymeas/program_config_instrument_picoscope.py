@@ -88,7 +88,7 @@ def get_config_setupPS500A():  # pylint: disable=too-many-statements
     # Picoscope
     step.input_channel = "A"  # channel A is connected without filter to the amplifier out
     # step.input_Vp = ...
-    step.bandwitdth = "BW_20MHZ"
+    step.bandwidth = "BW_20MHZ"
     step.offset = 0.0
     step.resolution = "16bit"
     # step.duration_s = ...
@@ -105,7 +105,7 @@ def get_config_setupPS500A():  # pylint: disable=too-many-statements
     # Picoscope
     step.input_channel = "A"  # channel A is connected without filter to the amplifier out
     # step.input_Vp = ...
-    step.bandwitdth = "BW_20MHZ"
+    step.bandwidth = "BW_20MHZ"
     step.offset = 0.0
     step.resolution = "15bit"
     step.duration_s = 0.6  #  Memory will limit time (7s). After about 0.5s the usb transfer starts and adds additional noise
@@ -122,7 +122,7 @@ def get_config_setupPS500A():  # pylint: disable=too-many-statements
     # Picoscope
     step.input_channel = "A"  # channel A is connected without filter to the amplifier out
     # step.input_Vp = ...
-    step.bandwitdth = "BW_20MHZ"
+    step.bandwidth = "BW_20MHZ"
     step.offset = 0.0
     step.resolution = "16bit"
     step.duration_s = 3.0  #  Memory will limit time (9.7s)
@@ -139,7 +139,7 @@ def get_config_setupPS500A():  # pylint: disable=too-many-statements
     # Picoscope
     step.input_channel = "B"  # channel B is connected with filter low pass 100 kHz ??? to the amplifier out
     # step.input_Vp = ...
-    step.bandwitdth = "BW_20MHZ"
+    step.bandwidth = "BW_20MHZ"
     step.offset = 0.0
     step.resolution = "16bit"
     step.duration_s = 60.0

@@ -34,7 +34,6 @@ assert SAMPLES_LEFT % DECIMATE_FACTOR == 0
 assert SAMPLES_RIGHT % DECIMATE_FACTOR == 0
 
 
-l = (2, 4, 8, 16, 32)
 class PushCalculator:
     """
     >>> [PushCalculator(dt_s).push_size_samples for dt_s in (1.0/125e6, 1.0/1953125.0, 1.0)]
@@ -43,11 +42,11 @@ class PushCalculator:
 
     def __init__(self, dt_s):
         self.dt_s = dt_s
-        self.push_size_samples = self.__calulcate_push_size_samples()
+        self.push_size_samples = self.__calculate_push_size_samples()
         self.previous_fir_samples_select = self.push_size_samples * DECIMATE_FACTOR
         self.previous_fir_samples_input = self.previous_fir_samples_select + SAMPLES_LEFT_RIGHT
 
-    def __calulcate_push_size_samples(self):  # TODO: correct calulcate
+    def __calculate_push_size_samples(self):  # TODO: correct calulcate
         push_size = 1.0 / self.dt_s / 1953125 * 2097152 / 2.0
         # Problemantic code
         #  push_size = 2**int(math.log2(push_size + 0.5))
@@ -178,7 +177,7 @@ class Density:  # pylint: disable=too-many-instance-attributes
         self.__stepsize_bins = classify_stepsize.bins_factory()
 
         self.frequencies = None
-        self.__Pxx_sum = np.zeros(SAMPLES_DENSITY//2+1, dtype=np.float64)
+        self.__Pxx_sum = np.zeros(SAMPLES_DENSITY // 2 + 1, dtype=np.float64)
         self.__Pxx_n = 0
         self.__stage = None
         self.__dt_s = None
@@ -279,12 +278,10 @@ class Density:  # pylint: disable=too-many-instance-attributes
 
         _filenameFull = program_fir_plot.DensityPlot.save(config=self.__config, directory=self.__directory, stage=self.__stage, dt_s=self.__dt_s, frequencies=self.frequencies, Pxx_n=self.__Pxx_n, Pxx_sum=self.__Pxx_sum, stepsize_bins_count=stepsize_bins_count, stepsize_bins_V=self.__stepsize_bins.V, samples_V=array)
 
-
     def density_preview(self, array):
         self.frequencies, Pxx = scipy.signal.periodogram(array, 1 / self.__dt_s, window="hamming", detrend="linear")  # Hz, V^2/Hz
 
         _filenameFull = program_fir_plot.DensityPlot.save(config=self.__config, directory=self.__directory, stage=self.__stage, dt_s=self.__dt_s, frequencies=self.frequencies, Pxx_n=1, Pxx_sum=Pxx, stepsize_bins_count=self.__stepsize_bins.count, stepsize_bins_V=self.__stepsize_bins.V, samples_V=array)
-
 
 
 class OutTrash:

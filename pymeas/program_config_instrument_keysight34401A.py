@@ -1,4 +1,3 @@
-
 import logging
 
 from . import program_instrument_keysight34401A

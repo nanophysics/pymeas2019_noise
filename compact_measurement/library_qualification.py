@@ -41,7 +41,6 @@ class Qualification:
         excel = ExcelReader(excel_file)
         self.qualification_rows = excel.tables.Qualification.rows
 
-
     def _iter_enum(self, cell, enum_class):
         if cell.text == "":
             yield from enum_class
@@ -54,7 +53,6 @@ class Qualification:
                 return
 
         yield cell.asenum(enum_class)
-
 
     def _iter_rows(self, combination):
         assert isinstance(combination, library_combinations.Combination)
@@ -128,7 +126,7 @@ class Qualification:
         assert isinstance(measurement, Measurement)
         range_lower = row.cols.lower.float
         range_upper = row.cols.upper.float
-        comment = f'{range_lower}<x<{range_upper} {row.cols.UnitRange.text}'
+        comment = f"{range_lower}<x<{range_upper} {row.cols.UnitRange.text}"
 
         subtract_basenoise = measurement.combination.channel is not None
         topic = self._read_topic(measurement=measurement, subtract_basenoise=subtract_basenoise)
@@ -136,14 +134,14 @@ class Qualification:
 
         MIN = -1000.0
         max_value = MIN
-        for x, y in zip(LSD['x'], LSD['y']):
+        for x, y in zip(LSD["x"], LSD["y"]):
             x = float(x)
             y = float(y)
             if range_lower < x < range_upper:
                 max_value = max(y, max_value)
 
         if max_value < -1.0:
-            logger.error(f'No measurements found in range {comment}')
+            logger.error(f"No measurements found in range {comment}")
             return
 
         self._append(row, measurement, measured=max_value, comment=comment)
@@ -156,7 +154,7 @@ class Qualification:
 
         # basenoise
         if subtract_basenoise:
-            dir_raw_basenoise = dir_raw.parent / 'raw-grey-BASENOISE'
+            dir_raw_basenoise = dir_raw.parent / "raw-grey-BASENOISE"
             if dir_raw_basenoise.exists():
                 topic_basenoise = Topic.load(dir_raw=dir_raw_basenoise)
                 topic.set_basenoise(topic_basenoise)
@@ -181,10 +179,10 @@ class Qualification:
         stepsize = PRESENTATIONS.dict["STEPSIZE"].get_as_dict(topic)
 
         range_lower = row.cols.lower.float
-        comment = f'range_lower={range_lower} {row.cols.UnitRange.text}'
+        comment = f"range_lower={range_lower} {row.cols.UnitRange.text}"
 
         _sum = 0.0
-        for x, y in zip(stepsize['x'], stepsize['y']):
+        for x, y in zip(stepsize["x"], stepsize["y"]):
             x = float(x)
             y = float(y)
             if x < range_lower:

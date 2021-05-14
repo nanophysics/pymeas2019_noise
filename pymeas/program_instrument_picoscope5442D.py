@@ -128,7 +128,7 @@ class Instrument:
 
         for channel_raw in ALL_CHANNELS:
             enabled = channel_raw in configstep.input_channel
-            self.scope.set_channel(channel_raw, coupling="dc", bandwidth=configstep.bandwitdth, offset=configstep.offset, scale=configstep.input_Vp, enabled=enabled)
+            self.scope.set_channel(channel_raw, coupling="dc", bandwidth=configstep.bandwidth, offset=configstep.offset, scale=configstep.input_Vp, enabled=enabled)
 
         if PICSCOPE_MODEL == PICSCOPE_MODEL_5442D:
             max_samples_bytes = self.scope.memory_segments(num_segments=1)
@@ -189,7 +189,6 @@ class Instrument:
 
             @callbacks.ps5000aStreamingReady
             def my_streaming_ready(handle, num_samples, start_index, overflow, trigger_at, triggered, auto_stop, p_parameter):  # pylint: disable=too-many-arguments
-
                 def stop(exit_code: ExitCode, reason: str):
                     assert isinstance(exit_code, ExitCode)
                     assert isinstance(reason, str)

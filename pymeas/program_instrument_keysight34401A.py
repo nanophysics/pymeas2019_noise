@@ -23,7 +23,7 @@ class Instrument:
         self.streaming_done = False
 
         self.rm = visa.ResourceManager()
-        self.instrument = self.rm.open_resource('GPIB0::12::INSTR')
+        self.instrument = self.rm.open_resource("GPIB0::12::INSTR")
 
     def connect(self):
         pass
@@ -38,35 +38,35 @@ class Instrument:
         print(self.instrument.write("*RST"))
         print(self.instrument.write("*CLS"))
         # print(self.instrument.write("CONF:VOLT:DC")) # auto range
-        print(self.instrument.write(f"CONF:VOLT:DC {configstep.input_Vp.value}")) # 0.1, 1, 10, 100, 1000
+        print(self.instrument.write(f"CONF:VOLT:DC {configstep.input_Vp.value}"))  # 0.1, 1, 10, 100, 1000
         time.sleep(1.0)
-        print(self.instrument.write("TRIG:DEL 0")) # Trigget delay
+        print(self.instrument.write("TRIG:DEL 0"))  # Trigget delay
         maxmemory = 512
         trig_count = 50
-        #assert (trig_count <= maxmemory)
+        # assert (trig_count <= maxmemory)
         print(self.instrument.write("TRIG:COUN %d" % trig_count))  # :COUNt {<value>|MINimum|MAXimum|INFinite}  samples pro lesen
-        print(self.instrument.write("SAMP:COUN 1")) # anzahl samples pro lesen  ???
+        print(self.instrument.write("SAMP:COUN 1"))  # anzahl samples pro lesen  ???
         # produkt aus TRIG:COUN x TRIG:COUN  darf nicht groesser als 512 sein. Anleitung fuer mich sehr unklar.
-        print(self.instrument.write("ZERO:AUTO OFF")) # ZERO:AUTO {OFF|ONCE|ON}
+        print(self.instrument.write("ZERO:AUTO OFF"))  # ZERO:AUTO {OFF|ONCE|ON}
         print(self.instrument.write("INP:IMP:AUTO ON"))
-        NPLC = '1' #NPLC: Integration over powerlinecycles, 0.02 0.2 1 10 100
-        #NPLC = '0.2' #NPLC: Integration over powerlinecycles, 0.02 0.2 1 10 100
-        print(self.instrument.write("VOLT:DC:NPLC " + NPLC)) # NPLC: Integration over powerlinecycles, 0.02 0.2 1 10 100
+        NPLC = "1"  # NPLC: Integration over powerlinecycles, 0.02 0.2 1 10 100
+        # NPLC = '0.2' #NPLC: Integration over powerlinecycles, 0.02 0.2 1 10 100
+        print(self.instrument.write("VOLT:DC:NPLC " + NPLC))  # NPLC: Integration over powerlinecycles, 0.02 0.2 1 10 100
 
-        #time.sleep(1.0)
+        # time.sleep(1.0)
 
-        #print(self.instrument.write("TRIG:SOUR IMM"))
-        #time.sleep(1.0)
-        #print(self.instrument.write("INIT"))
+        # print(self.instrument.write("TRIG:SOUR IMM"))
+        # time.sleep(1.0)
+        # print(self.instrument.write("INIT"))
 
         time.sleep(0.5)
         print(self.instrument.write("TRIG:SOUR IMM"))
-        #time.sleep(0.5)
-        #print(self.instrument.write("INIT"))
+        # time.sleep(0.5)
+        # print(self.instrument.write("INIT"))
 
         dt_s = 0.02 * float(NPLC)
         assert configstep.dt_s == dt_s
-        overheadfaktor = 1.0 # 1.14
+        overheadfaktor = 1.0  # 1.14
         total_samples = int(configstep.duration_s / dt_s)
 
         def convert(values_V):
@@ -86,7 +86,7 @@ class Instrument:
         start_s = time.time()
 
         for i in range(total_samples // trig_count):
-            values_comma_sep = self.instrument.query("READ?")  #.replace(",", "\n")
+            values_comma_sep = self.instrument.query("READ?")  # .replace(",", "\n")
             values_V = [float(i) for i in values_comma_sep.split(",")]
             queueFull = stream.put(values_V)
             assert not queueFull
