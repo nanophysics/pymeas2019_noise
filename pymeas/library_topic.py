@@ -203,7 +203,7 @@ class Topic:  # pylint: disable=too-many-public-methods
         self.__plot_line = None
         self.dir_raw = dir_raw
         self.toggle = True
-        self.is_basenoise = ra.topic == Topic.TAG_BASENOISE
+        self.is_basenoise = ra.topic.startswith(Topic.TAG_BASENOISE)
         self.basenoise = None
 
     @property
@@ -277,7 +277,7 @@ class Topic:  # pylint: disable=too-many-public-methods
         assert isinstance(presentation, Presentation)
         if presentation.supports_diff_basenoise:
             if self.basenoise:
-                return f"{self.topic} - {self.basenoise.topic}"
+                return f"{self.topic} - {Topic.TAG_BASENOISE}"
         return self.topic
 
     @property
