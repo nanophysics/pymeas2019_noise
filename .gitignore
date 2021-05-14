@@ -21,3 +21,5 @@ measurement-actual/logger_condense.txt
 compact_measurements/*
 hidden/
 measurement-zenerdiode/*
+measurement-zenerdiode1/*
+measurement-zenerdiode2/*

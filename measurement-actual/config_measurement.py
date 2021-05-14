@@ -8,7 +8,7 @@ def get_configsetup():
 
     duration_slow_s = 48 * 3600.0
     config.step_0_settle.settle_time_ok_s = 40.00
-    config.step_0_settle.duration_s = config.step_0_settle.settle_time_ok_s + 4 * 60.0
+    config.step_0_settle.duration_s = config.step_0_settle.settle_time_ok_s + 10 * 60.0
     config.step_0_settle.settle_input_part = 0.5
     config.step_3_slow.duration_s = duration_slow_s
     for step in config.configsteps:

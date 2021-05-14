@@ -80,10 +80,10 @@ while False:
 
 exit()
 
-str = instrument.query("READ?")  #.replace(",", "\n")
+_str = instrument.query("READ?")  #.replace(",", "\n")
 #strs = str.split(",")
 #floats = [float(i) for i in strs]
-print(str)
+print(_str)
 
 
 exit()

@@ -47,11 +47,15 @@ class PushCalculator:
         self.previous_fir_samples_select = self.push_size_samples * DECIMATE_FACTOR
         self.previous_fir_samples_input = self.previous_fir_samples_select + SAMPLES_LEFT_RIGHT
 
-    def __calulcate_push_size_samples(self):
+    def __calulcate_push_size_samples(self):  # TODO: correct calulcate
         push_size = 1.0 / self.dt_s / 1953125 * 2097152 / 2.0
-        push_size = 2**int(math.log2(push_size + 0.5))
-        # push_size = max(push_size, SAMPLES_DENSITY // PERIODOGRAM_OVERLAP)
-        push_size = max(push_size, 16)
+        # Problemantic code
+        #  push_size = 2**int(math.log2(push_size + 0.5))
+        # # push_size = max(push_size, SAMPLES_DENSITY // PERIODOGRAM_OVERLAP)
+        # push_size = max(push_size, 16)
+
+        push_size = int(push_size + 0.5)
+        push_size = max(push_size, SAMPLES_DENSITY // PERIODOGRAM_OVERLAP)
         push_size = min(push_size, SAMPLES_SELECT_MAX // 2)
         return push_size
 
@@ -174,7 +178,7 @@ class Density:  # pylint: disable=too-many-instance-attributes
         self.__stepsize_bins = classify_stepsize.bins_factory()
 
         self.frequencies = None
-        self.__Pxx_sum = np.zeros(SAMPLES_DENSITY//2+1, dtype=np.float32)
+        self.__Pxx_sum = np.zeros(SAMPLES_DENSITY//2+1, dtype=np.float64)
         self.__Pxx_n = 0
         self.__stage = None
         self.__dt_s = None
@@ -259,6 +263,10 @@ class Density:  # pylint: disable=too-many-instance-attributes
 
         # Averaging
         assert len(self.__Pxx_sum) == len(Pxx)
+        if self.__Pxx_n == 0:
+            if self.__Pxx_sum.dtype != Pxx.dtype:
+                # logger.warning(f"Stage {self.__stage}: Expected {Pxx.dtype} but got {self.__Pxx_sum.dtype}.")
+                pass
         self.__Pxx_sum += Pxx
         self.__Pxx_n += 1
         # Stepsize statistics
