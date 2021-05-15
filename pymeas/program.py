@@ -70,7 +70,7 @@ def iter_dir_raw(dir_measurement):
         yield dir_raw
 
 
-def run_condense(dir_measurement):
+def run_condense(dir_measurement, skip_on_error=False):
     # if False:
     #   import cProfile
     #   cProfile.run('program.run_condense_0to1()', sort='tottime')
@@ -81,7 +81,13 @@ def run_condense(dir_measurement):
     # if not dir_result.exists():
     #   dir_result.mkdir()
     for dir_raw in iter_dir_raw(dir_measurement):
-        run_condense_dir_raw(dir_raw)
+        try:
+            run_condense_dir_raw(dir_raw)
+        except library_topic.FrequencyNotFound as ex:
+            if skip_on_error:
+                logger.warning(f"SKIPPED: {ex}")
+                continue
+            raise
 
 
 def run_condense_dir_raw(dir_raw, do_plot=True):

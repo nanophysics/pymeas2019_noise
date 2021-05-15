@@ -16,6 +16,8 @@ DIRECTORY_NAME_RAW_PREFIX = "raw-"
 class Stage100msNotFoundException(Exception):
     pass
 
+class FrequencyNotFound(Exception):
+    pass
 
 class ResultAttributes:
     RESULT_DIR_PATTERN = "raw-*"
@@ -361,7 +363,7 @@ class Topic:  # pylint: disable=too-many-public-methods
         for i, f in enumerate(self.f):
             if fHz * 0.99 < f < fHz * 1.01:
                 return i
-        raise Exception(f"Frequency {fHz} not found")
+        raise FrequencyNotFound(f"Frequency {fHz} not found")
 
     @property
     def f_INTEGRAL(self):
