@@ -68,6 +68,7 @@ class FIR:  # pylint: disable=too-many-instance-attributes
 
     def __init__(self, out):
         self.out = out
+        self.prev = None
         self.array = None
         self.fake_left_right = True
         self.statistics_count = None
@@ -78,7 +79,8 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         self.TAG_PUSH = None
         self.pushcalulator_next = None
 
-    def init(self, stage, dt_s):
+    def init(self, stage, dt_s, prev):
+        self.prev = prev
         self.statistics_count = 0
         self.statistics_samples_out = 0
         self.statistics_samples_in = 0
@@ -88,7 +90,7 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         decimated_dt_s = dt_s * DECIMATE_FACTOR
         self.pushcalulator_next = PushCalculator(decimated_dt_s)
         logger.debug(f"stage {self.stage} push_size_samples {self.pushcalulator_next.push_size_samples} time_s {self.pushcalulator_next.dt_s*self.pushcalulator_next.push_size_samples}")
-        self.out.init(stage=stage + 1, dt_s=decimated_dt_s)
+        self.out.init(stage=stage + 1, dt_s=decimated_dt_s, prev=self)
 
     def done(self):
         logger.debug(f"Statistics {self.stage}: count {self.statistics_count}, samples in {self.statistics_samples_in*self.__dt_s:0.3f}s, samples out {self.statistics_samples_out*self.__dt_s*DECIMATE_FACTOR:0.3f}s")
@@ -179,6 +181,7 @@ class Density:  # pylint: disable=too-many-instance-attributes
         assert isinstance(directory, pathlib.Path)
 
         self.out = out
+        self.prev = None
         self.__config = config
         self.__directory = directory
         self.__stepsize_bins = classify_stepsize.bins_factory()
@@ -192,22 +195,24 @@ class Density:  # pylint: disable=too-many-instance-attributes
         self.__pushcalulator = None
         self.__mode_fifo = None
         self.__fifo = None
+        self.__fifo_size_s = None
 
     def print_size(self, f):
+        common = f"stage {self.__stage} Density: Pxx_n: {self.__Pxx_n}"
         if self.__mode_fifo:
             fifo_len = len(self.__fifo)
-            print(f"stage {self.__stage} Density: Pxx_n: {self.__Pxx_n}, fifo_len: {fifo_len}, {fifo_len*self.__dt_s:0.2e}s")
+            print(f"{common}, fifo_len: {fifo_len}, {fifo_len*self.__dt_s:0.2e}s")
         else:
             push_size_samples = self.__pushcalulator.push_size_samples
-            print(f"stage {self.__stage} Density: Pxx_n: {self.__Pxx_n}, push_size_samples: {push_size_samples}, {push_size_samples*self.__dt_s:0.2e}s")
+            print(f"{common}, push_size_samples: {push_size_samples}, {push_size_samples*self.__dt_s:0.2e}s")
 
         self.out.print_size(f)
 
-    def init(self, stage, dt_s):
+    def init(self, stage, dt_s, prev):
+        self.prev = prev
         self.__stage = stage
         self.__dt_s = dt_s
         self.__TAG_PUSH = f"Density {self.__stage}"
-
         self.__pushcalulator = PushCalculator(dt_s)
         self.__mode_fifo = self.__pushcalulator.push_size_samples < SAMPLES_DENSITY
         if self.__mode_fifo:
@@ -219,10 +224,38 @@ class Density:  # pylint: disable=too-many-instance-attributes
             # There is no need to allocate a fifo-array.
             self.__fifo = None
 
-        self.out.init(stage=stage, dt_s=dt_s)
+            self.__fifo_size_s = SAMPLES_DENSITY * self.__dt_s
+
+
+        self.out.init(stage=stage, dt_s=dt_s, prev=self)
 
     def done(self):
         self.out.done()
+
+    @property
+    def fifo_size_s(self) -> float:
+        if self.__fifo_size_s:
+            return self.__fifo_size_s
+        return len(self.__fifo) * self.__dt_s
+
+    def do_preview(self):
+        if not self.__mode_fifo:
+            return False
+        if self.__Pxx_n > 0:
+            # Preview should not overwrite real data.
+            return False
+
+        try:
+            prev_density = self.prev.prev
+        except AttributeError:
+            # There is not previous stage!
+            # This is happens with a very slow instrument: We are the first stage
+            return True
+
+        if self.fifo_size_s < prev_density.fifo_size_s * 1.01:
+            return False
+        logger.debug(f"Preview {self.__stage} {self.fifo_size_s}s > {prev_density.fifo_size_s}s")
+        return True
 
     def push(self, array_in):
         """
@@ -237,11 +270,6 @@ class Density:  # pylint: disable=too-many-instance-attributes
                 return self.out.push(None)
 
             if len(self.__fifo) < SAMPLES_DENSITY:
-                # Not sufficient data
-                # if len(self.__fifo) > 0:
-                #     if self.__Pxx_n == 0:
-                #         # Preview should not overwrite real data.
-                #         self.density_preview(self.__fifo)
                 return self.out.push(None)
 
             # Time is over. Calculate density
@@ -264,6 +292,10 @@ class Density:  # pylint: disable=too-many-instance-attributes
         if self.__mode_fifo:
             assert len(array_in) == self.__pushcalulator.push_size_samples
             self.__fifo = np.append(self.__fifo, array_in)
+
+            if self.do_preview():
+                self.density_preview(self.__fifo[SAMPLES_LEFT_RIGHT:])
+
             return None
 
         assert len(array_in) >= SAMPLES_DENSITY
@@ -307,11 +339,13 @@ class OutTrash:
     """
 
     def __init__(self):
+        self.prev = None
         self.stage = None
         self.dt_s = None
         self.array = np.empty(0, dtype=NUMPY_FLOAT_TYPE)
 
-    def init(self, stage, dt_s):
+    def init(self, stage, dt_s, prev):
+        self.prev = prev
         self.stage = stage
         self.dt_s = dt_s
 
@@ -354,8 +388,10 @@ class InSynthetic:
             assert len(array) == push_size_samples
             self.out.push(array)
             sample_start += push_size_samples
-            # self.out.print_size(sys.stdout)
-            # print("----------------")
+
+            print("----------------")
+            self.out.print_size(sys.stdout)
+            print("----------------")
 
             max_calculations = 30
             for _ in range(max_calculations):
@@ -382,7 +418,7 @@ class UniformPieces:
     def init(self, stage, dt_s):
         self.stage = stage
         self.total_samples = 0
-        self.out.init(stage=stage, dt_s=dt_s)
+        self.out.init(stage=stage, dt_s=dt_s, prev=None)
         self.pushcalulator_next = PushCalculator(dt_s)
 
     def done(self):
