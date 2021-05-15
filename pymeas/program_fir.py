@@ -1,4 +1,4 @@
-import math
+import sys
 import pathlib
 import logging
 
@@ -16,6 +16,7 @@ SAMPLES_DENSITY = 2 ** 12  # length of periodogram (2**12=4096)
 PERIODOGRAM_OVERLAP = 2 ** 4  # number of overlaps (2**4=16)
 assert SAMPLES_DENSITY % PERIODOGRAM_OVERLAP == 0
 SAMPLES_SELECT_MAX = 2 ** 23  # (2**23=8388608)
+
 
 # NUMPY_FLOAT_TYPE=np.float
 NUMPY_FLOAT_TYPE = np.float32
@@ -92,6 +93,12 @@ class FIR:  # pylint: disable=too-many-instance-attributes
     def done(self):
         logger.debug(f"Statistics {self.stage}: count {self.statistics_count}, samples in {self.statistics_samples_in*self.__dt_s:0.3f}s, samples out {self.statistics_samples_out*self.__dt_s*DECIMATE_FACTOR:0.3f}s")
         self.out.done()
+
+    def print_size(self, f):
+        array_len = -1 if self.array is None else len(self.array)
+        print(f"stage {self.stage} FIR: array_len: {array_len}")
+
+        self.out.print_size(f)
 
     def push(self, array_in):  # pylint: disable=too-many-return-statements
         """
@@ -186,6 +193,16 @@ class Density:  # pylint: disable=too-many-instance-attributes
         self.__mode_fifo = None
         self.__fifo = None
 
+    def print_size(self, f):
+        if self.__mode_fifo:
+            fifo_len = len(self.__fifo)
+            print(f"stage {self.__stage} Density: Pxx_n: {self.__Pxx_n}, fifo_len: {fifo_len}, {fifo_len*self.__dt_s:0.2e}s")
+        else:
+            push_size_samples = self.__pushcalulator.push_size_samples
+            print(f"stage {self.__stage} Density: Pxx_n: {self.__Pxx_n}, push_size_samples: {push_size_samples}, {push_size_samples*self.__dt_s:0.2e}s")
+
+        self.out.print_size(f)
+
     def init(self, stage, dt_s):
         self.__stage = stage
         self.__dt_s = dt_s
@@ -221,10 +238,10 @@ class Density:  # pylint: disable=too-many-instance-attributes
 
             if len(self.__fifo) < SAMPLES_DENSITY:
                 # Not sufficient data
-                if len(self.__fifo) > 0:
-                    if self.__Pxx_n == 0:
-                        # Preview should not overwrite real data.
-                        self.density_preview(self.__fifo)
+                # if len(self.__fifo) > 0:
+                #     if self.__Pxx_n == 0:
+                #         # Preview should not overwrite real data.
+                #         self.density_preview(self.__fifo)
                 return self.out.push(None)
 
             # Time is over. Calculate density
@@ -301,6 +318,9 @@ class OutTrash:
     def done(self):
         pass
 
+    def print_size(self, f):
+        pass
+
     def push(self, array_in):
         """
         If calculation: Return a string explaining which stage calculated.
@@ -334,6 +354,8 @@ class InSynthetic:
             assert len(array) == push_size_samples
             self.out.push(array)
             sample_start += push_size_samples
+            # self.out.print_size(sys.stdout)
+            # print("----------------")
 
             max_calculations = 30
             for _ in range(max_calculations):
@@ -365,6 +387,9 @@ class UniformPieces:
 
     def done(self):
         self.out.done()
+
+    def print_size(self, f):
+        self.out.print_size(f)
 
     def push(self, array_in):
         """
