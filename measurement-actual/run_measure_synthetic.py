@@ -3,6 +3,10 @@ import logging
 
 import numpy as np
 
+import library_path
+
+library_path.init(__file__)
+
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 
 # pylint: disable=wrong-import-position
@@ -74,7 +78,7 @@ def main():
     config.duration_s = 10.0
     config.validate()
 
-    sp = program_fir.SamplingProcess(config=config, directory_raw=DIRECTORY_OF_THIS_FILE / "measurement-actual" / "raw-green-synthetic")
+    sp = program_fir.SamplingProcess(config=config, directory_raw=DIRECTORY_OF_THIS_FILE/ "raw-green-synthetic")
     i = program_fir.InSynthetic(sp.output, signal=signal, dt_s=DT_S, time_total_s=config.duration_s)
     i.process()
     logger.info("Done")
