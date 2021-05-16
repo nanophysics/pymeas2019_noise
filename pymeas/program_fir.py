@@ -70,7 +70,6 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         self.out = out
         self.prev = None
         self.array = None
-        self.fake_left_right = True
         self.statistics_count = None
         self.statistics_samples_out = None
         self.statistics_samples_in = None
@@ -110,17 +109,6 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         if array_in is not None:
           Return: None
         """
-        if not self.fake_left_right:
-            if self.array is None:
-                if array_in is None:
-                    return self.out.push(None)
-                # This is the veriy first time
-                # Keep the oldest SAMPLES_LEFT_RIGHT
-                assert len(array_in) >= SAMPLES_LEFT_RIGHT
-                self.array = array_in[-SAMPLES_LEFT_RIGHT:]
-                self.statistics_samples_in += len(array_in)
-                return self.out.push(None)
-
         if array_in is None:
             if self.array is None:
                 return self.out.push(None)
@@ -141,10 +129,9 @@ class FIR:  # pylint: disable=too-many-instance-attributes
 
         assert len(array_in) % self.pushcalulator_next.push_size_samples == 0
 
-        if self.fake_left_right:
-            if self.array is None:
-                # The first time. Left&Right must be faked.
-                self.array = np.flip(array_in[:SAMPLES_LEFT_RIGHT])
+        if self.array is None:
+            # The first time. Left&Right must be faked.
+            self.array = np.flip(array_in[:SAMPLES_LEFT_RIGHT])
 
         self.statistics_samples_in += len(array_in)
         # Add to 'self.array'
