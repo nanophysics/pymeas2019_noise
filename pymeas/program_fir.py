@@ -14,6 +14,8 @@ from . import program_configsetup
 
 logger = logging.getLogger("logger")
 
+DEBUG_FIFO = False
+
 SAMPLES_DENSITY = 2 ** 12  # length of periodogram (2**12=4096)
 PERIODOGRAM_OVERLAP = 2 ** 5  # number of overlaps (2**5=32)
 assert SAMPLES_DENSITY % PERIODOGRAM_OVERLAP == 0
@@ -144,12 +146,19 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         self.statistics_samples_in += len(array_in)
         # Add to 'self.array'
         self.array = np.append(self.array, array_in)
+
+        if DEBUG_FIFO:
+            if self.__dt_s >= 0.01:
+                logger.debug(f"stage {self.stage} decimate received push {len(array_in)} samples, total {len(self.array)} samples")
+
         return None
 
     def decimate(self, array_decimate):
         self.statistics_count += 1
 
-        logger.debug(f"decimate, stage {self.stage}")
+        if DEBUG_FIFO:
+            array_len = -1 if self.array is None else len(self.array)
+            logger.debug(f"decimate, stage {self.stage}, array_len: {array_len}")
         assert len(array_decimate) > SAMPLES_LEFT_RIGHT
         assert len(array_decimate) % DECIMATE_FACTOR == 0
 
@@ -281,7 +290,10 @@ class Density:  # pylint: disable=too-many-instance-attributes
             # Time is over. Calculate density
             self.density(self.__fifo)
             if self.__mode_fifo:
+                len_before = len(self.__fifo)
                 self.__fifo = self.__fifo[self.__pushcalulator.push_size_samples :]
+                if DEBUG_FIFO:
+                    logger.debug(f"stage {self.__stage} density squash fifo from  {len_before} to {len(self.__fifo)} samples")
             else:
                 self.__fifo = None
             return self.__TAG_PUSH
@@ -299,6 +311,11 @@ class Density:  # pylint: disable=too-many-instance-attributes
                 assert samples_flipped < len(array_in)
                 array_tmp = array_in[samples_flipped:]
             self.__fifo = np.append(self.__fifo, array_tmp)
+
+            if DEBUG_FIFO:
+                if self.__dt_s >= 0.01:
+                    logger.debug(f"stage {self.__stage} density received push {len(array_in)} samples, total {len(self.__fifo)} samples")
+
 
             if self.do_preview():
                 self.density_preview(self.__fifo)
@@ -421,6 +438,7 @@ class UniformPieces:
         self.stage = None
         self.total_samples = None
         self.pushcalulator_next = None
+        self._calculation_not_finished_counter = 0
 
     def init(self, stage, dt_s):
         self.stage = stage
@@ -455,13 +473,17 @@ class UniformPieces:
             # Save the remainting part to 'self.array'
             self.array = self.array[push_size_samples:]
 
-            max_calculations = 30
+            max_calculations = 40
             for _i in range(max_calculations):
                 calculation_stage = self.out.push(None)
                 assert isinstance(calculation_stage, str)
                 done = len(calculation_stage) == 0
                 if done:
+                    self._calculation_not_finished_counter = 0
                     return None
+            self._calculation_not_finished_counter += 1
+            if self._calculation_not_finished_counter >= 20:
+                logger.warning(f"calculation_not_finished_counter: {self._calculation_not_finished_counter}")
             # logger.debug('m', end='')
         return None
 
@@ -470,8 +492,6 @@ class SamplingProcess:
     def __init__(self, config, directory_raw):
         assert isinstance(config, program_configsetup.SamplingProcessConfig)
         assert isinstance(directory_raw, pathlib.Path)
-
-        program.create_or_empty_directory(dir_raw=directory_raw)
 
         self.config = config
         self.directory_raw = directory_raw

@@ -42,7 +42,7 @@ class Settle:  # pylint: disable=too-many-instance-attributes
     def done(self):
         ExitCode.ERROR_INPUT_NOT_SETTLE.os_exit(msg="Settling: The input voltage did not settle!")
 
-    def push(self, array_in, previous_step):
+    def push(self, array_in):
         """
         If calculation: Return a string explaining which stage calculated.
         Else: Pass to the next stage.
