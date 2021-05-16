@@ -5,6 +5,7 @@ def get_configsetup():
     from pymeas import program_config_instrument_picoscope
 
     config = program_config_instrument_picoscope.get_config_setupPS500A()
+    config.filename = __file__
 
     duration_slow_s = 48 * 3600.0
     config.step_0_settle.settle_time_ok_s = 40.00

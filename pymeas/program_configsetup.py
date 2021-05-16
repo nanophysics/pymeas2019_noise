@@ -153,6 +153,7 @@ class ConfigStepSkip(ConfigStep):  # pylint: disable=too-few-public-methods,too-
 
 class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
     def __init__(self):
+        self.filename: str = None
         self.setup_name: str = LockingMixin.TO_BE_SET
         self.module_instrument: types.ModuleType = LockingMixin.TO_BE_SET
         self.step_0_settle = LockingMixin.TO_BE_SET
@@ -163,6 +164,7 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
         self._lock()
 
     def validate(self):
+        assert isinstance(self.filename, (type(None), str))
         assert isinstance(self.setup_name, str)
         assert isinstance(self.module_instrument, types.ModuleType)
         assert isinstance(self.step_0_settle, ConfigStep)
@@ -174,6 +176,14 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
 
         for configstep in self.configsteps:
             configstep.validate()
+
+    def backup(self, dir_raw):
+        if self.filename is None:
+            return
+        assert isinstance(dir_raw, pathlib.Path)
+        filename = pathlib.Path(self.filename)
+        filenamebak = dir_raw / f"{filename.name}.bak"
+        filenamebak.write_text(filename.read_text())
 
     @property
     def configsteps(self):

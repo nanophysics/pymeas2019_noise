@@ -12,6 +12,7 @@ logger = logging.getLogger("logger")
 
 def measure2(configsetup, dir_raw):
     program.create_or_empty_directory(dir_raw=dir_raw)
+    configsetup.backup(dir_raw=dir_raw)
 
     library_logger.init_logger_measurement(directory=dir_raw)
 
