@@ -44,11 +44,29 @@ class TestSignal:
         # logger.info('.', end='')
         return signal
 
+class TestSignalSin:
+    def __init__(self, sine_amp_V_rms, f_Hz):
+        self.sine_amp_V_rms = sine_amp_V_rms
+        self.f_Hz = f_Hz
+
+    def calculate(self, dt_s, sample_start, push_size_samples):
+        # test signal to test the algorythm
+        # produces sines every decade with added white noise
+        # you should be able to see the given values in the measurement
+        time_0 = sample_start * dt_s
+        logger.info(f"time s: {time_0:0.1f}")
+        time = np.arange(push_size_samples) * dt_s + time_0
+        signal = self.sine_amp_V_rms * np.sqrt(2) * np.sin(2 * np.pi * self.f_Hz * time)
+        assert len(signal) == push_size_samples
+        # logger.info('.', end='')
+        return signal
+
 
 def main():
     library_logger.init_logger_measurement(DIRECTORY_OF_THIS_FILE)
 
     signal = TestSignal(sine_amp_V_rms=1e-4, noise_density_V_sqrtHz=1e-7)
+    # signal = TestSignalSin(sine_amp_V_rms=1e-4, f_Hz=10.0)
 
     config = program_configsetup.SamplingProcessConfig()
     config.fir_count = 20

@@ -213,7 +213,6 @@ class Density:  # pylint: disable=too-many-instance-attributes
 
             self.__fifo_size_s = SAMPLES_DENSITY * self.__dt_s
 
-
         self.out.init(stage=stage, dt_s=dt_s, prev=self)
 
     def done(self):
@@ -224,6 +223,18 @@ class Density:  # pylint: disable=too-many-instance-attributes
         if self.__fifo_size_s:
             return self.__fifo_size_s
         return len(self.__fifo) * self.__dt_s
+
+    def calculate_samples_flipped(self):
+        # We flip samples to be able to decimate. These samples are not real measured samples.
+        # Therefore we remove them for the density calculation. This only happens in the beginning.
+        # stage samples
+        #    0     0
+        #    1    50
+        #    2    75
+        #  100   100
+        samples = round(SAMPLES_LEFT - SAMPLES_LEFT / (DECIMATE_FACTOR ** self.__stage))
+        assert samples <= SAMPLES_LEFT
+        return samples
 
     def do_preview(self):
         if not self.__mode_fifo:
@@ -260,11 +271,6 @@ class Density:  # pylint: disable=too-many-instance-attributes
                 return self.out.push(None)
 
             # Time is over. Calculate density
-            assert len(self.__fifo) == SAMPLES_DENSITY
-            # if len(self.array) != SAMPLES_DENSITY:
-            #   logger.debug('Density not calculated')
-            # if self.stage >= 4:
-            #   logger.debug(f'self.density {self.stage}')
             self.density(self.__fifo)
             if self.__mode_fifo:
                 self.__fifo = self.__fifo[self.__pushcalulator.push_size_samples :]
@@ -278,10 +284,16 @@ class Density:  # pylint: disable=too-many-instance-attributes
         # Add to 'self.array'
         if self.__mode_fifo:
             assert len(array_in) == self.__pushcalulator.push_size_samples
-            self.__fifo = np.append(self.__fifo, array_in)
+            array_tmp = array_in
+            if len(self.__fifo) == 0:
+                # The very first time: Remove SAMPLES_LEFT
+                samples_flipped = self.calculate_samples_flipped()
+                assert samples_flipped < len(array_in)
+                array_tmp = array_in[samples_flipped:]
+            self.__fifo = np.append(self.__fifo, array_tmp)
 
             if self.do_preview():
-                self.density_preview(self.__fifo[SAMPLES_LEFT_RIGHT:])
+                self.density_preview(self.__fifo)
 
             return None
 
@@ -294,7 +306,7 @@ class Density:  # pylint: disable=too-many-instance-attributes
     def density(self, array):
         # logger.debug(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array)={len(array)} calculation")
 
-        self.frequencies, Pxx = scipy.signal.periodogram(array, 1 / self.__dt_s, window="hamming", detrend="linear")  # Hz, V^2/Hz
+        self.frequencies, Pxx = scipy.signal.periodogram(array[:SAMPLES_DENSITY], 1 / self.__dt_s, window="hamming", detrend="linear")  # Hz, V^2/Hz
 
         # Averaging
         assert len(self.__Pxx_sum) == len(Pxx)
