@@ -1,3 +1,4 @@
+from pymeas import program
 import sys
 import pathlib
 import logging
@@ -462,6 +463,8 @@ class SamplingProcess:
     def __init__(self, config, directory_raw):
         assert isinstance(config, program_configsetup.SamplingProcessConfig)
         assert isinstance(directory_raw, pathlib.Path)
+
+        program.create_or_empty_directory(dir_raw=directory_raw)
 
         self.config = config
         self.directory_raw = directory_raw

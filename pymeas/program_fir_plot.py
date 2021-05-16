@@ -98,7 +98,8 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
             "stepsize_bins_V": np.array(stepsize_bins_V, dtype=program_fir.NUMPY_FLOAT_TYPE),
             "samples_V": samples_V,
         }
-        directory.mkdir(parents=True, exist_ok=True)
+        # We expect that the directory was created (and emptied) before.
+        # directory.mkdir(parents=True, exist_ok=True)
         filenameFull = directory / filename
         with filenameFull.open("wb") as f:
             pickle.dump(data, f)

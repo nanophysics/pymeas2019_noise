@@ -33,6 +33,11 @@ def examine_dir_raw(dir_measurement):
 
     dir_raw = dir_measurement / library_topic.ResultAttributes.result_dir_actual(dir_arg)
 
+    create_or_empty_directory(dir_raw)
+
+    return dir_raw
+
+def create_or_empty_directory(dir_raw):
     if dir_raw.exists():
 
         def delete_directory_contents(directory):
@@ -45,7 +50,6 @@ def examine_dir_raw(dir_measurement):
     else:
         dir_raw.mkdir(parents=True, exist_ok=True)
 
-    return dir_raw
 
 
 def reload_if_changed(dir_raw):
