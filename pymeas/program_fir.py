@@ -17,7 +17,8 @@ logger = logging.getLogger("logger")
 DEBUG_FIFO = False
 
 SAMPLES_DENSITY = 2 ** 12  # length of periodogram (2**12=4096)
-PERIODOGRAM_OVERLAP = 2 ** 5  # number of overlaps (2**5=32)
+# PERIODOGRAM_OVERLAP = 2 ** 5  # number of overlaps (2**5=32)
+PERIODOGRAM_OVERLAP = 2 ** 4  # number of overlaps (2**4=16)
 assert SAMPLES_DENSITY % PERIODOGRAM_OVERLAP == 0
 SAMPLES_SELECT_MAX = 2 ** 23  # (2**23=8388608)
 
@@ -192,6 +193,7 @@ class Density:  # pylint: disable=too-many-instance-attributes
 
         self.frequencies = None
         self.__Pxx_sum = np.zeros(SAMPLES_DENSITY // 2 + 1, dtype=np.float64)
+        # self.__Pxx_sum = np.zeros(SAMPLES_DENSITY // 2 + 1, dtype=np.float32)
         self.__Pxx_n = 0
         self.__stage = None
         self.__dt_s = None
