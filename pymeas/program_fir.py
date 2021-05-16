@@ -1,5 +1,6 @@
 from pymeas import program
 import sys
+import math
 import pathlib
 import logging
 
@@ -14,7 +15,7 @@ from . import program_configsetup
 logger = logging.getLogger("logger")
 
 SAMPLES_DENSITY = 2 ** 12  # length of periodogram (2**12=4096)
-PERIODOGRAM_OVERLAP = 2 ** 4  # number of overlaps (2**4=16)
+PERIODOGRAM_OVERLAP = 2 ** 5  # number of overlaps (2**5=32)
 assert SAMPLES_DENSITY % PERIODOGRAM_OVERLAP == 0
 SAMPLES_SELECT_MAX = 2 ** 23  # (2**23=8388608)
 
@@ -48,14 +49,20 @@ class PushCalculator:
         self.previous_fir_samples_select = self.push_size_samples * DECIMATE_FACTOR
         self.previous_fir_samples_input = self.previous_fir_samples_select + SAMPLES_LEFT_RIGHT
 
-    def __calculate_push_size_samples(self):  # TODO: correct calulcate
+    def __calculate_push_size_samples(self):
+        # 0.536870912s push_size_sample=1048576
+        # ...
+        # 0.536870912s push_size_sample=8192
+        # 0.536870912s push_size_sample=4096
+        # 0.536870912s push_size_sample=2048
+        # 0.536870912s push_size_sample=1024
+        # 0.536870912s push_size_sample=512
+        # 0.536870912s push_size_sample=256
+        # 0.536870912s push_size_sample=128
+        # ...
+        # 17.179869184s push_size_sample=128
         push_size = 1.0 / self.dt_s / 1953125 * 2097152 / 2.0
-        # Problemantic code
-        #  push_size = 2**int(math.log2(push_size + 0.5))
-        # # push_size = max(push_size, SAMPLES_DENSITY // PERIODOGRAM_OVERLAP)
-        # push_size = max(push_size, 16)
-
-        push_size = int(push_size + 0.5)
+        push_size = 2**round(math.log2(push_size + 0.5))
         push_size = max(push_size, SAMPLES_DENSITY // PERIODOGRAM_OVERLAP)
         push_size = min(push_size, SAMPLES_SELECT_MAX // 2)
         return push_size
