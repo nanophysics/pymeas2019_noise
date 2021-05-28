@@ -1,3 +1,4 @@
+import time
 import pathlib
 import logging
 
@@ -40,10 +41,10 @@ class TestSignal:
         # you should be able to see the given values in the measurement
         time_0 = sample_start * dt_s
         logger.info(f"time s: {time_0:0.1f}")
-        time = np.arange(push_size_samples) * dt_s + time_0
+        time_s = np.arange(push_size_samples) * dt_s + time_0
         signal = np.random.normal(scale=self.noise_density_V_sqrtHz * np.sqrt(1 / (2.0 * dt_s)), size=push_size_samples)
         for sine_freq_Hz in self.list_frequencies:
-            signal += self.sine_amp_V_rms * np.sqrt(2) * np.sin(2 * np.pi * sine_freq_Hz * time)
+            signal += self.sine_amp_V_rms * np.sqrt(2) * np.sin(2 * np.pi * sine_freq_Hz * time_s)
         assert len(signal) == push_size_samples
         # logger.info('.', end='')
         return signal
@@ -59,14 +60,15 @@ class TestSignalSin:
         # you should be able to see the given values in the measurement
         time_0 = sample_start * dt_s
         logger.info(f"time s: {time_0:0.1f}")
-        time = np.arange(push_size_samples) * dt_s + time_0
-        signal = self.sine_amp_V_rms * np.sqrt(2) * np.sin(2 * np.pi * self.f_Hz * time)
+        time_s = np.arange(push_size_samples) * dt_s + time_0
+        signal = self.sine_amp_V_rms * np.sqrt(2) * np.sin(2 * np.pi * self.f_Hz * time_s)
         assert len(signal) == push_size_samples
         # logger.info('.', end='')
         return signal
 
 
 def main():
+    start_s = time.time()
     library_logger.init_logger_measurement(DIRECTORY_OF_THIS_FILE)
 
     signal = TestSignal(sine_amp_V_rms=1e-4, noise_density_V_sqrtHz=1e-7)
@@ -81,7 +83,7 @@ def main():
     sp = program_fir.SamplingProcess(config=config, directory_raw=DIRECTORY_OF_THIS_FILE/ "raw-green-synthetic")
     i = program_fir.InSynthetic(sp.output, signal=signal, dt_s=DT_S, time_total_s=config.duration_s)
     i.process()
-    logger.info("Done")
+    logger.info(f"Done {time.time()-start_s:0.1f}")
 
 
 if __name__ == "__main__":

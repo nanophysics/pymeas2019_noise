@@ -1,4 +1,3 @@
-from pymeas import program
 import sys
 import math
 import pathlib
@@ -419,12 +418,16 @@ class InSynthetic:
             self.out.print_size(sys.stdout)
             print("----------------")
 
-            max_calculations = 30
+            max_calculations = 200
             for _ in range(max_calculations):
                 calculation_stage = self.out.push(None)
                 done = len(calculation_stage) == 0
                 if done:
                     break
+            else:
+                assert False
+
+        self.out.done()
 
 
 class UniformPieces:
@@ -475,7 +478,7 @@ class UniformPieces:
             # Save the remainting part to 'self.array'
             self.array = self.array[push_size_samples:]
 
-            max_calculations = 40
+            max_calculations = 200
             for _i in range(max_calculations):
                 calculation_stage = self.out.push(None)
                 assert isinstance(calculation_stage, str)
@@ -497,6 +500,8 @@ class SamplingProcess:
 
         self.config = config
         self.directory_raw = directory_raw
+
+        directory_raw.mkdir(parents=True, exist_ok=True)
 
         if config.settle:
             self.output = program_settle.Settle(config=config, directory=self.directory_raw)

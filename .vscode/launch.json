@@ -41,7 +41,7 @@
             "name": "Python: run_measure_synthetic.py",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/run_measure_synthetic.py",
+            "program": "${workspaceFolder}/measurement-actual/run_measure_synthetic.py",
             "console": "integratedTerminal"
         },
         {
