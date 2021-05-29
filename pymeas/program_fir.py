@@ -252,6 +252,9 @@ class Density:  # pylint: disable=too-many-instance-attributes
         return samples
 
     def do_preview(self):
+        # TODO: How to self.prev.prev ?
+        return
+
         if not self.__mode_fifo:
             return False
         if self.__Pxx_n > 0:
@@ -387,6 +390,37 @@ class OutTrash:
         """
         assert array_in is not None
 
+class InterprocessQueue:
+    """
+    Stream-Sink: Implements a Stream-Interface
+    """
+    def __init__(self, out):
+        self.out = out
+        self.prev = None
+        self.stage = None
+        self.dt_s = None
+
+    def init(self, stage, dt_s, prev):
+        self.prev = prev
+        self.stage = stage
+        self.dt_s = dt_s
+        self.out.init(stage=stage, dt_s=dt_s, prev=self)
+
+    def done(self):
+        self.out.done()
+
+    def print_size(self, f):
+        self.out.print_size(f)
+
+    def push(self, array_in):
+        """
+        If calculation: Return a string explaining which stage calculated.
+        Else: Pass to the next stage.
+        The last stage will return ''.
+        if array_in is not None:
+          Return: None
+        """
+        self.out.push(array_in)
 
 class InSynthetic:
     """
@@ -481,6 +515,7 @@ class SamplingProcess:
         for _i in range(config.fir_count - 1):
             o = Density(o, config=config, directory=self.directory_raw)
             o = FIR(o)
+            o = InterprocessQueue(o)
 
         o = Density(o, config=config, directory=self.directory_raw)
         o = UniformPieces(o)
