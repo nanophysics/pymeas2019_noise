@@ -41,7 +41,7 @@ class TestSignal:
         # you should be able to see the given values in the measurement
         time_0 = sample_start * dt_s
         logger.info(f"time s: {time_0:0.1f}")
-        time_s = np.arange(push_size_samples) * dt_s + time_0
+        time_s = np.arange(push_size_samples, dtype=program_fir.NUMPY_FLOAT_TYPE) * dt_s + time_0
         signal = np.random.normal(scale=self.noise_density_V_sqrtHz * np.sqrt(1 / (2.0 * dt_s)), size=push_size_samples)
         for sine_freq_Hz in self.list_frequencies:
             signal += self.sine_amp_V_rms * np.sqrt(2) * np.sin(2 * np.pi * sine_freq_Hz * time_s)
@@ -60,7 +60,7 @@ class TestSignalSin:
         # you should be able to see the given values in the measurement
         time_0 = sample_start * dt_s
         logger.info(f"time s: {time_0:0.1f}")
-        time_s = np.arange(push_size_samples) * dt_s + time_0
+        time_s = np.arange(push_size_samples, dtype=program_fir.NUMPY_FLOAT_TYPE) * dt_s + time_0
         signal = self.sine_amp_V_rms * np.sqrt(2) * np.sin(2 * np.pi * self.f_Hz * time_s)
         assert len(signal) == push_size_samples
         # logger.info('.', end='')

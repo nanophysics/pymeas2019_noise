@@ -139,7 +139,7 @@ def run():
 
     if True:  # pylint: disable=using-constant-test
         time_total_s = 10.0
-        t = np.arange(0, time_total_s, i.dt_s)
+        t = np.arange(0, time_total_s, i.dt_s, dtype=program_fir.NUMPY_FLOAT_TYPE)
         # nse = np.random.randn(len(t))
         r = np.exp(-t / 0.05)  # pylint: disable=unused-variable
         # cnse = np.convolve(nse, r) * dt_s
