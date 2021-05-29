@@ -50,8 +50,7 @@ class Settle:  # pylint: disable=too-many-instance-attributes
         if array_in is not None:
           Return: None
         """
-        if array_in is None:
-            return None
+        assert array_in is not None
 
         self.__fifo = np.append(self.__fifo, array_in)
 

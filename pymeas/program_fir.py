@@ -85,7 +85,6 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         self.statistics_samples_in = None
         self.stage = None
         self.__dt_s = None
-        self.TAG_PUSH = None
         self.pushcalulator_next = None
 
     def init(self, stage, dt_s, prev):
@@ -95,7 +94,6 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         self.statistics_samples_in = 0
         self.stage = stage
         self.__dt_s = dt_s
-        self.TAG_PUSH = f"FIR {self.stage}"
         decimated_dt_s = dt_s * DECIMATE_FACTOR
         self.pushcalulator_next = PushCalculator(decimated_dt_s)
         logger.debug(f"stage {self.stage} push_size_samples {self.pushcalulator_next.push_size_samples} time_s {self.pushcalulator_next.dt_s*self.pushcalulator_next.push_size_samples}")
@@ -119,14 +117,16 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         if array_in is not None:
           Return: None
         """
-        if array_in is None:
+        assert array_in is not None
+
+        def array_in_is_none():
             if self.array is None:
-                return self.out.push(None)
-            # array_in is None: We may decimate
+                # Nothing to decimate
+                return
+
             if len(self.array) < self.pushcalulator_next.previous_fir_samples_input:
                 # Not sufficient data
-                # Give the next stage a chance to decimate!
-                return self.out.push(None)
+                return
 
             array_decimate = self.decimate(self.array[: self.pushcalulator_next.previous_fir_samples_input])
             assert len(array_decimate) == self.pushcalulator_next.push_size_samples
@@ -135,7 +135,6 @@ class FIR:  # pylint: disable=too-many-instance-attributes
             # Save the remainting part to 'self.array'
             self.array = self.array[self.pushcalulator_next.previous_fir_samples_select :]
             assert len(self.array) >= SAMPLES_LEFT_RIGHT
-            return self.TAG_PUSH
 
         assert len(array_in) % self.pushcalulator_next.push_size_samples == 0
 
@@ -151,7 +150,7 @@ class FIR:  # pylint: disable=too-many-instance-attributes
             if self.__dt_s >= 0.01:
                 logger.debug(f"stage {self.stage} decimate received push {len(array_in)} samples, total {len(self.array)} samples")
 
-        return None
+        array_in_is_none()
 
     def decimate(self, array_decimate):
         self.statistics_count += 1
@@ -196,7 +195,6 @@ class Density:  # pylint: disable=too-many-instance-attributes
         self.__Pxx_n = 0
         self.__stage = None
         self.__dt_s = None
-        self.__TAG_PUSH = None
         self.__pushcalulator = None
         self.__mode_fifo = None
         self.__fifo = None
@@ -217,7 +215,6 @@ class Density:  # pylint: disable=too-many-instance-attributes
         self.prev = prev
         self.__stage = stage
         self.__dt_s = dt_s
-        self.__TAG_PUSH = f"Density {self.__stage}"
         self.__pushcalulator = PushCalculator(dt_s)
         self.__mode_fifo = self.__pushcalulator.push_size_samples < SAMPLES_DENSITY
         if self.__mode_fifo:
@@ -281,12 +278,14 @@ class Density:  # pylint: disable=too-many-instance-attributes
         if array_in is not None:
           Return: None
         """
-        if array_in is None:
+        assert array_in is not None
+
+        def array_in_is_none():
             if self.__fifo is None:
-                return self.out.push(None)
+                return
 
             if len(self.__fifo) < SAMPLES_DENSITY:
-                return self.out.push(None)
+                return
 
             # Time is over. Calculate density
             self.density(self.__fifo)
@@ -295,11 +294,9 @@ class Density:  # pylint: disable=too-many-instance-attributes
                 self.__fifo = self.__fifo[self.__pushcalulator.push_size_samples :]
                 if DEBUG_FIFO:
                     logger.debug(f"stage {self.__stage} density squash fifo from  {len_before} to {len(self.__fifo)} samples")
-            else:
-                self.__fifo = None
-            return self.__TAG_PUSH
+                return
+            self.__fifo = None
 
-        assert array_in is not None
         self.out.push(array_in)
 
         # Add to 'self.array'
@@ -317,17 +314,17 @@ class Density:  # pylint: disable=too-many-instance-attributes
                 if self.__dt_s >= 0.01:
                     logger.debug(f"stage {self.__stage} density received push {len(array_in)} samples, total {len(self.__fifo)} samples")
 
-
             if self.do_preview():
                 self.density_preview(self.__fifo)
 
-            return None
+            array_in_is_none()
+            return
 
         assert len(array_in) >= SAMPLES_DENSITY
         self.__fifo = array_in[:SAMPLES_DENSITY]
         # logger.debug(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array_in)={len(array_in)}")
 
-        return None
+        array_in_is_none()
 
     def density(self, array):
         # logger.debug(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array)={len(array)} calculation")
@@ -388,7 +385,7 @@ class OutTrash:
         if array_in is not None:
           Return: None
         """
-        return ""
+        assert array_in is not None
 
 
 class InSynthetic:
@@ -417,18 +414,6 @@ class InSynthetic:
             print("----------------")
             self.out.print_size(sys.stdout)
             print("----------------")
-
-            max_calculations = 200
-            for _ in range(max_calculations):
-                calculation_stage = self.out.push(None)
-                done = len(calculation_stage) == 0
-                if done:
-                    break
-            else:
-                assert False
-
-        self.out.done()
-
 
 class UniformPieces:
     """
@@ -465,9 +450,7 @@ class UniformPieces:
         if array_in is not None:
           Return: None
         """
-        if array_in is None:
-            # Give the next stage a chance to decimate!
-            return self.out.push(None)
+        assert array_in is not None
 
         self.total_samples += len(array_in)
         self.array = np.append(self.array, array_in)
@@ -477,20 +460,6 @@ class UniformPieces:
             self.out.push(self.array[:push_size_samples])
             # Save the remainting part to 'self.array'
             self.array = self.array[push_size_samples:]
-
-            max_calculations = 200
-            for _i in range(max_calculations):
-                calculation_stage = self.out.push(None)
-                assert isinstance(calculation_stage, str)
-                done = len(calculation_stage) == 0
-                if done:
-                    self._calculation_not_finished_counter = 0
-                    return None
-            self._calculation_not_finished_counter += 1
-            if self._calculation_not_finished_counter >= 20:
-                logger.warning(f"calculation_not_finished_counter: {self._calculation_not_finished_counter}")
-            # logger.debug('m', end='')
-        return None
 
 
 class SamplingProcess:
