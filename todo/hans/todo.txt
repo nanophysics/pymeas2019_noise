@@ -1,3 +1,11 @@
+Picoscope:
+  128 MSamples/s (f0_fast_fs_hz = 125e6)
+  f0_fast_fs_hz = 125 Mhz
+  7'812'500.0 MSampes/s (f1_medium_useful_hz = f0_fast_fs_hz / 2 ** temp)
+  f1_medium_fs_hz = 62.5 MHz
+  3814.697265625 Samples/s  (f2_slow_useful_hz = f1_medium_fs_hz / 2 ** f1_medium_fir_count)
+  f2_slow_fs_hz = 3'906'250 MHz
+
 DONE: Rename program_config_frequencies.py -> program_eseries.py
 DONE: Rename program_picoscope.py -> program_config_instrument_picoscope.py
 DONE: Rename 'class PicoScope' -> 'Instrument'

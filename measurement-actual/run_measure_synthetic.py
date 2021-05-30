@@ -75,7 +75,7 @@ def main():
     # signal = TestSignalSin(sine_amp_V_rms=1e-4, f_Hz=10.0)
 
     config = program_configsetup.SamplingProcessConfig()
-    config.fir_count = 20
+    config.fir_count = 3
     config.stepname = "slow"
     config.duration_s = 10.0
     config.validate()

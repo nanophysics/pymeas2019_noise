@@ -1,0 +1,2 @@
+python test_multiprocessing_shm2.py
+pause
