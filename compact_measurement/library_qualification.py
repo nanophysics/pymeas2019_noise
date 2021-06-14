@@ -169,7 +169,12 @@ class Qualification:
 
         _flickernoise_Vrms, flickernoise_minus_basenoise_Vrms, comment = topic.flickernoise()
 
-        self._append(row, measurement, measured=flickernoise_minus_basenoise_Vrms, comment=comment)
+        if measurement.combination.short: # short: BASENOISE is measured. Do not substract basenoise
+            flickernoise = _flickernoise_Vrms
+        else:
+            flickernoise = flickernoise_minus_basenoise_Vrms
+
+        self._append(row, measurement, measured=flickernoise, comment=comment)
 
     def qual_step_size(self, row, measurement):
         assert isinstance(row, Row)

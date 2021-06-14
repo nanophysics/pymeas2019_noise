@@ -9,13 +9,15 @@ DIR_MEASUREMENT = library_path.DIR_MEASUREMENT
 
 CONTEXT = MeasurementContext(
     topdir=library_path.TOPDIR,
-    compact_serial="20200918_83",
-    measurement_date="20210412a",
-    speed=Speed.DETAILED,
+    compact_serial="20200918_75",
+    measurement_date="20210614a",
+    #speed=Speed.DETAILED_NO_HV_AMP, # no HV amp assembled
+    speed=Speed.DETAILED_WITH_HV_AMP,
     mocked_picoscope=False,
     mocked_scanner=False,
     mocked_compact=False,
-    mocked_voltmeter=False
+    mocked_voltmeter=False,
+    mocked_hv_amp=True
 )
 
 

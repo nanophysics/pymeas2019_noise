@@ -1,4 +1,4 @@
-TITLE = "Zenerdiode noise"
+TITLE = "Noise"
 
 
 def get_configsetup():

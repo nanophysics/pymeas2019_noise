@@ -1,3 +1,9 @@
+Performance Measurements
+  30% all
+  22% Picoscope, Stage0(Unify, Density, FIR)
+  16% Picoscope only, Function 'convert' seems to have no impact
+
+
 Dependency testen von Plot Channel, Plot Measuretype
 
 Logger: stdout und file...

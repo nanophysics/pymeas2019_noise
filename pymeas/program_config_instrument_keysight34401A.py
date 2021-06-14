@@ -14,7 +14,7 @@ def get_config_setupKeysight34401A():  # pylint: disable=too-many-statements
     step = ConfigStepKeysight34401A()
     step.stepname = "3_slow"
     step.skalierungsfaktor = 1.0
-    step.input_Vp = InputRangeKeysight34401A.RANGE_100V
+    step.input_Vp = InputRangeKeysight34401A.RANGE_100V  # RANGE_100mV, RANGE_1V, RANGE_10V, RANGE_100V, RANGE_1000V
     # Processing
     step.fir_count = 26
     step.fir_count_skipped = 0

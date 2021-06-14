@@ -1,3 +1,4 @@
+from os import O_RANDOM
 import sys
 import time
 import shutil
@@ -89,6 +90,7 @@ class MeasurementContext:  # pylint: disable=too-many-instance-attributes
     mocked_compact: bool = False
     mocked_picoscope: bool = False
     mocked_voltmeter: bool = False
+    mocked_hv_amp: bool = False
 
     @property
     def stati(self):
@@ -179,7 +181,7 @@ class Measurement:
         dict_template = {
             "TITLE": self.dir_measurementtype.name,
             "input_Vp": self.combination.picoscope_input_Vp,
-            "SMOKE": (self.context.speed != Speed.DETAILED),
+            "SMOKE": ((self.context.speed != Speed.DETAILED_NO_HV_AMP) or (self.context.speed != Speed.DETAILED_WITH_HV_AMP)),
         }
 
         config_measurement_text = TEMPLATE.format(**dict_template)

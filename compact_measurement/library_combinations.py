@@ -14,10 +14,10 @@ COLOR_DA = ("blue", "orange", "black", "green", "red", "cyan", "magenta", "darkg
 
 
 class Speed(Enum):
-    DETAILED = 1
-    SMOKE = 2
-    BLIP = 3
-
+    DETAILED_WITH_HV_AMP = 1
+    DETAILED_NO_HV_AMP = 2
+    SMOKE = 3
+    BLIP = 4
 
 @dataclass
 class NoiseBandLSD:
@@ -249,11 +249,12 @@ def Combinations(speed):
                 yield Combination(MeasurementType.DA, filter_, level, channel)
             yield Combination(MeasurementType.DA, filter_, level, short=True)
 
-    for level in OutputLevel:
-        for filter_ in FilterHV:
-            for channel in range(COMPACT_HV_FIRST, COMPACT_HV_LAST + 1):
-                yield Combination(MeasurementType.HV, filter_, level, channel)
-            yield Combination(MeasurementType.HV, filter_, level, short=True)
+    if speed == Speed.DETAILED_WITH_HV_AMP:
+        for level in OutputLevel:
+            for filter_ in FilterHV:
+                for channel in range(COMPACT_HV_FIRST, COMPACT_HV_LAST + 1):
+                    yield Combination(MeasurementType.HV, filter_, level, channel)
+                yield Combination(MeasurementType.HV, filter_, level, short=True)
 
     for level in (OutputLevel.MINUS, OutputLevel.PLUS):
         yield Combination(MeasurementType.SUPPLY, level=level)

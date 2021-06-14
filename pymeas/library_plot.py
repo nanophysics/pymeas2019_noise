@@ -106,7 +106,11 @@ class PlotContext:
                     continue
                 if stage is not None:
                     label_stepsize.add(stage.label)
-            topic.recalculate_data(presentation=self.__presentation, stage=stage)
+            try:        
+                topic.recalculate_data(presentation=self.__presentation, stage=stage)
+            except (library_topic.Stage100msNotFoundException, library_topic.FrequencyNotFound) as exc:
+                logger.error(f"SKIPPED: Topic {topic.topic}: {exc}")
+                continue
 
         x_label = self.__presentation.x_label
         if len(label_stepsize) > 0:
@@ -123,10 +127,10 @@ class PlotContext:
             if self.__presentation.logarithmic_scales:
                 ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
                 ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
-            # Uncomment to modify figure
-            # self.__fig.set_size_inches(13.0, 7.0)
-            # ax.set_xlim(1e-1, 1e4)
-            # ax.set_ylim(1e-9, 1e-5)
+                # Uncomment to modify figure
+                # self.__fig.set_size_inches(13.0, 7.0)
+                #    ax.set_xlim(1e-3, 1e4)
+                #ax.set_ylim(1e-9, 1e-5)
 
         # The following line will take up to 5s. Why?
         # self.__fig.canvas.draw()
@@ -236,7 +240,7 @@ class PlotFile:
         for presentation in library_topic.PRESENTATIONS.list:
             try:
                 self.plot_presentation(presentation=presentation)
-            except library_topic.Stage100msNotFoundException as exc:
+            except (library_topic.Stage100msNotFoundException, library_topic.FrequencyNotFound) as exc:
                 logger.error(f"Presentation {presentation.tag}: {exc}")
 
     def plot_presentation(self, presentation):

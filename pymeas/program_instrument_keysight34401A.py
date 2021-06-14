@@ -87,7 +87,7 @@ class Instrument:
 
         for i in range(total_samples // trig_count):
             values_comma_sep = self.instrument.query("READ?")  # .replace(",", "\n")
-            values_V = [float(i) for i in values_comma_sep.split(",")]
+            values_V = [configstep.skalierungsfaktor * float(i) for i in values_comma_sep.split(",")]
             queueFull = stream.put(values_V)
             assert not queueFull
 

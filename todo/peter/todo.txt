@@ -1,4 +1,18 @@
 
+matplotlib
+  achsen einstellungen im ordner mit messungen überschreibbar? je nach topic (LSD PS...) verschieden
+
+
+preview zeit langsame zeitskala super einfach.
+
+knopf
+start preview 
+  langsame zeitskala timeseries alle 1s mittelwert, sofortiger uptdate. alle 1s, frequenzen bis 1 Hz
+start settle 
+  langsame zeitskala timeseries alle 1s mittelwert
+start now
+
+
 qualifikation auf werde minus BASENOISE und nicht auf die direkt gemessenen
 
 C:\data\pymeas2019_noise_git\compact_measurements\20000101_01-20210319a\DA_DIRECT_-10V\raw-red-DA05

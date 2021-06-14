@@ -31,7 +31,7 @@ class MeasurementController:
     def run_measurements(self) -> None:
         logger.info("****** run_measurements()")
         logger.info(f"context.dir_measurement_date: {self.context.dir_measurement_date}")
-        if self.context.speed != Speed.DETAILED:
+        if (self.context.speed != Speed.DETAILED_NO_HV_AMP) or (self.context.speed != Speed.DETAILED_WITH_HV_AMP):
             logger.warning(f"context.speed: {self.context.speed.name}")
         for device in ("picoscope", "voltmeter", "scanner", "compact"):
             name = f"mocked_{device}"
