@@ -11,7 +11,7 @@ from .library_filelock import ExitCode
 logger = logging.getLogger("logger")
 
 try:
-    import visa
+    import pyvisa as visa
 except ImportError as ex:
     logger.error(f"Failed to import ({ex}). Try: pip install vi")
     logger.exception(ex)

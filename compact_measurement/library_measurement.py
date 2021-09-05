@@ -181,7 +181,7 @@ class Measurement:
         dict_template = {
             "TITLE": self.dir_measurementtype.name,
             "input_Vp": self.combination.picoscope_input_Vp,
-            "SMOKE": ((self.context.speed != Speed.DETAILED_NO_HV_AMP) or (self.context.speed != Speed.DETAILED_WITH_HV_AMP)),
+            "SMOKE": ((self.context.speed != Speed.DETAILED_NO_HV_AMP) and (self.context.speed != Speed.DETAILED_WITH_HV_AMP)),
         }
 
         config_measurement_text = TEMPLATE.format(**dict_template)
@@ -263,7 +263,7 @@ class Measurement:
         if self.context.mocked_voltmeter:
             self.measurement_channel_voltage.write(47.11)
             return
-        import visa  # pylint: disable=import-error
+        import pyvisa as visa  # pylint: disable=import-error
 
         connection = "GPIB0::12::INSTR"
         rm = visa.ResourceManager()
@@ -314,6 +314,7 @@ class Measurement:
                 if retry >= 3:
                     raise
                 retry += 1
+                time.sleep(5)
                 logger.error(f"Retry {retry}")
 
     # def _copy_file(self, filename):

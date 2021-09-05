@@ -1,0 +1,12 @@
+Peter Maerki 2021-04-01_20_04_30
+
+
+preamplifier und compact mit 5 kurzen gnd kabeln gut verbinden
+
+scanner, preamplifier und compact gnd verbinden.
+
+messkabel:
+
+verbinden bei da und hv amp und bei extension board.
+wichtig: T6, T7, T8 brücken nicht vergessen!
+HV am muss eingeschaltet sein, sonst belastet es DA01 !!!
