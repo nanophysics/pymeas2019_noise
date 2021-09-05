@@ -37,11 +37,11 @@ install using defaults
 start `cmd.exe`
 
 ```
-python -m pip install --upgrade pip
+python -m pip install --user --upgrade pip
 cd C:\data\temp        (for example, choose yourself)
 git clone --recurse-submodules https://github.com/nanophysics/pymeas2019_noise.git
 cd pymeas2019_noise
-python -m pip install -r requirements.txt
+python -m pip install --user -r requirements.txt
 ```
 
 restart pc
