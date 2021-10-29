@@ -495,6 +495,7 @@ class SamplingProcess:
         assert isinstance(config, program_configsetup.SamplingProcessConfig)
         assert isinstance(directory_raw, pathlib.Path)
 
+        directory_raw.mkdir(parents=True, exist_ok=True)
         self.config = config
         self.directory_raw = directory_raw
 
