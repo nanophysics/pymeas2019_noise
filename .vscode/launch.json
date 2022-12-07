@@ -35,7 +35,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/measurement-actual/run_0_measure.py",
             "cwd": "${workspaceFolder}/measurement-actual",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "justMyCode": false
         },
         {
             "name": "Python: run_measure_synthetic.py",

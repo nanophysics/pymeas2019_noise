@@ -74,7 +74,7 @@ class Instrument:
                 break
             except msl.equipment.exceptions.PicoTechError as ex:
                 logging.exception(ex)
-                if retry >= 3:
+                if retry >= 30:
                     raise
 
     def close(self):

@@ -34,7 +34,7 @@ def run():
         return
 
     logger.info(f"No arguments': run_condense('{DIR_MEASUREMENT}')")
-    program.run_condense(dir_measurement=DIR_MEASUREMENT)
+    program.run_condense(dir_measurement=DIR_MEASUREMENT, skip_on_error=True)
     run_2_composite_plots.run(dir_measurement=DIR_MEASUREMENT)
 
 

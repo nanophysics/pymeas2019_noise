@@ -24,6 +24,14 @@ def run(dir_measurement):
     plotFile = library_plot.PlotFile(plotData=plotData, write_files_directory=dir_measurement, title=config_measurement.TITLE)
     plotFile.plot_presentations()
 
+    try:
+        import library_1_postprocess
+    except ModuleNotFoundError:
+        logger.error("No library_1_postprocess...")
+        return
+    logger.info(f"library_1_postprocess.postprocess({dir_measurement})")
+    library_1_postprocess.postprocess(dir_measurement=dir_measurement, plotData=plotData)
+
 
 if __name__ == "__main__":
     run(DIRECTORY_OF_THIS_FILE)

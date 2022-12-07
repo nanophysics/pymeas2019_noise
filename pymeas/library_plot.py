@@ -129,7 +129,7 @@ class PlotContext:
                 ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
                 # Uncomment to modify figure
                 # self.__fig.set_size_inches(13.0, 7.0)
-                #    ax.set_xlim(1e-3, 1e4)
+                #ax.set_xlim(1e-3, 1e4)
                 #ax.set_ylim(1e-9, 1e-5)
 
         # The following line will take up to 5s. Why?
