@@ -27,7 +27,6 @@ class Settle:  # pylint: disable=too-many-instance-attributes
                 raise Exception(f"Will never settle if settle_time_ok_s {config.settle_time_ok_s:0.1}s is bigger than duration_s {config.duration_s:0.1}s!")
 
         self.__config = config
-        self.__directory = directory
         self.__dt_s = None
 
         self.__input_range_V = self.__config.input_Vp * self.__config.skalierungsfaktor
@@ -67,7 +66,7 @@ class Settle:  # pylint: disable=too-many-instance-attributes
 
         if self.__filelock_measurement.requested_stop_soft():
             logger.error("Aborted by ctrl-C")
-            logger.error(f"Exiting!")
+            logger.error("Exiting!")
             ExitCode.CTRL_C.os_exit()
 
         time_left_s = self.__config.settle_time_ok_s + self.__last_sample_outside_s - now_s

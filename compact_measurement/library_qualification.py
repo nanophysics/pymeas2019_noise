@@ -8,12 +8,12 @@ from enum import Enum
 import pathlib
 import logging
 
-from pymeas.library_topic import Topic, PRESENTATIONS
+from library_qualification_data import Line
 from library_measurement import Measurement
 import library_combinations
+from pymeas.library_topic import Topic, get_presentations
+from pymeas.library_plot_config import PlotConfig
 from compact_measurement.pyspreadsheet import ExcelReader, Row
-
-from library_qualification_data import Line
 
 logger = logging.getLogger("logger")
 
@@ -35,6 +35,13 @@ class Qualification:
         assert isinstance(dir_measurement_date, pathlib.Path)
         self.dir_measurement_date = dir_measurement_date
         self.list_results = []
+
+        self._plot_config_dummy = PlotConfig(
+            eseries="E12",
+            unit="V",
+            integral_index_start=0.1,
+        )
+        self._presentations = get_presentations(plot_config=self._plot_config_dummy)
 
         excel_file = pathlib.Path(__file__).absolute().parent / "library_qualification_tolerances.xlsx"
 
@@ -130,7 +137,7 @@ class Qualification:
 
         subtract_basenoise = measurement.combination.channel is not None
         topic = self._read_topic(measurement=measurement, subtract_basenoise=subtract_basenoise)
-        LSD = PRESENTATIONS.dict["LSD"].get_as_dict(topic)
+        LSD = self._presentations.dict["LSD"].get_as_dict(topic)
 
         MIN = -1000.0
         max_value = MIN
@@ -150,13 +157,13 @@ class Qualification:
         assert isinstance(measurement, Measurement)
 
         dir_raw = measurement.dir_measurement_channel
-        topic = Topic.load(dir_raw=dir_raw)
+        topic = Topic.load(dir_raw=dir_raw, plot_config=self._plot_config_dummy, presentations=self._presentations)
 
         # basenoise
         if subtract_basenoise:
             dir_raw_basenoise = dir_raw.parent / "raw-grey-BASENOISE"
             if dir_raw_basenoise.exists():
-                topic_basenoise = Topic.load(dir_raw=dir_raw_basenoise)
+                topic_basenoise = Topic.load(dir_raw=dir_raw_basenoise, plot_config=self._plot_config_dummy, presentations=self._presentations)
                 topic.set_basenoise(topic_basenoise)
 
         return topic
@@ -169,7 +176,7 @@ class Qualification:
 
         _flickernoise_Vrms, flickernoise_minus_basenoise_Vrms, comment = topic.flickernoise()
 
-        if measurement.combination.short: # short: BASENOISE is measured. Do not substract basenoise
+        if measurement.combination.short:  # short: BASENOISE is measured. Do not substract basenoise
             flickernoise = _flickernoise_Vrms
         else:
             flickernoise = flickernoise_minus_basenoise_Vrms
@@ -181,7 +188,7 @@ class Qualification:
         assert isinstance(measurement, Measurement)
 
         topic = self._read_topic(measurement)
-        stepsize = PRESENTATIONS.dict["STEPSIZE"].get_as_dict(topic)
+        stepsize = self._presentations.dict["STEPSIZE"].get_as_dict(topic)
 
         range_lower = row.cols.lower.float
         comment = f"range_lower={range_lower} {row.cols.UnitRange.text}"

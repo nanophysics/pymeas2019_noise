@@ -1,15 +1,16 @@
 import sys
 import logging
 
+# pylint: disable=wrong-import-position
 import library_path
 
 library_path.init(__file__)
 
-# pylint: disable=wrong-import-position
+import run_2_composite_plots
+import config_plot
+
 from pymeas import library_logger
 from pymeas import program
-
-import run_2_composite_plots
 
 logger = logging.getLogger("logger")
 
@@ -17,11 +18,14 @@ DIR_MEASUREMENT = library_path.DIR_MEASUREMENT
 
 
 def reload_if_changed(dir_raw):
-    return program.reload_if_changed(dir_raw=dir_raw)
+    plot_config = config_plot.get_plot_config()
+    return program.reload_if_changed(dir_raw=dir_raw, plot_config=plot_config)
 
 
 def run():
     library_logger.init_logger_condense(DIR_MEASUREMENT)
+
+    plot_config = config_plot.get_plot_config()
 
     if len(sys.argv) > 1:
         dir_raw = sys.argv[1]
@@ -30,11 +34,11 @@ def run():
             run_2_composite_plots.run(dir_measurement=DIR_MEASUREMENT)
             return
         logger.info(f"Argument '{dir_raw}': program.run_condense_dir_raw('{DIR_MEASUREMENT / dir_raw}')")
-        program.run_condense_dir_raw(dir_raw=DIR_MEASUREMENT / dir_raw)
+        program.run_condense_dir_raw(dir_raw=DIR_MEASUREMENT / dir_raw, plot_config=plot_config)
         return
 
     logger.info(f"No arguments': run_condense('{DIR_MEASUREMENT}')")
-    program.run_condense(dir_measurement=DIR_MEASUREMENT, skip_on_error=True)
+    program.run_condense(dir_measurement=DIR_MEASUREMENT, plot_config=plot_config, skip_on_error=True)
     run_2_composite_plots.run(dir_measurement=DIR_MEASUREMENT)
 
 

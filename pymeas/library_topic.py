@@ -8,6 +8,8 @@ import logging
 import pathlib
 import numpy as np
 
+from . import library_plot_config
+
 logger = logging.getLogger("logger")
 
 DIRECTORY_NAME_RAW_PREFIX = "raw-"
@@ -196,13 +198,17 @@ class TopicMinusBasenoise:
 class Topic:  # pylint: disable=too-many-public-methods
     TAG_BASENOISE = "BASENOISE"
 
-    def __init__(self, ra, prs, dir_raw):
+    def __init__(self, ra, prs, dir_raw, plot_config: library_plot_config.PlotConfig, presentations:"Presentations"):
         assert isinstance(ra, ResultAttributes)
         assert isinstance(prs, PickleResultSummary)
         assert isinstance(dir_raw, pathlib.Path)
+        assert isinstance(plot_config, library_plot_config.PlotConfig)
+        assert isinstance(presentations, Presentations)
         self.__ra = ra
         self.__prs = prs
         self.__plot_line = None
+        self._plot_config = plot_config
+        self._presentations = presentations
         self.dir_raw = dir_raw
         self.toggle = True
         self.is_basenoise = ra.topic.startswith(Topic.TAG_BASENOISE)
@@ -220,7 +226,7 @@ class Topic:  # pylint: disable=too-many-public-methods
                 f=self.f,
                 enbw=self.enbw,
             ),
-            presentations=PRESENTATIONS.get_as_dict(self),
+            presentations=self._presentations.get_as_dict(self),
         )
 
     def reset_plot_line(self):
@@ -260,12 +266,12 @@ class Topic:  # pylint: disable=too-many-public-methods
         self.__plot_line.set_data(x, y)
 
     @classmethod
-    def load(cls, dir_raw):
+    def load(cls, dir_raw, plot_config,  presentations):
         assert isinstance(dir_raw, pathlib.Path)
 
         prs = PickleResultSummary.load(dir_raw)
         ra = ResultAttributes(dir_raw=dir_raw)
-        return Topic(ra=ra, prs=prs, dir_raw=dir_raw)
+        return Topic(ra=ra, prs=prs, dir_raw=dir_raw, plot_config=plot_config, presentations=presentations)
 
     @property
     def topic(self) -> str:
@@ -359,7 +365,7 @@ class Topic:  # pylint: disable=too-many-public-methods
         return np.multiply(self.scaling_PSD, self.enbw)
 
     def _integral_index_start(self):
-        fHz = 0.1
+        fHz = self._plot_config.integral_index_start
         for i, f in enumerate(self.f):
             if fHz * 0.99 < f < fHz * 1.01:
                 return i
@@ -401,7 +407,7 @@ class Topic:  # pylint: disable=too-many-public-methods
 
     def flickernoise(self):
         "return Vrms and commentj"
-        PS = PRESENTATIONS.dict["PS"].get_as_dict(self)
+        PS = self._presentations.dict["PS"].get_as_dict(self)
 
         f_low = 0.1
         f_high = 10.0
@@ -536,60 +542,61 @@ PRESENTATION_STEPSIZE = "STEPSIZE"
 
 
 class Presentations:
-    def __init__(self):
+    def __init__(self, plot_config: library_plot_config.PlotConfig):
+        unit = plot_config.unit
         self.list = (
             Presentation(
                 tag=DEFAULT_PRESENTATION,
                 supports_diff_basenoise=True,
                 x_label=X_LABEL,
-                y_label="linear spectral density [V/Hz^0.5]",
-                help_text="linear spectral density [V/Hz^0.5] represents the noise density. Useful to describe random noise.",
+                y_label=f"linear spectral density [{unit}/Hz^0.5]",
+                help_text=f"linear spectral density [{unit}/Hz^0.5] represents the noise density. Useful to describe random noise.",
                 xy_func=lambda topic, stage: (topic.f, topic.scaling_LSD),
             ),
             Presentation(
                 tag="PSD",
                 supports_diff_basenoise=True,
                 x_label=X_LABEL,
-                y_label="power spectral density [V^2/Hz]",
-                help_text="power spectral density [V^2/Hz] ist just the square of the LSD. This representation of random noise is useful if you want to sum up the signal over a given frequency interval. ",
+                y_label=f"power spectral density [{unit}^2/Hz]",
+                help_text=f"power spectral density [{unit}^2/Hz] ist just the square of the LSD. This representation of random noise is useful if you want to sum up the signal over a given frequency interval. ",
                 xy_func=lambda topic, stage: (topic.f, topic.scaling_PSD)
             ),
             Presentation(
                 tag="LS",
                 supports_diff_basenoise=False, # Peter: abz Basenoise macht nicht viel Sinn weil LS typisch fuer eine Frequenz, z.B. 50 Hz gebraucht wird. Je nach Phasenlage ist das subtrahieren irrefuehrend. Daher nicht implementieren.
                 x_label=X_LABEL,
-                y_label="linear spectrum [V rms]",
-                help_text="linear spectrum [V rms] represents the voltage in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.",
+                y_label=f"linear spectrum [{unit} rms]",
+                help_text=f"linear spectrum [{unit} rms] represents the quantity in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.",
                 xy_func=lambda topic, stage: (topic.f, topic.scaling_LS)
             ),
             Presentation(
                 tag="PS",
                 supports_diff_basenoise=False,
                 x_label=X_LABEL,
-                y_label="power spectrum [V^2]",
-                help_text="power spectrum [V^2] represents the square of LS. Useful if you want to measure the amplitude of a sinusoidal signal which is just between two frequency bins. You can now add the two values to get the amplitude of the sinusoidal signal.",
+                y_label=f"power spectrum [{unit}^2]",
+                help_text=f"power spectrum [{unit}^2] represents the square of LS. Useful if you want to measure the amplitude of a sinusoidal signal which is just between two frequency bins. You can now add the two values to get the amplitude of the sinusoidal signal.",
                 xy_func=lambda topic, stage: (topic.f, topic.scaling_PS),
             ),
             Presentation(
                 tag="INTEGRAL",
                 supports_diff_basenoise=False,
                 x_label=X_LABEL,
-                y_label="integral [V rms]",
-                help_text="integral [V rms] represents the integrated voltage from the lowest measured frequency up to the actual frequency. Example: Value at 1 kHz: is the voltage between 0.01 Hz and 1 kHz.",
+                y_label=f"integral [{unit} rms]",
+                help_text=f"integral [{unit} rms] represents the integrated quantity from the lowest measured frequency up to the actual frequency. Example: Value at 1 kHz: is the quantity between 0.01 Hz and 1 kHz.",
                 xy_func=lambda topic, stage: (topic.f_INTEGRAL, topic.scaling_INTEGRAL),
             ),
             Presentation(
                 tag="DECADE",
                 supports_diff_basenoise=False,
                 x_label=X_LABEL,
-                y_label="decade left of the point [V rms]",
-                help_text="decade left of the point [V rms] Example: The value at 100 Hz represents the voltage between 100Hz/10 = 10 Hz and 100 Hz.",
+                y_label=f"decade left of the point [{unit} rms]",
+                help_text=f"decade left of the point [{unit} rms] Example: The value at 100 Hz represents the quantity between 100Hz/10 = 10 Hz and 100 Hz.",
                 xy_func=lambda topic, stage: topic.decade_f_d
             ),
             Presentation(
                 tag=PRESENTATION_STEPSIZE,
                 supports_diff_basenoise=False,
-                x_label="stepsize [V]",
+                x_label=f"stepsize [{unit}]",
                 y_label="count samples [samples/s]",
                 help_text="TODO-PRESENTATION_STEPSIZE",
                 xy_func=lambda topic, stage: topic.get_stepsize(stage)
@@ -598,7 +605,7 @@ class Presentations:
                 tag=PRESENTATION_TIMESERIE,
                 supports_diff_basenoise=False,
                 x_label="timeserie [s]",
-                y_label="sample [V]",
+                y_label=f"sample [{unit}]",
                 help_text="TODO-PRESENTATION_TIMESERIE",
                 xy_func=lambda topic, stage: topic.get_timeserie(stage),
                 logarithmic_scales=False
@@ -611,8 +618,8 @@ class Presentations:
     def get(self, tag):
         try:
             return self.dict[tag]
-        except KeyError:
-            raise Exception(f"Presentation {tag} not found! Choose one of {self.tags}.")
+        except KeyError as e:
+            raise Exception(f"Presentation {tag} not found! Choose one of {self.tags}.") from e
 
     def get_as_dict(self, topic):
         d = {}
@@ -624,8 +631,8 @@ class Presentations:
         return d
 
 
-PRESENTATIONS = Presentations()
-
+def get_presentations(plot_config: library_plot_config.PlotConfig) -> Presentations:
+    return Presentations(plot_config)
 
 class StartupDuration:
     """
@@ -653,18 +660,20 @@ class StartupDuration:
 
 
 class PlotDataMultipleDirectories:
-    def __init__(self, topdir):
+    def __init__(self, topdir: pathlib.Path, plot_config: library_plot_config.PlotConfig, presentations: Presentations):
         assert isinstance(topdir, pathlib.Path)
+        assert isinstance(plot_config, library_plot_config.PlotConfig)
+        assert isinstance(presentations, Presentations)
 
         self.startup_duration = StartupDuration()
         self.startup_duration.log("PlotDataMultipleDirectories initialized")
         self.topdir = topdir
         self.topic_basenoise = None
         self.list_topics = []
-        self.load_data()
+        self.load_data(plot_config=plot_config, presentations=presentations)
         self.startup_duration.log("After load_data()")
 
-    def load_data(self):
+    def load_data(self, plot_config: library_plot_config.PlotConfig, presentations: Presentations):
         self.topic_basenoise = None
 
         list_directories = self.read_directories()
@@ -685,7 +694,7 @@ class PlotDataMultipleDirectories:
         for dir_raw in list_directories:
             topic = topic_exists(dir_raw)
             if topic is None:
-                topic = Topic.load(dir_raw=dir_raw)
+                topic = Topic.load(dir_raw=dir_raw, plot_config=plot_config,  presentations=presentations)
             self.list_topics.append(topic)
 
         self.list_topics.sort(key=lambda topic: topic.topic.upper())
@@ -718,7 +727,9 @@ class PlotDataMultipleDirectories:
 
 
 class PlotDataSingleDirectory:
-    def __init__(self, dir_raw):
+    def __init__(self, dir_raw, plot_config: library_plot_config.PlotConfig):
         assert isinstance(dir_raw, pathlib.Path)
 
-        self.list_topics = [Topic.load(dir_raw)]
+        presentations=get_presentations(plot_config=plot_config)
+
+        self.list_topics = [Topic.load(dir_raw=dir_raw, plot_config=plot_config, presentations=presentations)]

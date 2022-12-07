@@ -1,4 +1,3 @@
-from pymeas import program
 import sys
 import math
 import pathlib

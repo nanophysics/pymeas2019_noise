@@ -40,8 +40,8 @@ disable=
         R0903, # too-few-public-methods
         # R0904, # too-many-public-methods
         # R0911, # too-many-return-statements
-        # R0912, # too-many-branches
-        # R0913, # too-many-arguments
+        R0912, # too-many-branches
+        R0913, # too-many-arguments
         R0914, # too-many-locals
         # R0915, # too-many-statements
         # R1702, # too-many-nested-blocks
@@ -57,6 +57,7 @@ disable=
         # W0107, # unnecessary-pass
         # W0703, # broad-except
         W1202, # logging-format-interpolation
+        W1203, # logging-fstring-interpolation
 
 [REPORTS]
 # The following line displays the '\' - which is wrong, but I did not find out a way how to avoid id

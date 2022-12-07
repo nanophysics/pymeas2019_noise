@@ -72,8 +72,8 @@ class Instrument:
                 info = self.scope.get_unit_info()
                 # logger.debug(f'picoscope info={info}')
                 break
-            except msl.equipment.exceptions.PicoTechError as ex:
-                logging.exception(ex)
+            except msl.equipment.exceptions.PicoTechError as e:
+                logging.exception(e)
                 if retry >= 30:
                     raise
 

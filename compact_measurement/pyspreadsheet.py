@@ -48,16 +48,16 @@ class Cell:
         t = self.text
         try:
             return _type(t)
-        except ValueError:
-            raise ValueError(f'"{t}" is not a valid {_type.__name__}! See: {self.reference}')
+        except ValueError as e:
+            raise ValueError(f'"{t}" is not a valid {_type.__name__}! See: {self.reference}') from e
 
     def asenum(self, _enum):
         t = self.text
         try:
             return _enum[t]
-        except KeyError:
+        except KeyError as e:
             valid_values = '|'.join([e.name for e in _enum])
-            raise ValueError(f'"{t}" is not a valid {_enum.__name__}! Valid values are {valid_values}. See: {self.reference}')
+            raise ValueError(f'"{t}" is not a valid {_enum.__name__}! Valid values are {valid_values}. See: {self.reference}') from e
 
     def asdate(self, format='%Y-%m-%d'):  # pylint: disable=redefined-builtin
         if self._pyxl_cell is None:

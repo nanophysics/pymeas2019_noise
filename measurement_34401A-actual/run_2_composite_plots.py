@@ -1,16 +1,17 @@
 import logging
 import pathlib
 
+# pylint: disable=wrong-import-position
 import library_path
 
 library_path.init(__file__)
 
-# pylint: disable=wrong-import-position
+import config_measurement
+import config_plot
+
 from pymeas import library_topic
 from pymeas import library_plot
 from pymeas import library_logger
-
-import config_measurement
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 
@@ -20,8 +21,10 @@ logger = logging.getLogger("logger")
 def run(dir_measurement):
     library_logger.init_logger_composite_plots(dir_measurement)
 
-    plotData = library_topic.PlotDataMultipleDirectories(dir_measurement)
-    plotFile = library_plot.PlotFile(plotData=plotData, write_files_directory=dir_measurement, title=config_measurement.TITLE)
+    plot_config = config_plot.get_plot_config()
+    presentations = library_topic.get_presentations(plot_config=plot_config)
+    plotData = library_topic.PlotDataMultipleDirectories(topdir=dir_measurement, plot_config=plot_config, presentations=presentations)
+    plotFile = library_plot.PlotFile(plotData=plotData, plot_config=plot_config, presentations=presentations, write_files_directory=dir_measurement, title=config_measurement.TITLE)
     plotFile.plot_presentations()
 
     try:

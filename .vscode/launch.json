@@ -10,7 +10,13 @@
             "request": "launch",
             "module": "pylint",
             "cwd": "${workspaceFolder}",
-            "args": ["--rcfile=${workspaceFolder}/.pylintrc", "--verbose", "pymeas", "compact_measurement", "measurement-actual"],
+            "args": [
+                "--rcfile=${workspaceFolder}/.pylintrc",
+                "--verbose",
+                "pymeas",
+                "compact_measurement",
+                "measurement-actual"
+            ],
             "console": "integratedTerminal"
         },
         {
@@ -19,7 +25,14 @@
             "request": "launch",
             "module": "black",
             "cwd": "${workspaceFolder}",
-            "args": ["--config", "${workspaceFolder}/.blackconfig.yaml", "*.py", "pymeas/*.py", "compact_measurement/*.py", "measurement-actual/*.py"],
+            "args": [
+                "--config",
+                "${workspaceFolder}/.blackconfig.yaml",
+                "*.py",
+                "pymeas/*.py",
+                "compact_measurement/*.py",
+                "measurement-actual/*.py"
+            ],
             "console": "integratedTerminal"
         },
         {
@@ -61,7 +74,9 @@
             "justMyCode": false,
             "program": "${workspaceFolder}/compact_measurements/20000101_01-20210322a/HV_OUT_FIL_0V/run_1_condense.py",
             "cwd": "${workspaceFolder}/compact_measurements/20000101_01-20210322a/HV_OUT_FIL_0V",
-            "args": ["raw-red-CH11"],
+            "args": [
+                "raw-red-CH11"
+            ],
             "console": "integratedTerminal"
         },
         {
@@ -89,7 +104,9 @@
             "justMyCode": false,
             "program": "${workspaceFolder}/compact_measurements/20000101_01-20210310a/DA_DIRECT_+10V/run_1_condense.py",
             "cwd": "${workspaceFolder}/compact_measurements/20000101_01-20210310a/DA_DIRECT_+10V",
-            "args": ["TOPONLY"],
+            "args": [
+                "TOPONLY"
+            ],
             "console": "integratedTerminal"
         },
         {

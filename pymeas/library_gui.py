@@ -17,7 +17,7 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, NavigationToolb
 import matplotlib.animation
 
 import wx
-import wx.xrc as xrc
+from wx import xrc
 
 from . import library_filelock
 from . import library_topic
@@ -150,8 +150,9 @@ class PlotPanel(wx.Panel):
 
 
 class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
-    def __init__(self, plot_context):
+    def __init__(self, plot_context, presentations):
         self._plot_context = plot_context
+        self._presentations = presentations
         self.res = None
         self.frame = None
         self.panel = None
@@ -224,7 +225,7 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         # presentation combo ------------------
         self.combo_box_presentation = xrc.XRCCTRL(self.frame, "combo_box_presentation")
         self.combo_box_presentation.Bind(wx.EVT_COMBOBOX, self.OnComboBoxPresentation)
-        for presentation in library_topic.PRESENTATIONS.list:
+        for presentation in self._presentations.list:
             self.combo_box_presentation.Append(presentation.title, presentation)
 
         idx = self.combo_box_presentation.FindString(self._plot_context.presentation_title)

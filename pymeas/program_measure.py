@@ -6,6 +6,7 @@ from pymeas import program_configsetup
 from . import library_logger
 from . import library_filelock
 from . import program
+from . import library_plot_config
 
 logger = logging.getLogger("logger")
 
@@ -21,7 +22,12 @@ def measure2(configsetup, dir_raw):
 
     library_filelock.FilelockMeasurement.update_status(f"Condense data: {dir_raw.name}")
 
-    program.run_condense_dir_raw(dir_raw=dir_raw, do_plot=False)
+    plot_config_dummy = library_plot_config.PlotConfig(
+        eseries="E12",
+        unit="V",
+        integral_index_start=0.1,
+    )
+    program.run_condense_dir_raw(dir_raw=dir_raw, do_plot=False, plot_config=plot_config_dummy)
 
 
 def measure(configsetup, dir_measurement):

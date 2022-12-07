@@ -14,7 +14,7 @@ def postprocess(dir_measurement, plotData):
     isinstance(dir_measurement, pathlib.Path)
 
     with (dir_measurement / "result_flickernoise.txt").open("w") as f:
-        f.write(f"Flickernoise: 0.1 ... 10 Hz\n")
+        f.write("Flickernoise: 0.1 ... 10 Hz\n")
         f.write(f"{'Topic':50s}\t{'Vrms':8s}\t{'Vrms-BASENOISE':8s}\tcomment\n")
         for topic in plotData.list_topics:
             flickernoise_Vrms, flickernoise_minus_basenoise_Vrms, comment = topic.flickernoise()

@@ -9,14 +9,14 @@ import threading
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+from matplotlib import ticker
 
+from . import library_plot_config
 from . import program_eseries
 from . import program_fir
 from . import library_topic
 
 logger = logging.getLogger("logger")
-
 
 class FilenameDensityStepMatcher:
     FILENAME_TAG_SKIP = "_SKIP"
@@ -287,7 +287,7 @@ class DensityPoint:
 class Selector:
     USEFUL_PART = 0.75  # depending on the downsampling, useful part is the non influenced part by the low pass filtering of the FIR stage
 
-    def __init__(self, series="E12"):
+    def __init__(self, series):
         self.__eseries_borders = program_eseries.eseries(series=series, minimal=1e-6, maximal=1e8, borders=True)
 
     def fill_bins(self, density, firstDensityPoint, lastDensity, trace=False):
@@ -367,7 +367,8 @@ class ColorRotator:
 
 
 class LsdSummary:
-    def __init__(self, list_density, directory, trace=False):
+    def __init__(self,plot_config:library_plot_config.PlotConfig, list_density, directory, trace=False):
+        assert isinstance(plot_config, library_plot_config.PlotConfig)
         assert isinstance(list_density, list)
         assert isinstance(directory, pathlib.Path)
         assert isinstance(trace, bool)
@@ -393,7 +394,7 @@ class LsdSummary:
             if Pxx is None:
                 continue
 
-            selector = Selector("E12")
+            selector = Selector(series=plot_config.eseries)
             first_density_point = len(self.__list_density_points) == 0
             last_density = density == list_density[-1]
             list_density_points = selector.fill_bins(density, firstDensityPoint=first_density_point, lastDensity=last_density, trace=self.__trace)
@@ -402,7 +403,7 @@ class LsdSummary:
     def write_summary_file(self, trace):
         file_tag = "_trace" if trace else ""
         filename_summary = f"{self.__directory}/result_summary_LSD{file_tag}.txt"
-        with open(filename_summary, "w") as f:
+        with open(filename_summary, "w", encoding="utf-8") as f:
             for dp in self.__list_density_points:
                 f.write(dp.line)
                 f.write("\n")
@@ -439,8 +440,8 @@ class LsdSummary:
                     markersize = 2 if dp.skip else 4
                 ax.loglog(f, d, linestyle=linestyle, linewidth=0.1, marker=marker, markersize=markersize, color=color)
 
-        plt.ylabel(f"Density [V/Hz^0.5]")
-        plt.xlabel(f"Frequency [Hz]")
+        plt.ylabel("Density [V/Hz^0.5]")
+        plt.xlabel("Frequency [Hz]")
         # plt.ylim( 1e-11,1e-6)
         # plt.xlim(1e-2, 1e5) # temp Peter
         # plt.grid(True)

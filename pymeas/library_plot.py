@@ -17,15 +17,21 @@ import matplotlib.animation
 
 import run_0_measure
 
+from . import library_plot_config
 from . import library_topic
 
 logger = logging.getLogger("logger")
 
 
 class PlotContext:
-    def __init__(self, plotData):
+    def __init__(self, plotData: library_topic.PlotDataMultipleDirectories, plot_config:library_plot_config.PlotConfig, presentations: library_topic.Presentations):
+        assert isinstance(plotData, (library_topic.PlotDataSingleDirectory, library_topic.PlotDataMultipleDirectories))
+        assert isinstance(plot_config, library_plot_config.PlotConfig)
+        assert isinstance(presentations, library_topic.Presentations)
+        self._plot_config = plot_config
+        self._presentations = presentations
         # The currently active presentation
-        self.__presentation = library_topic.PRESENTATIONS.get(library_topic.DEFAULT_PRESENTATION)
+        self.__presentation = presentations.get(library_topic.DEFAULT_PRESENTATION)
         # The data to be displayed
         self.plotData = plotData
         self.__plot_is_invalid = True
@@ -102,11 +108,11 @@ class PlotContext:
                 stage = topic.find_stage(stage)
                 if stage is None:
                     topic.remove_line()
-                    logger.warning(f"No stage stored for topic {topic}")
+                    logger.warning(f"No stage stored for topic {topic.color_topic}")
                     continue
                 if stage is not None:
                     label_stepsize.add(stage.label)
-            try:        
+            try:
                 topic.recalculate_data(presentation=self.__presentation, stage=stage)
             except (library_topic.Stage100msNotFoundException, library_topic.FrequencyNotFound) as exc:
                 logger.error(f"SKIPPED: Topic {topic.topic}: {exc}")
@@ -131,9 +137,17 @@ class PlotContext:
                 # self.__fig.set_size_inches(13.0, 7.0)
                 #ax.set_xlim(1e-3, 1e4)
                 #ax.set_ylim(1e-9, 1e-5)
+                if self._plot_config.func_matplotlib_ax is not None:
+                    if self.__presentation.tag != library_topic.PRESENTATION_STEPSIZE:
+                        self._plot_config.func_matplotlib_ax(ax=ax)
 
         # The following line will take up to 5s. Why?
         # self.__fig.canvas.draw()
+
+        if self.__presentation.logarithmic_scales:
+            if self._plot_config.func_matplotlib_fig is not None:
+                self._plot_config.func_matplotlib_fig(fig=self.__fig)
+
 
     @property
     def list_selected_topics(self) -> list:
@@ -145,7 +159,7 @@ class PlotContext:
         if self.plotData.directories_changed():
             logger.info("Directories changed: Reload all data!")
             self.invalidate()
-            self.plotData.load_data()
+            self.plotData.load_data(presentations=self._presentations)
 
         if self.__plot_is_invalid:
             self.update_presentation()
@@ -158,12 +172,12 @@ class PlotContext:
         # The start button has been pressed
         # proc = subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw])
         # proc = subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw], start_new_session=True, startupinfo=subprocess.DETACHED_PROCESS)
-        proc = subprocess.Popen([sys.executable, run_0_measure.__file__, dir_raw], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        proc = subprocess.Popen([sys.executable, run_0_measure.__file__, dir_raw], creationflags=subprocess.CREATE_NEW_CONSOLE)  # pylint: disable=consider-using-with
         logger.info(f"Started measurement in folder '{dir_raw}' with pid={proc.pid}.")
 
     def open_directory_in_explorer(self):
         directory = pathlib.Path(run_0_measure.__file__).absolute().parent
-        subprocess.Popen(["explorer", str(directory)])
+        subprocess.Popen(["explorer", str(directory)])  # pylint: disable=consider-using-with
 
     @property
     def iter_topics(self):
@@ -207,7 +221,7 @@ class PlotContext:
         directory = pathlib.Path(run_0_measure.__file__).absolute().parent
         import run_0_plot_interactive
 
-        subprocess.Popen([sys.executable, run_0_plot_interactive.__file__], cwd=directory)
+        subprocess.Popen([sys.executable, run_0_plot_interactive.__file__], cwd=directory)  # pylint: disable=consider-using-with
 
     def savefig(self, filename, dpi):
         self.__fig.savefig(filename, dpi=dpi)
@@ -220,11 +234,13 @@ class PlotContext:
 
 
 class PlotFile:
-    def __init__(self, plotData, title=None, write_files=("png",), write_files_directory=None):
-        """
-        Possible values: write_files=("png", "svg")
-        """
+    def __init__(self, plotData, plot_config: library_plot_config.PlotConfig, presentations: library_topic.Presentations, title=None, write_files=("png",), write_files_directory=None):
+        assert isinstance(plot_config, library_plot_config.PlotConfig)
+        assert isinstance(presentations, library_topic.Presentations)
+        # Possible values: write_files=("png", "svg")
         self.plotData = plotData
+        self._plot_config = plot_config
+        self._presentations = presentations
         self.title = title
         self.write_files = write_files
         assert isinstance(write_files_directory, (type(None), pathlib.Path))
@@ -237,14 +253,14 @@ class PlotFile:
         """
         Print all presentation (LSD, LS, PS, etc.)
         """
-        for presentation in library_topic.PRESENTATIONS.list:
+        for presentation in self._presentations.list:
             try:
                 self.plot_presentation(presentation=presentation)
             except (library_topic.Stage100msNotFoundException, library_topic.FrequencyNotFound) as exc:
                 logger.error(f"Presentation {presentation.tag}: {exc}")
 
     def plot_presentation(self, presentation):
-        plot_context = PlotContext(plotData=self.plotData)
+        plot_context = PlotContext(plotData=self.plotData, plot_config=self._plot_config, presentations=self._presentations)
         try:
             if self.title:
                 plt.title(self.title)

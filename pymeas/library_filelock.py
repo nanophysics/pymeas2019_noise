@@ -139,7 +139,7 @@ class FilelockMeasurement:
     def requested_stop(cls):
         FilelockMeasurement.__check_files()
         if FilelockMeasurement.REQUESTED_STOP:
-            logger.info(f"requested_stop() returned True!")
+            logger.info("requested_stop() returned True!")
             return True
         return False
 
@@ -147,7 +147,7 @@ class FilelockMeasurement:
     def requested_stop_soft(cls):
         FilelockMeasurement.__check_files()
         if FilelockMeasurement.REQUESTED_STOP_SOFT:
-            logger.info(f"requested_stop_soft() returned True!")
+            logger.info("requested_stop_soft() returned True!")
             return True
         return False
 
@@ -155,7 +155,7 @@ class FilelockMeasurement:
     def requested_stop_hard(cls):
         FilelockMeasurement.__check_files()
         if FilelockMeasurement.REQUESTED_STOP_HARD:
-            logger.info(f"requested_stop_hard() returned True!")
+            logger.info("requested_stop_hard() returned True!")
             return True
         return False
 
@@ -163,7 +163,7 @@ class FilelockMeasurement:
     def requested_skip_settle(cls):
         FilelockMeasurement.__check_files()
         if FilelockMeasurement.REQUESTED_SKIP_SETTLE:
-            logger.info(f"requested_skip_settle() returned True!")
+            logger.info("requested_skip_settle() returned True!")
             return True
         return False
 

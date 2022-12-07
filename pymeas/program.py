@@ -52,7 +52,7 @@ def create_or_empty_directory(dir_raw):
 
 
 
-def reload_if_changed(dir_raw):
+def reload_if_changed(dir_raw, plot_config):
     if program_fir_plot.DensityPlot.file_changed(dir_input=dir_raw):
         try:
             list_density = program_fir_plot.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=True)
@@ -61,7 +61,7 @@ def reload_if_changed(dir_raw):
             # data = pickle.load(f)
             # EOFError: Ran out of input
             return False
-        lsd_summary = program_fir_plot.LsdSummary(list_density, directory=dir_raw, trace=False)
+        lsd_summary = program_fir_plot.LsdSummary(plot_config=plot_config, list_density=list_density, directory=dir_raw, trace=False)
         lsd_summary.write_summary_pickle()
         return True
     return False
@@ -74,7 +74,7 @@ def iter_dir_raw(dir_measurement):
         yield dir_raw
 
 
-def run_condense(dir_measurement, skip_on_error=False):
+def run_condense(dir_measurement, plot_config, skip_on_error=False):
     # if False:
     #   import cProfile
     #   cProfile.run('program.run_condense_0to1()', sort='tottime')
@@ -86,25 +86,27 @@ def run_condense(dir_measurement, skip_on_error=False):
     #   dir_result.mkdir()
     for dir_raw in iter_dir_raw(dir_measurement):
         try:
-            run_condense_dir_raw(dir_raw)
-        except library_topic.FrequencyNotFound as ex:
+            run_condense_dir_raw(dir_raw, plot_config=plot_config)
+        except library_topic.FrequencyNotFound as e:
             if skip_on_error:
-                logger.warning(f"SKIPPED: {ex}")
+                logger.warning(f"SKIPPED: {e}")
                 continue
             raise
 
 
-def run_condense_dir_raw(dir_raw, do_plot=True):
+def run_condense_dir_raw(dir_raw, plot_config, do_plot=True):
     assert isinstance(dir_raw, pathlib.Path)
 
-    run_condense_0to1(dir_raw=dir_raw, do_plot=do_plot, trace=False)
-    run_condense_0to1(dir_raw=dir_raw, do_plot=do_plot, trace=True)
+    presentations = library_topic.get_presentations(plot_config=plot_config)
 
-    plotData = library_topic.PlotDataSingleDirectory(dir_raw)
+    run_condense_0to1(dir_raw=dir_raw, plot_config=plot_config, do_plot=do_plot, trace=False)
+    run_condense_0to1(dir_raw=dir_raw, plot_config=plot_config, do_plot=do_plot, trace=True)
+
+    plotData = library_topic.PlotDataSingleDirectory(dir_raw=dir_raw, plot_config=plot_config)
     write_presentation_summary_file(plotData, dir_raw)
     if do_plot:
         title = dir_raw.parent.name
-        plotFile = library_plot.PlotFile(plotData=plotData, write_files_directory=dir_raw, title=title)
+        plotFile = library_plot.PlotFile(plotData=plotData, write_files_directory=dir_raw, title=title, plot_config=plot_config, presentations=presentations)
 
         plotFile.plot_presentations()
 
@@ -118,7 +120,7 @@ def write_presentation_summary_file(plotData, directory):
         SpecializedPrettyPrint(stream=f).pprint(dict_result)
 
 
-def run_condense_0to1(dir_raw, trace=False, do_plot=True):
+def run_condense_0to1(dir_raw, plot_config, trace=False, do_plot=True):
     assert isinstance(dir_raw, pathlib.Path)
 
     list_density = program_fir_plot.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
@@ -126,7 +128,7 @@ def run_condense_0to1(dir_raw, trace=False, do_plot=True):
         logger.info(f"SKIPPED: No data for directory {dir_raw}")
         return
 
-    lsd_summary = program_fir_plot.LsdSummary(list_density, directory=dir_raw, trace=trace)
+    lsd_summary = program_fir_plot.LsdSummary(plot_config, list_density, directory=dir_raw, trace=trace)
     lsd_summary.write_summary_file(trace=trace)
     if not trace:
         lsd_summary.write_summary_pickle()

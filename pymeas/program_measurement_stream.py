@@ -19,7 +19,6 @@ SIZE_MAX_INT16 = SIZE_MAX_BYTES // BYTES_INT16
 
 class Progress:
     def __init__(self, dt_s, duration_s):
-        self.__dt_s = dt_s
         self.__duration_s = duration_s
         self.__start_s = time.time()
         self.__print_update_interval_s = 10.0

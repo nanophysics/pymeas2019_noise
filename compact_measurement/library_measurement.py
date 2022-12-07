@@ -1,4 +1,3 @@
-from os import O_RANDOM
 import sys
 import time
 import shutil
@@ -9,6 +8,7 @@ import subprocess
 from dataclasses import dataclass
 
 from mp import pyboard_query
+# pylint: disable=wrong-import-position
 import library_path
 from library_stati import Stati
 

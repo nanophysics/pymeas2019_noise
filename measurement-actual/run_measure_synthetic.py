@@ -3,13 +3,13 @@ import logging
 
 import numpy as np
 
+# pylint: disable=wrong-import-position
 import library_path
 
 library_path.init(__file__)
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 
-# pylint: disable=wrong-import-position
 from pymeas import program_fir
 from pymeas import program_configsetup
 
