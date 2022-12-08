@@ -64,7 +64,7 @@ class PushCalculator:
         # ...
         # 17.179869184s push_size_sample=128
         push_size = 1.0 / self.dt_s / 1953125 * 2097152 / 2.0
-        push_size = 2**round(math.log2(push_size + 0.5))
+        push_size = 2 ** round(math.log2(push_size + 0.5))
         push_size = max(push_size, SAMPLES_DENSITY // PERIODOGRAM_OVERLAP)
         push_size = min(push_size, SAMPLES_SELECT_MAX // 2)
         return push_size
@@ -316,7 +316,6 @@ class Density:  # pylint: disable=too-many-instance-attributes
             if DEBUG_FIFO:
                 if self.__dt_s >= 0.01:
                     logger.debug(f"stage {self.__stage} density received push {len(array_in)} samples, total {len(self.__fifo)} samples")
-
 
             if self.do_preview():
                 self.density_preview(self.__fifo)

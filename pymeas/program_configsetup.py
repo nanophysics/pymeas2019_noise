@@ -2,6 +2,7 @@ import enum
 import types
 import logging
 import pathlib
+from typing import Iterable, Optional
 
 from .program_lockingmixin import LockingMixin
 from .library_filelock import ExitCode, FilelockMeasurement
@@ -98,6 +99,11 @@ class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-ma
         c.duration_s = self.duration_s
         return c
 
+    def get_filename_capture_raw(self, config_setup: "ConfigSetup", dir_raw: pathlib.Path) -> Optional[pathlib.Path]:
+        if config_setup.capture_raw:
+            return dir_raw / f"capture_raw_{self.stepname}.raw"
+        return None
+
 
 class InputRangeKeysight34401A(enum.Enum):
     RANGE_100mV = "0.1"
@@ -156,6 +162,9 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
         self.filename: str = None
         self.setup_name: str = LockingMixin.TO_BE_SET
         self.module_instrument: types.ModuleType = LockingMixin.TO_BE_SET
+        self.capture_raw: bool = False
+        "Save the datastream from the scope directly to a file and do not process it."
+        self.capture_raw_hit_anykey: bool = False
         self.step_0_settle = LockingMixin.TO_BE_SET
         self.step_1_fast = LockingMixin.TO_BE_SET
         self.step_2_medium = LockingMixin.TO_BE_SET
@@ -167,6 +176,7 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
         assert isinstance(self.filename, (type(None), str))
         assert isinstance(self.setup_name, str)
         assert isinstance(self.module_instrument, types.ModuleType)
+        assert isinstance(self.capture_raw, bool)
         assert isinstance(self.step_0_settle, ConfigStep)
         assert isinstance(self.step_1_fast, ConfigStep)
         assert isinstance(self.step_2_medium, ConfigStep)
@@ -186,7 +196,7 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
         filenamebak.write_text(filename.read_text())
 
     @property
-    def configsteps(self):
+    def configsteps(self) -> Iterable[ConfigStep]:
         yield self.step_0_settle
         yield self.step_1_fast
         yield self.step_2_medium
@@ -205,7 +215,7 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
             traceback.print_exc()
             ExitCode.ERROR_PICOSCOPE.os_exit(msg=str(e))
 
-    def measure_for_all_steps(self, dir_measurement, dir_raw):
+    def measure_for_all_steps(self, dir_measurement: pathlib.Path, dir_raw: pathlib.Path):
         assert isinstance(dir_measurement, pathlib.Path)
         assert isinstance(dir_raw, pathlib.Path)
 
@@ -214,11 +224,19 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
         for configstep in self.configsteps:
             if configstep.skip:
                 continue
+            if self.capture_raw_hit_anykey:
+                input("capture_raw_hit_anykey=True: Hit <enter> to start acquistion...")
+            filename_capture_raw = configstep.get_filename_capture_raw(config_setup=self, dir_raw=dir_raw)
+            # if not filename_capture_raw.is_file():
+            #     logger.info(f"{filename_capture_raw}: does not exist: No processing!")
+            #     continue
+            logger.info(f"{filename_capture_raw}: processing...")
+
             _lock.update_status(f"Measuring: {dir_raw.name} / {configstep.stepname}")
             picoscope = self.module_instrument.Instrument(configstep)  # pylint: disable=no-member
             picoscope.connect()
             sample_process = program_fir.SamplingProcess(configstep.process_config, dir_raw)
-            picoscope.acquire(configstep=configstep, stream_output=sample_process.output, filelock_measurement=_lock)
+            picoscope.acquire(configstep=configstep, stream_output=sample_process.output, filename_capture_raw=filename_capture_raw, filelock_measurement=_lock)
             picoscope.close()
 
             if _lock.requested_stop_soft():

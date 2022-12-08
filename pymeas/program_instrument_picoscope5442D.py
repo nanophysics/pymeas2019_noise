@@ -118,7 +118,7 @@ class Instrument:
         # total_samples = int(configstep.duration_s/selected_dt_s)
         # logger.debug(f'total_samples={total_samples_before}) -> {total_samples}')
 
-    def acquire(self, configstep, stream_output, filelock_measurement):  # pylint: disable=too-many-statements
+    def acquire(self, configstep, filename_capture_raw, stream_output, filelock_measurement):  # pylint: disable=too-many-statements
         assert isinstance(configstep, program_configsetup.ConfigStep)
 
         valid_ranges = set(range.value for range in self.scope.enRange)
@@ -168,7 +168,7 @@ class Instrument:
             volts = np.multiply(channel_gain, adu_values, dtype=np.float32)  # NUMPY_FLOAT_TYPE
             return volts
 
-        stream = program_measurement_stream.InThread(stream_output, dt_s=dt_s, duration_s=configstep.duration_s, func_convert=convert)
+        stream = program_measurement_stream.InThread(stream_output, dt_s=dt_s, filename_capture_raw=filename_capture_raw, duration_s=configstep.duration_s, func_convert=convert)
         stream.start()
 
         self.actual_sample_count = 0

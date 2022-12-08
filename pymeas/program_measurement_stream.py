@@ -1,7 +1,9 @@
 import sys
 import time
 import queue
+import pathlib
 import logging
+from typing import Optional
 import threading
 
 from pymeas.library_filelock import ExitCode
@@ -63,9 +65,12 @@ class InThread:  # pylint: disable=too-many-instance-attributes
     The worker thread of the stream
     """
 
-    def __init__(self, out, dt_s, func_convert, duration_s=None):
+    def __init__(self, out, dt_s, func_convert, filename_capture_raw: Optional[pathlib.Path], duration_s=None):
         self.out = out
         self.dt_s = dt_s
+        self._f_capture_raw = None
+        if filename_capture_raw is not None:
+            self._f_capture_raw = filename_capture_raw.open("wb")
         self.done = False
         self.exitcode = ExitCode.OK
         self.__func_convert = func_convert
@@ -85,6 +90,8 @@ class InThread:  # pylint: disable=too-many-instance-attributes
                 raw_data_in = self.__queue.get()
                 if isinstance(raw_data_in, ExitCode):
                     self.out.done()
+                    if self._f_capture_raw is not None:
+                        self._f_capture_raw.close()
                     break
                 samples = len(raw_data_in)
                 with self.__lock:
@@ -93,6 +100,10 @@ class InThread:  # pylint: disable=too-many-instance-attributes
                 self.__samples_processed += samples
                 # logger.info('push: ', end='')
                 array_in = self.__func_convert(raw_data_in)
+                if self._f_capture_raw is not None:
+                    self._f_capture_raw.write(array_in.tobytes())
+                    # Do NOT process data when dumping capture_raw.
+                    continue
                 rc = self.out.push(array_in)
                 self.__progress.tick(self.__samples_processed, now_V=array_in[-1])
                 assert rc is None

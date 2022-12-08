@@ -15,7 +15,8 @@
                 "--verbose",
                 "pymeas",
                 "compact_measurement",
-                "measurement-actual"
+                "measurement-actual",
+                "measurement_34401A-actual"
             ],
             "console": "integratedTerminal"
         },
@@ -72,11 +73,9 @@
             "type": "python",
             "request": "launch",
             "justMyCode": false,
-            "program": "${workspaceFolder}/compact_measurements/20000101_01-20210322a/HV_OUT_FIL_0V/run_1_condense.py",
-            "cwd": "${workspaceFolder}/compact_measurements/20000101_01-20210322a/HV_OUT_FIL_0V",
-            "args": [
-                "raw-red-CH11"
-            ],
+            "program": "${workspaceFolder}/measurement-actual/run_1_condense.py",
+            "cwd": "${workspaceFolder}/measurement-actual",
+            "args": [],
             "console": "integratedTerminal"
         },
         {

@@ -64,6 +64,10 @@ class LockingMixin:  # pylint: disable=too-few-public-methods
             raise Exception(f"These properties have not been set: {unset_properties}!")
         self.__dict__[LockingMixin.__IS_FROZEN] = True
 
+    def unlock(self):
+        del self.__dict__[LockingMixin.__IS_LOCKED]
+        del self.__dict__[LockingMixin.__IS_FROZEN]
+
     def dump(self, logger, indent="") -> None:
         for name, value in sorted(self.__dict__.items()):
             if name.startswith("_"):
