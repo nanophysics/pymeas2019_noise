@@ -159,7 +159,7 @@ class PlotContext:
         if self.plotData.directories_changed():
             logger.info("Directories changed: Reload all data!")
             self.invalidate()
-            self.plotData.load_data(presentations=self._presentations)
+            self.plotData.load_data(plot_config=self._plot_config, presentations=self._presentations)
 
         if self.__plot_is_invalid:
             self.update_presentation()
