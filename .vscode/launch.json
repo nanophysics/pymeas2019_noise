@@ -69,6 +69,14 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Python: run_1_process_raw.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/measurement-actual/run_1_process_raw.py",
+            "cwd": "${workspaceFolder}/measurement-actual",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Python: run_1_condense.py",
             "type": "python",
             "request": "launch",

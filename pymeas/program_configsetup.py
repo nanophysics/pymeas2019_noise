@@ -202,13 +202,14 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
         yield self.step_2_medium
         yield self.step_3_slow
 
-    def measure(self, dir_measurement, dir_raw):
+    def measure(self, dir_measurement, dir_raw, do_exit=True):
         assert isinstance(dir_measurement, pathlib.Path)
         assert isinstance(dir_raw, pathlib.Path)
 
         try:
             self.measure_for_all_steps(dir_measurement=dir_measurement, dir_raw=dir_raw)
-            ExitCode.OK.os_exit()
+            if do_exit:
+                ExitCode.OK.os_exit()
         except Exception as e:  # pylint: disable=broad-except
             import traceback
 

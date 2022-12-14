@@ -16,25 +16,34 @@ from pymeas import library_logger
 from pymeas import program_instrument_capture_raw
 from pymeas import library_topic
 from pymeas import program
+from pymeas.program_configsetup import ConfigSetup
 
 logger = logging.getLogger("logger")
 
 skip_on_error = False
 
 
-def main():
-    library_logger.init_logger_condense(DIR_MEASUREMENT)
-
-    configsetup = config_measurement.get_configsetup()
+def patch_configsetup(configsetup) -> ConfigSetup:
     configsetup.validate()
     configsetup.unlock()
     configsetup.module_instrument = program_instrument_capture_raw
     configsetup.capture_raw_hit_anykey = False
     configsetup.validate()
+    return configsetup
+
+
+def main():
+    library_logger.init_logger_condense(DIR_MEASUREMENT)
+
+    configsetup = patch_configsetup(config_measurement.get_configsetup())
 
     for dir_raw in program.iter_dir_raw(dir_measurement=DIR_MEASUREMENT):
         try:
-            configsetup.measure(dir_measurement=DIR_MEASUREMENT, dir_raw=dir_raw)
+            pickles = list(dir_raw.glob("densitystep_*.pickle"))
+            if len(pickles) > 0:
+                logger.info(f"directory '{dir_raw.name}' already processed: processing SKIPPED")
+                continue
+            configsetup.measure(dir_measurement=DIR_MEASUREMENT, dir_raw=dir_raw, do_exit=False)
         except library_topic.FrequencyNotFound as e:
             if skip_on_error:
                 logger.warning(f"SKIPPED: {e}")
