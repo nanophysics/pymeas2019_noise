@@ -49,6 +49,11 @@ cd pymeas2019_noise
 python -m pip install --user -r requirements.txt
 ```
 
+With picoscope:
+```
+python -m pip install --user -r requirements.txt -r requirements_picoscope.txt
+```
+
 restart pc
 
 * file explorer: pymeas2019_noise/measurement-actual
