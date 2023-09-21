@@ -234,6 +234,7 @@ f_lowest = 1 / (1.3 * aquisition_time)
 ## Noise Picoscope
 
 ![](images/PS_5442D_MSO_2019_noise.png)
+
 This measurement was done with a picoscope bought in 2019.
 
 With a preamplifier with a gain of 1000 we measured this noise contribution of the picoscope. The noise level could be quite different from device to device.
@@ -244,6 +245,7 @@ To geht the noise level at the oscilloscope input, multiply the values shown in 
 The noise level of the picoscope is not overwhelming but for the price an size it's ok. 
 
 ![](images/PS_5442D_2023_noise.png)
+
 This measurement was done with a picoscope bought in 2023. The noise level is very similar to the one bought in 2019.
 The measurements have been done without a gain of 1000 for the preamlifier.
 
