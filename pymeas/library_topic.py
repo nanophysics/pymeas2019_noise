@@ -406,7 +406,7 @@ class Topic:  # pylint: disable=too-many-public-methods
         return f_decade, value_decade
 
     def flickernoise(self):
-        "return Vrms and commentj"
+        "return Vrms and comment"
         PS = self._presentations.dict["PS"].get_as_dict(self)
 
         f_low = 0.1
@@ -589,8 +589,8 @@ class Presentations:
                 tag="DECADE",
                 supports_diff_basenoise=False,
                 x_label=X_LABEL,
-                y_label=f"decade left of the point [{unit} rms]",
-                help_text=f"decade left of the point [{unit} rms] Example: The value at 100 Hz represents the quantity between 100Hz/10 = 10 Hz and 100 Hz.",
+                y_label=f"decade left of the point (noch falsch, nicht brauchen!) [{unit} rms]",
+                help_text=f"decade left of the point (noch falsch, nicht brauchen!) [{unit} rms] Example: The value at 100 Hz represents the quantity between 100Hz/10 = 10 Hz and 100 Hz.",
                 xy_func=lambda topic, stage: topic.decade_f_d
             ),
             Presentation(
