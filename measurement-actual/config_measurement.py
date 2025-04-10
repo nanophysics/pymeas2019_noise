@@ -4,9 +4,9 @@ from pymeas.program_configsetup import ConfigSetup
 
 
 def get_configsetup() -> ConfigSetup:
-    from pymeas import program_config_instrument_picoscope
+    from pymeas import program_config_instrument_ad_low_noise_float_2023
 
-    config = program_config_instrument_picoscope.get_config_setupPS500A()
+    config = program_config_instrument_ad_low_noise_float_2023.get_config_setup()
     config.filename = __file__
     #config.capture_raw = True
     #config.capture_raw_hit_anykey = True
@@ -18,7 +18,7 @@ def get_configsetup() -> ConfigSetup:
     config.step_3_slow.duration_s = duration_slow_s
     for step in config.configsteps:
         # To choose the best input range, see the description in 'program_config_instrument_picoscope'.
-        step.input_Vp = program_config_instrument_picoscope.InputRange.R_100mV
+        step.input_Vp = program_config_instrument_ad_low_noise_float_2023.InputRangeADLowNoiseFloat2023.RANGE_5V
         # step.input_Vp = program_config_instrument_picoscope.InputRange.R_500mV
         step.skalierungsfaktor = 1.0e-3
 
