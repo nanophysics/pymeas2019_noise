@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Lint",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "pylint",
             "cwd": "${workspaceFolder}",
@@ -22,7 +22,7 @@
         },
         {
             "name": "Black",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "black",
             "cwd": "${workspaceFolder}",
@@ -38,14 +38,23 @@
         },
         {
             "name": "Python: Aktuelle Datei",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal"
         },
         {
+            "name": "Python: program_instrument_ad_low_noise_float_2023.py",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pymeas.program_instrument_ad_low_noise_float_2023",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
             "name": "Python: run_0_measure.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/measurement-actual/run_0_measure.py",
             "cwd": "${workspaceFolder}/measurement-actual",
@@ -54,14 +63,14 @@
         },
         {
             "name": "Python: run_measure_synthetic.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/run_measure_synthetic.py",
             "console": "integratedTerminal"
         },
         {
             "name": "Python: run_0_plot_interactive.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "program": "${workspaceFolder}/measurement-actual/run_0_plot_interactive.py",
@@ -70,7 +79,7 @@
         },
         {
             "name": "Python: run_1_process_raw.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/measurement-actual/run_1_process_raw.py",
             "cwd": "${workspaceFolder}/measurement-actual",
@@ -78,7 +87,7 @@
         },
         {
             "name": "Python: run_1_condense.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "program": "${workspaceFolder}/measurement-actual/run_1_condense.py",
@@ -88,7 +97,7 @@
         },
         {
             "name": "Python: run_2_composite_plots.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "program": "${workspaceFolder}/measurement-actual/run_2_composite_plots.py",
@@ -97,7 +106,7 @@
         },
         {
             "name": "Python: COMPACT_MEASUREMENTS run_1_condense.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "program": "${workspaceFolder}/compact_measurements/20000101_01-20210310a/DA_DIRECT_+10V/run_1_condense.py",
@@ -106,7 +115,7 @@
         },
         {
             "name": "Python: COMPACT_MEASUREMENTS run_1_condense.py TOPONLY",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "program": "${workspaceFolder}/compact_measurements/20000101_01-20210310a/DA_DIRECT_+10V/run_1_condense.py",
@@ -118,7 +127,7 @@
         },
         {
             "name": "Python: COMPACT_MEASUREMENTS run_measurements.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "program": "${workspaceFolder}/compact_measurement/run_measurements.py",

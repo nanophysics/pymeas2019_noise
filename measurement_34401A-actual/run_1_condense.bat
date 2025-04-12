@@ -1,3 +1,3 @@
-python run_1_condense.py
+..\venv\Scripts\python.exe run_1_condense.py
 echo ERRORLEVEL %ERRORLEVEL%
 pause

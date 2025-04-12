@@ -234,11 +234,11 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
             logger.info(f"{filename_capture_raw}: processing...")
 
             _lock.update_status(f"Measuring: {dir_raw.name} / {configstep.stepname}")
-            picoscope = self.module_instrument.Instrument(configstep)  # pylint: disable=no-member
-            picoscope.connect()
+            ad_low_noise_float_2023 = self.module_instrument.Instrument(configstep)  # pylint: disable=no-member
+            ad_low_noise_float_2023.connect()
             sample_process = program_fir.SamplingProcess(configstep.process_config, dir_raw)
-            picoscope.acquire(configstep=configstep, stream_output=sample_process.output, filename_capture_raw=filename_capture_raw, filelock_measurement=_lock)
-            picoscope.close()
+            ad_low_noise_float_2023.acquire(configstep=configstep, stream_output=sample_process.output, filename_capture_raw=filename_capture_raw, filelock_measurement=_lock)
+            ad_low_noise_float_2023.close()
 
             if _lock.requested_stop_soft():
                 return
