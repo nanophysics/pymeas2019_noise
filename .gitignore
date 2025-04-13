@@ -12,6 +12,7 @@
 **/result_*.svg
 **/result_*.txt
 **/result_*.pickle
+**/*.bak
 /obsolete/
 .ipynb_checkpoints
 todo/peter/tests/*

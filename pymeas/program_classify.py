@@ -14,7 +14,7 @@ class Classify:
         self.V = [x[1] for x in self.eseries]
 
     @property
-    def bin_count(self):
+    def bin_count(self) -> int:
         return len(self.__borders) + 1
 
     def find_bin_index(self, value):

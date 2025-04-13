@@ -113,7 +113,7 @@ class InputRangeKeysight34401A(enum.Enum):
     RANGE_1000V = "1000"
 
     @property
-    def V(self):
+    def V(self) -> float:
         return {
             InputRangeKeysight34401A.RANGE_100mV: 0.1,
             InputRangeKeysight34401A.RANGE_1V: 1.0,

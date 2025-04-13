@@ -15,14 +15,14 @@ def get_configsetup() -> ConfigSetup:
     config.step_0_settle.duration_s = config.step_0_settle.settle_time_ok_s + 5.0
     config.step_0_settle.settle_input_part = 0.5
 
-    config.step_3_slow.duration_s = 60.0
+    config.step_3_slow.duration_s = 10.0 * 3600.0
     for step in config.configsteps:
         # To choose the best input range, see the description in 'program_config_instrument_picoscope'.
         step.input_Vp = (
-            program_config_instrument_ad_low_noise_float_2023.InputRangeADLowNoiseFloat2023.RANGE_5V
+            program_config_instrument_ad_low_noise_float_2023.InputRangeADLowNoiseFloat2023.RANGE_1000mV
         )
         # step.input_Vp = program_config_instrument_picoscope.InputRange.R_500mV
-        step.skalierungsfaktor = 1.0e-3
+        step.skalierungsfaktor = 1.0
 
     # config.step_0_settle.skip = True
     # config.step_1_fast.skip = True

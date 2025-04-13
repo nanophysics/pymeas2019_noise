@@ -24,10 +24,7 @@ RE_STATUS_BYTE_MASK = re.compile(r"STATUS_BYTE_MASK=0x(\w+)")
 class PcbAd:
     VID = 0x2E8A
     PID = 0x4242
-    if sys.platform == "win32":
-        DESCRIPTION = "USB Serial Device"
-    else:
-        DESCRIPTION = "ad_low_noise_float_2023"
+    DESCRIPTION = "ad_low_noise_float_2023"
 
     def __init__(self) -> None:
         devices_pcb_ad: list[str] = []
@@ -35,14 +32,17 @@ class PcbAd:
         for port in ports:
             if port.pid == self.PID:
                 if port.vid == self.VID:
+                    if sys.platform == "win32":
+                        devices_pcb_ad.append(port.device)
+                        continue
                     if port.description.startswith(self.DESCRIPTION):
                         devices_pcb_ad.append(port.device)
 
         assert (
             len(devices_pcb_ad) == 2
         ), f"{self.DESCRIPTION} not found: {devices_pcb_ad}"
-        self.serial_control = serial.Serial(devices_pcb_ad[0], timeout=1)
-        self.serial_adc_measurements = serial.Serial(devices_pcb_ad[1], timeout=1)
+        self.serial_control = serial.Serial(devices_pcb_ad[1], timeout=1)
+        self.serial_adc_measurements = serial.Serial(devices_pcb_ad[0], timeout=1)
 
     def readline(self) -> str:
         while True:
@@ -69,8 +69,11 @@ class AdcMeasurementsThread(threading.Thread):
 
     def run(self) -> None:
         in_sync_counter = self.IN_SYNC_COUNTER_START
+        adc_measurements_counter = 0
+        begin_s = time.monotonic()
         while not self.stop_flag:
             adc_measurement = self.serial_adc_measurements.read(size=4)
+            adc_measurements_counter += 1
             status = adc_measurement[0]
             in_sync = (status & ~self.STATUS_BYTE_MASK) == 0x00
 
@@ -100,7 +103,7 @@ class AdcMeasurementsThread(threading.Thread):
 
                 return measurement_raw
 
-            def get_adc_value_V(adc_value_int: int) -> float:
+            def get_adc_value_ain_V(adc_value_int: int) -> float:
                 """
                 See https://www.ti.com/lit/ds/symlink/ads127l21.pdf
                 page 72, 7.5.1.8.1 Conversion Data
@@ -111,9 +114,12 @@ class AdcMeasurementsThread(threading.Thread):
                 return adc_value_int / (2**23) * REF_V / GAIN
 
             adc_value_int = signExtend()
-            adc_value_V = get_adc_value_V(adc_value_int)
-            self.cb_measurement(adc_value_V)
-            # print(f"{adc_value_V=:15.6f} ({adc_value_int})")
+            adc_value_ain_V = get_adc_value_ain_V(adc_value_int)
+            self.cb_measurement(adc_value_ain_V)
+            if adc_measurements_counter % 10_000 == 0:
+                duration_s = time.monotonic() - begin_s
+                sps = adc_measurements_counter / duration_s
+                print(f"{adc_value_ain_V=:15.6f} ({adc_value_int}) {sps:0.1f}SPS")
 
     def stop(self) -> None:
         self.stop_flag = True
@@ -158,9 +164,8 @@ class Instrument:
 
         stream_output.init(stage=0, dt_s=configstep.dt_s)
 
-
-        def convert(values_V):
-            return np.array(values_V, dtype=np.float32)
+        # def convert(values_V):
+        #     return np.array(values_V, dtype=np.float32)
 
         # stream = program_measurement_stream.InThread(
         #     stream_output,
@@ -175,11 +180,17 @@ class Instrument:
         # for i in range(total_samples // trig_count):
 
         class Measurements:
-            def __init__(self) -> None:
+            def __init__(self, configstep: program_configsetup.ConfigStep) -> None:
                 self.count = 0
+                self.configstep = configstep
 
-            def cb(self, adc_value_V: float) -> None:
+            def cb(self, adc_value_ain_V: float) -> None:
                 self.count += 1
+                adc_value_V = (
+                    adc_value_ain_V
+                    * self.configstep.skalierungsfaktor
+                    * self.configstep.input_Vp.V
+                )
                 if self.count % 100_000 == 0:
                     print(
                         f"{self.count} samples of {total_samples} {self.count/total_samples*100:0.0f}%. {adc_value_V=:0.6f}"
@@ -187,7 +198,7 @@ class Instrument:
                 queueFull = stream_output.push([adc_value_V])
                 assert not queueFull
 
-        measurements = Measurements()
+        measurements = Measurements(configstep=configstep)
         self.adc_measurements_thread.cb_measurement = measurements.cb
 
         def flush_stages():
@@ -219,7 +230,7 @@ def main():
     def cb_measurement(adc_value_V: float) -> None:
         print(f"{adc_value_V=:15.6f}")
 
-    instrument.adc_measurements_thread.cb_measurement = cb_measurement
+    # instrument.adc_measurements_thread.cb_measurement = cb_measurement
 
 
 if __name__ == "__main__":
