@@ -1,19 +1,14 @@
 # https://github.com/petermaerki/ad_low_noise_float_2023_git/blob/hmaerki/evaluation_software/evaluation_software/cpp_cdc/2025-03-30a_ads127L21/src/reader.py
 import serial
 import serial.tools.list_ports
-import threading
 import re
 import sys
 import time
-import typing
 import logging
-import pathlib
-
+import typing
 import numpy as np
 
 from . import program_configsetup
-from . import program_fir
-from . import program_measurement_stream
 
 logger = logging.getLogger("logger")
 
@@ -21,89 +16,97 @@ logger = logging.getLogger("logger")
 RE_STATUS_BYTE_MASK = re.compile(r"STATUS_BYTE_MASK=0x(\w+)")
 
 
-class PcbAd:
+class Adc:
+    PRINTF_INTERVAL_S = 2.0
     VID = 0x2E8A
     PID = 0x4242
-    DESCRIPTION = "ad_low_noise_float_2023"
+    MEASURMENT_BYTES = 3
+    COMMAND_START = b"s"
+    COMMAND_STOP = b"p"
 
     def __init__(self) -> None:
-        devices_pcb_ad: list[str] = []
+        self.serial = self._open_serial()
+
+    def _open_serial(self) -> serial.Serial:
         ports = serial.tools.list_ports.comports()
         for port in ports:
-            if port.pid == self.PID:
-                if port.vid == self.VID:
-                    if sys.platform == "win32":
-                        devices_pcb_ad.append(port.device)
-                        continue
-                    if port.description.startswith(self.DESCRIPTION):
-                        devices_pcb_ad.append(port.device)
+            if port.vid == self.VID:
+                if port.pid == self.PID:
+                    return serial.Serial(port=port.device, timeout=0.5)
 
-        assert (
-            len(devices_pcb_ad) == 2
-        ), f"{self.DESCRIPTION} not found: {devices_pcb_ad}"
-        self.serial_control = serial.Serial(devices_pcb_ad[1], timeout=1)
-        self.serial_adc_measurements = serial.Serial(devices_pcb_ad[0], timeout=1)
-
-    def readline(self) -> str:
-        while True:
-            line = self.serial_control.readline()
-            line = line.strip().decode("ascii")
-            if len(line) > 0:  # TODO: Why
-                return line
+        raise ValueError(
+            f"No board with VID=0x{self.VID:02X} and PID=0x{self.PID:02X} found!"
+        )
 
     def close(self) -> None:
-        self.serial_control.close()
-        self.serial_adc_measurements.close()
+        self.serial.close()
 
+    def drain(self) -> bool:
+        while True:
+            line = self.serial.read()
+            if len(line) == 0:
+                return
 
-class AdcMeasurementsThread(threading.Thread):
-    STATUS_BYTE_MASK = 0x76
-    IN_SYNC_COUNTER_START = 100
+    def read_status(self) -> bool:
+        """
+        return True on success
+        """
+        while True:
+            line = self.serial.readline()
+            if len(line) == 0:
+                return False
+            line = line.strip().decode("ascii")
+            print(f"  status: {line}")
+            if line == "END=1":
+                return True
 
-    def __init__(self, serial_adc_measurements: serial.Serial) -> None:
-        super().__init__(name="adc_measurements", daemon=False)
-        self.serial_adc_measurements = serial_adc_measurements
-        self.cb_measurement = lambda acd_value_V: None
-        self.stop_flag = False
-        self.start()
-
-    def run(self) -> None:
-        in_sync_counter = self.IN_SYNC_COUNTER_START
-        adc_measurements_counter = 0
+    def iter_measurements(self) -> typing.Iterable[float]:
+        counter = 0
+        counter_separator = 0
         begin_s = time.monotonic()
-        while not self.stop_flag:
-            adc_measurement = self.serial_adc_measurements.read(size=4)
-            adc_measurements_counter += 1
-            status = adc_measurement[0]
-            in_sync = (status & ~self.STATUS_BYTE_MASK) == 0x00
+        running_crc = 0
+        STATUS_BYTE = False
+        while True:
+            measurement = self.serial.read(size=self.MEASURMENT_BYTES)
+            if len(measurement) != self.MEASURMENT_BYTES:
+                if len(measurement) == 0:
+                    return
+                raise ValueError(f"Wrong size {measurement}!")
 
-            if not in_sync:
-                print(f"{in_sync=}")
-                self.serial_adc_measurements.read(size=1)
-                in_sync_counter = self.IN_SYNC_COUNTER_START
+            # TODO: Sync if not aligned!
+
+            measurement_raw_unsigned = 0
+            for idx in (0, 1, 2):
+                measurement_raw_unsigned <<= 8
+                running_crc ^= measurement[idx]
+                measurement_raw_unsigned += measurement[idx]
+
+            if STATUS_BYTE:
+                byte_status, byte_crc, byte_reserve = measurement
+                show = (byte_status != 0) or (running_crc != 0)
+                if show:
+                    print(
+                        f"{counter_separator=} status=0x{byte_status:02X} crc=0x{byte_crc:02X} (0x{running_crc:02X}) reserve=0x{byte_reserve:02X}"
+                    )
+                counter_separator = 0
+                running_crc = 0
+                STATUS_BYTE = False
                 continue
 
-            if in_sync_counter > 0:
-                in_sync_counter -= 1
-                if in_sync_counter == 0:
-                    print(f"{in_sync=}")
+            if measurement_raw_unsigned == 0:
+                STATUS_BYTE = True
                 continue
 
-            def signExtend() -> int:
+            def signExtend(measurement_raw_unsigned) -> int:
                 """
                 See: https://github.com/TexasInstruments/precision-adc-examples/blob/42e54e2d3afda165bd265020bac97c8aedf1f135/devices/ads127l21/ads127l21.c#L571-L578
                 """
-                measurement_raw = 0
-                for idx in (1, 2, 3):
-                    measurement_raw <<= 8
-                    measurement_raw += adc_measurement[idx]
+                if measurement_raw_unsigned & 0x80_00_00:
+                    measurement_raw_unsigned -= 0x1_00_00_00
 
-                if measurement_raw & 0x80_00_00:
-                    measurement_raw -= 0x1_00_00_00
+                return measurement_raw_unsigned
 
-                return measurement_raw
-
-            def get_adc_value_ain_V(adc_value_int: int) -> float:
+            def get_adc_value_V(measurement_raw_signed: int) -> float:
                 """
                 See https://www.ti.com/lit/ds/symlink/ads127l21.pdf
                 page 72, 7.5.1.8.1 Conversion Data
@@ -111,45 +114,42 @@ class AdcMeasurementsThread(threading.Thread):
                 REF_V = 5.0
                 GAIN = 5.0  # 1.0, 2.0, 5.0, 10.0
 
-                return adc_value_int / (2**23) * REF_V / GAIN
+                return measurement_raw_signed / (2**23) * REF_V / GAIN
 
-            adc_value_int = signExtend()
-            adc_value_ain_V = get_adc_value_ain_V(adc_value_int)
-            self.cb_measurement(adc_value_ain_V)
-            if adc_measurements_counter % 10_000 == 0:
+            measurement_raw_signed = signExtend(measurement_raw_unsigned)
+            adc_value_ain_V = get_adc_value_V(measurement_raw_signed)
+
+            counter_separator += 1
+            counter += 1
+            duration_s = time.monotonic() - begin_s
+            if duration_s > self.PRINTF_INTERVAL_S:
                 duration_s = time.monotonic() - begin_s
-                sps = adc_measurements_counter / duration_s
-                print(f"{adc_value_ain_V=:15.6f} ({adc_value_int}) {sps:0.1f}SPS")
+                print(
+                    f"{adc_value_ain_V=:2.6f} ({measurement_raw_signed}) {counter/duration_s:0.1f} SPS"
+                )
+                begin_s = time.monotonic()
+                counter = 0
 
-    def stop(self) -> None:
-        self.stop_flag = True
-        self.join(timeout=100)
+            yield adc_value_ain_V
 
 
 class Instrument:
     def __init__(self, configstep):
-        self.pcb_ad = PcbAd()
-        self.adc_measurements_thread = AdcMeasurementsThread(
-            serial_adc_measurements=self.pcb_ad.serial_adc_measurements
-        )
+        self.adc = Adc()
 
     def connect(self):
-        while True:
-            line = self.pcb_ad.readline()
-            match_status_byte = RE_STATUS_BYTE_MASK.match(line)
-            if match_status_byte:
-                status_byte_mask = int(match_status_byte.group(1), base=16)
-                assert (
-                    self.adc_measurements_thread.STATUS_BYTE_MASK == status_byte_mask
-                ), (
-                    self.adc_measurements_thread.STATUS_BYTE_MASK,
-                    status_byte_mask,
-                )
-                return
+        print("Started")
+        self.adc.serial.write(Adc.COMMAND_STOP)
+        print("drain()")
+        self.adc.drain()
+        self.adc.serial.write(Adc.COMMAND_STOP)
+        print("status()")
+        self.adc.read_status()
+        self.adc.serial.write(Adc.COMMAND_START)
+        print("iter_measurements()")
 
     def close(self):
-        self.adc_measurements_thread.stop()
-        self.pcb_ad.close()
+        self.adc.close()
 
     def acquire(
         self,
@@ -164,43 +164,6 @@ class Instrument:
 
         stream_output.init(stage=0, dt_s=configstep.dt_s)
 
-        # def convert(values_V):
-        #     return np.array(values_V, dtype=np.float32)
-
-        # stream = program_measurement_stream.InThread(
-        #     stream_output,
-        #     dt_s=configstep.dt_s,
-        #     filename_capture_raw=filename_capture_raw,
-        #     duration_s=configstep.duration_s,
-        #     func_convert=convert,
-        # )
-        # stream.start()
-        # self.streaming_done = False
-
-        # for i in range(total_samples // trig_count):
-
-        class Measurements:
-            def __init__(self, configstep: program_configsetup.ConfigStep) -> None:
-                self.count = 0
-                self.configstep = configstep
-
-            def cb(self, adc_value_ain_V: float) -> None:
-                self.count += 1
-                adc_value_V = (
-                    adc_value_ain_V
-                    * self.configstep.skalierungsfaktor
-                    * self.configstep.input_Vp.V
-                )
-                if self.count % 100_000 == 0:
-                    print(
-                        f"{self.count} samples of {total_samples} {self.count/total_samples*100:0.0f}%. {adc_value_V=:0.6f}"
-                    )
-                queueFull = stream_output.push([adc_value_V])
-                assert not queueFull
-
-        measurements = Measurements(configstep=configstep)
-        self.adc_measurements_thread.cb_measurement = measurements.cb
-
         def flush_stages():
             max_calculations = 30
             for _ in range(max_calculations):
@@ -209,17 +172,26 @@ class Instrument:
                 if done:
                     break
 
-        while True:
-            if measurements.count > total_samples:
+        count = 0
+        start_s = time.monotonic()
+        for adc_value_ain_V in self.adc.iter_measurements():
+            if count > total_samples:
                 flush_stages()
                 return
-            if filelock_measurement.requested_stop_soft():
-                # stop(ExitCode.CTRL_C, "<ctrl-c> or softstop")
-                flush_stages()
-                return
-            line = self.pcb_ad.readline()
-            print(line)
-            time.sleep(0.1)
+            # print(adc_value_V)
+            count += 1
+            adc_value_V = (
+                adc_value_ain_V * configstep.skalierungsfaktor * configstep.input_Vp.V
+            )
+            if count % 100_000 == 0:
+                duration_s = time.monotonic() - start_s
+                print(
+                    f"{count} samples of {total_samples} {count/duration_s:0.1f}SPS {count/total_samples*100:0.0f}%. {adc_value_ain_V=:0.6f} {adc_value_V=:0.6f}"
+                )
+            # array_in = np.array([adc_value_V], dtype=np.float32)
+            array_in = [adc_value_V]
+            queueFull = stream_output.push(array_in)
+            assert not queueFull
 
 
 def main():
@@ -227,10 +199,11 @@ def main():
     instrument = Instrument(configstep=None)
     instrument.connect()
 
-    def cb_measurement(adc_value_V: float) -> None:
-        print(f"{adc_value_V=:15.6f}")
+    for i, adc_value_ain_V in enumerate(instrument.adc.iter_measurements()):
+        if i % 10000 == 0:
+            print(f"{adc_value_ain_V=:1.6f}")
 
-    # instrument.adc_measurements_thread.cb_measurement = cb_measurement
+    # instrument.adc.cb_measurement = cb_measurement
 
 
 if __name__ == "__main__":

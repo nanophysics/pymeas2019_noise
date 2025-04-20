@@ -23,11 +23,10 @@ class InputRangeADLowNoiseFloat2023(enum.Enum):
         }[self]
 
 
-# f2_settle_fs_hz = 195313.0  # CLK 25 MHz
-f2_settle_fs_hz = 3052.0  # CLK 25 MHz
+# fs_hz = 195313.0  # CLK 25 MHz
+# fs_hz = 3052.0  # CLK 25 MHz
+fs_hz = 24_414.0  # CLK 25 MHz
 fir_count_3_slow = 20
-# f2_slow_fs_hz = 195313.0  # CLK 25 MHz
-f2_slow_fs_hz = 3052.0  # CLK 25 MHz
 
 
 def get_config_setup() -> ConfigSetup:  # pylint: disable=too-many-statements
@@ -43,7 +42,7 @@ def get_config_setup() -> ConfigSetup:  # pylint: disable=too-many-statements
     step.bandwidth = "BW_20MHZ" # old, picoscope
     step.offset = 0.0
     step.resolution = "16bit" # old, picoscope
-    step.dt_s = 1 / f2_settle_fs_hz
+    step.dt_s = 1 / fs_hz
 
     step = setup.step_1_fast = ConfigStepSkip()
     step.stepname = "1_fast"
@@ -57,7 +56,7 @@ def get_config_setup() -> ConfigSetup:  # pylint: disable=too-many-statements
     step.bandwidth = "BW_20MHZ" # old, picoscope
     step.offset = 0.0
     step.resolution = "16bit" # old, picoscope
-    step.dt_s = 1 / f2_slow_fs_hz
+    step.dt_s = 1 / fs_hz
     step.input_channel = "A"
 
     return setup

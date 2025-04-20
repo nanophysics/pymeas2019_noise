@@ -11,7 +11,7 @@ def get_configsetup() -> ConfigSetup:
     # config.capture_raw = True
     # config.capture_raw_hit_anykey = True
 
-    config.step_0_settle.settle_time_ok_s = 5.00
+    config.step_0_settle.settle_time_ok_s = 2.00
     config.step_0_settle.duration_s = config.step_0_settle.settle_time_ok_s + 5.0
     config.step_0_settle.settle_input_part = 0.5
 
