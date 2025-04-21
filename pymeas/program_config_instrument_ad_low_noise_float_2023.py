@@ -25,7 +25,8 @@ class InputRangeADLowNoiseFloat2023(enum.Enum):
 
 # fs_hz = 195313.0  # CLK 25 MHz
 # fs_hz = 3052.0  # CLK 25 MHz
-fs_hz = 24_414.0  # CLK 25 MHz
+# fs_hz = 24_414.0  # CLK 25 MHz
+fs_hz = 6_104.0  # CLK 25 MHz
 fir_count_3_slow = 20
 
 

@@ -60,6 +60,17 @@ class Adc:
             if line == "END=1":
                 return True
 
+    def test_usb_speed(self) -> None:
+        begin_ns = time.monotonic_ns()
+        counter = 0
+        while True:
+            measurements = self.serial.read(size=30_000)
+            counter += len(measurements) // 3
+            duration_ns = time.monotonic_ns() - begin_ns
+            print(f"{1e9*counter/duration_ns:0.1f} SPS")
+
+        # Pico:197k  PC Peter 96k (0.1% CPU auslasung)
+
     def iter_measurements(self) -> typing.Iterable[float]:
         counter = 0
         counter_separator = 0
@@ -199,6 +210,8 @@ def main():
     instrument = Instrument(configstep=None)
     instrument.connect()
 
+    instrument.adc.test_usb_speed()
+    return
     for i, adc_value_ain_V in enumerate(instrument.adc.iter_measurements()):
         if i % 10000 == 0:
             print(f"{adc_value_ain_V=:1.6f}")
