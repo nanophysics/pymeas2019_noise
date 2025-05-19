@@ -8,6 +8,7 @@ import typing
 import serial
 import serial.tools.list_ports
 import dynamic_buffer
+import numpy as np
 
 from . import program_configsetup
 
@@ -18,7 +19,7 @@ RE_STATUS_BYTE_MASK = re.compile(r"STATUS_BYTE_MASK=0x(\w+)")
 
 
 class Adc:
-    PRINTF_INTERVAL_S = 2.0
+    PRINTF_INTERVAL_S = 10.0
     VID = 0x2E8A
     PID = 0x4242
     MEASURMENT_BYTES = 3
@@ -90,9 +91,10 @@ class Adc:
 
         # Pico:197k  PC Peter 96k (0.1% CPU auslasung)
 
-    def iter_measurements(self) -> typing.Iterable[float]:
-        counter = 0
-        begin_s = time.monotonic()
+    def iter_measurements(self) -> typing.Iterable[np.ndarray]:
+        # counter = 0
+        # begin_s = time.monotonic()
+
         db = dynamic_buffer.DynamicBuffer()
         while True:
             measurements = self.serial.read(size=1_000_000)
@@ -100,35 +102,32 @@ class Adc:
             db.push_bytes(measurements)
 
             while True:
-                numpy_array = db.get_numpy_array()
-                if numpy_array is None:
+                adc_value_ain_signed32 = db.get_numpy_array()
+                if adc_value_ain_signed32 is None:
                     # print(".", end="")
                     break
-                counter += len(numpy_array)
+                # counter += len(adc_value_ain_signed32)
                 if db.get_crc() != 0:
                     print(f"ERROR crc={db.get_crc()}")
                 if db.get_errors() != 8:
                     print(f"ERROR errors={db.get_errors()}")
 
-                for measurement_signed in numpy_array:
-                    REF_V = 5.0
-                    GAIN = 5.0  # 1.0, 2.0, 5.0, 10.0
-                    adc_value_ain_V = measurement_signed / (2**23) * REF_V / GAIN
+                # duration_s = time.monotonic() - begin_s
+                # if duration_s > self.PRINTF_INTERVAL_S:
+                #     print(
+                #         f"{adc_value_ain_signed32[0]=:2.6f}  {counter/duration_s:0.1f} SPS"
+                #     )
+                #     begin_s = time.monotonic()
+                #     counter = 0
 
-                    duration_s = time.monotonic() - begin_s
-                    if duration_s > self.PRINTF_INTERVAL_S:
-                        print(
-                            f"{adc_value_ain_V=:2.6f}  {counter/duration_s:0.1f} SPS"
-                        )
-                        begin_s = time.monotonic()
-                        counter = 0
-
-                    yield adc_value_ain_V
+                yield adc_value_ain_signed32
 
 
 class Instrument:
     def __init__(self, configstep):
         self.adc = Adc()
+        self.REF_V = 5.0
+        self.GAIN = 5.0  # 1.0, 2.0, 5.0, 10.0
 
     def connect(self):
         print("Started")
@@ -166,24 +165,35 @@ class Instrument:
                     break
 
         count = 0
-        start_s = time.monotonic()
-        for adc_value_ain_V in self.adc.iter_measurements():
+        next_print_s =start_s = time.monotonic()
+        printf_interval_s = 10.0
+        factor = (
+            self.GAIN
+            / self.REF_V
+            / (2**23)
+            * configstep.skalierungsfaktor
+            * configstep.input_Vp.V
+        )
+        for adc_value_ain_signed32 in self.adc.iter_measurements():
             if count > total_samples:
                 flush_stages()
                 return
             # print(adc_value_V)
-            count += 1
-            adc_value_V = (
-                adc_value_ain_V * configstep.skalierungsfaktor * configstep.input_Vp.V
-            )
-            if count % 100_000 == 0:
-                duration_s = time.monotonic() - start_s
+            count += len(adc_value_ain_signed32)
+            adc_value_V = np.multiply(
+                factor,
+                adc_value_ain_signed32,
+                dtype=np.float32,
+            )  # NUMPY_FLOAT_TYPE
+
+            duration_s = time.monotonic() - start_s
+            if next_print_s < time.monotonic():
+                next_print_s += printf_interval_s
                 print(
-                    f"{count} samples of {total_samples} {count/duration_s:0.1f}SPS {count/total_samples*100:0.0f}%. {adc_value_ain_V=:0.6f} {adc_value_V=:0.6f}"
+                    f"{count} samples of {total_samples} {count/duration_s:0.1f}SPS {count/total_samples*100:0.0f}%. {adc_value_V[0]=:0.6f}"
                 )
-            # array_in = np.array([adc_value_V], dtype=np.float32)
-            array_in = [adc_value_V]
-            queueFull = stream_output.push(array_in)
+                start_s = time.monotonic()
+            queueFull = stream_output.push(adc_value_V)
             assert not queueFull
 
 
@@ -195,8 +205,8 @@ def main():
     # instrument.adc.test_usb_speed()
     # return
     for i, adc_value_ain_V in enumerate(instrument.adc.iter_measurements()):
-        if i % 200_000 == 0:
-            print(f"{adc_value_ain_V=:1.6f}")
+        if i % 100 == 0:
+            print(f"{adc_value_ain_V[0]=:1.6f}")
 
     # instrument.adc.cb_measurement = cb_measurement
 
