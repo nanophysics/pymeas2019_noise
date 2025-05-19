@@ -1,12 +1,13 @@
 # https://github.com/petermaerki/ad_low_noise_float_2023_git/blob/hmaerki/evaluation_software/evaluation_software/cpp_cdc/2025-03-30a_ads127L21/src/reader.py
-import serial
-import serial.tools.list_ports
+import logging
 import re
 import sys
 import time
-import logging
 import typing
-import numpy as np
+
+import serial
+import serial.tools.list_ports
+import dynamic_buffer
 
 from . import program_configsetup
 
@@ -32,7 +33,7 @@ class Adc:
         for port in ports:
             if port.vid == self.VID:
                 if port.pid == self.PID:
-                    return serial.Serial(port=port.device, timeout=0.5)
+                    return serial.Serial(port=port.device, timeout=0.2)
 
         raise ValueError(
             f"No board with VID=0x{self.VID:02X} and PID=0x{self.PID:02X} found!"
@@ -63,85 +64,66 @@ class Adc:
     def test_usb_speed(self) -> None:
         begin_ns = time.monotonic_ns()
         counter = 0
+        db = dynamic_buffer.DynamicBuffer()
         while True:
-            measurements = self.serial.read(size=30_000)
-            counter += len(measurements) // 3
-            duration_ns = time.monotonic_ns() - begin_ns
-            print(f"{1e9*counter/duration_ns:0.1f} SPS")
+            measurements = self.serial.read(size=1_000_000)
+            # print(f"len={len(measurements)/3}")
+            db.push_bytes(measurements)
+
+            while True:
+                numpy_array = db.get_numpy_array()
+                if numpy_array is None:
+                    print(".", end="")
+                    break
+                if db.get_crc() != 0:
+                    print(f"ERROR crc={db.get_crc()}")
+                if db.get_errors() != 8:
+                    print(f"ERROR errors={db.get_errors()}")
+
+                counter += len(numpy_array)
+                duration_ns = time.monotonic_ns() - begin_ns
+                print(f"{1e9*counter/duration_ns:0.1f} SPS")
+
+                # counter += len(measurements) // 3
+                # duration_ns = time.monotonic_ns() - begin_ns
+                # print(f"{1e9*counter/duration_ns:0.1f} SPS")
 
         # Pico:197k  PC Peter 96k (0.1% CPU auslasung)
 
     def iter_measurements(self) -> typing.Iterable[float]:
         counter = 0
-        counter_separator = 0
         begin_s = time.monotonic()
-        running_crc = 0
-        STATUS_BYTE = False
+        db = dynamic_buffer.DynamicBuffer()
         while True:
-            measurement = self.serial.read(size=self.MEASURMENT_BYTES)
-            if len(measurement) != self.MEASURMENT_BYTES:
-                if len(measurement) == 0:
-                    return
-                raise ValueError(f"Wrong size {measurement}!")
+            measurements = self.serial.read(size=1_000_000)
+            # print(f"len={len(measurements)/3}")
+            db.push_bytes(measurements)
 
-            # TODO: Sync if not aligned!
+            while True:
+                numpy_array = db.get_numpy_array()
+                if numpy_array is None:
+                    # print(".", end="")
+                    break
+                counter += len(numpy_array)
+                if db.get_crc() != 0:
+                    print(f"ERROR crc={db.get_crc()}")
+                if db.get_errors() != 8:
+                    print(f"ERROR errors={db.get_errors()}")
 
-            measurement_raw_unsigned = 0
-            for idx in (0, 1, 2):
-                measurement_raw_unsigned <<= 8
-                running_crc ^= measurement[idx]
-                measurement_raw_unsigned += measurement[idx]
+                for measurement_signed in numpy_array:
+                    REF_V = 5.0
+                    GAIN = 5.0  # 1.0, 2.0, 5.0, 10.0
+                    adc_value_ain_V = measurement_signed / (2**23) * REF_V / GAIN
 
-            if STATUS_BYTE:
-                byte_status, byte_crc, byte_reserve = measurement
-                show = (byte_status != 0) or (running_crc != 0)
-                if show:
-                    print(
-                        f"{counter_separator=} status=0x{byte_status:02X} crc=0x{byte_crc:02X} (0x{running_crc:02X}) reserve=0x{byte_reserve:02X}"
-                    )
-                counter_separator = 0
-                running_crc = 0
-                STATUS_BYTE = False
-                continue
+                    duration_s = time.monotonic() - begin_s
+                    if duration_s > self.PRINTF_INTERVAL_S:
+                        print(
+                            f"{adc_value_ain_V=:2.6f}  {counter/duration_s:0.1f} SPS"
+                        )
+                        begin_s = time.monotonic()
+                        counter = 0
 
-            if measurement_raw_unsigned == 0:
-                STATUS_BYTE = True
-                continue
-
-            def signExtend(measurement_raw_unsigned) -> int:
-                """
-                See: https://github.com/TexasInstruments/precision-adc-examples/blob/42e54e2d3afda165bd265020bac97c8aedf1f135/devices/ads127l21/ads127l21.c#L571-L578
-                """
-                if measurement_raw_unsigned & 0x80_00_00:
-                    measurement_raw_unsigned -= 0x1_00_00_00
-
-                return measurement_raw_unsigned
-
-            def get_adc_value_V(measurement_raw_signed: int) -> float:
-                """
-                See https://www.ti.com/lit/ds/symlink/ads127l21.pdf
-                page 72, 7.5.1.8.1 Conversion Data
-                """
-                REF_V = 5.0
-                GAIN = 5.0  # 1.0, 2.0, 5.0, 10.0
-
-                return measurement_raw_signed / (2**23) * REF_V / GAIN
-
-            measurement_raw_signed = signExtend(measurement_raw_unsigned)
-            adc_value_ain_V = get_adc_value_V(measurement_raw_signed)
-
-            counter_separator += 1
-            counter += 1
-            duration_s = time.monotonic() - begin_s
-            if duration_s > self.PRINTF_INTERVAL_S:
-                duration_s = time.monotonic() - begin_s
-                print(
-                    f"{adc_value_ain_V=:2.6f} ({measurement_raw_signed}) {counter/duration_s:0.1f} SPS"
-                )
-                begin_s = time.monotonic()
-                counter = 0
-
-            yield adc_value_ain_V
+                    yield adc_value_ain_V
 
 
 class Instrument:
@@ -210,10 +192,10 @@ def main():
     instrument = Instrument(configstep=None)
     instrument.connect()
 
-    instrument.adc.test_usb_speed()
-    return
+    # instrument.adc.test_usb_speed()
+    # return
     for i, adc_value_ain_V in enumerate(instrument.adc.iter_measurements()):
-        if i % 10000 == 0:
+        if i % 200_000 == 0:
             print(f"{adc_value_ain_V=:1.6f}")
 
     # instrument.adc.cb_measurement = cb_measurement
