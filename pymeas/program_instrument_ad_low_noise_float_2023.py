@@ -7,7 +7,7 @@ import typing
 
 import serial
 import serial.tools.list_ports
-import dynamic_buffer
+import ad_low_noise_float_2023_decoder
 import numpy as np
 
 from . import program_configsetup
@@ -95,22 +95,22 @@ class Adc:
         # counter = 0
         # begin_s = time.monotonic()
 
-        db = dynamic_buffer.DynamicBuffer()
+        decoder = ad_low_noise_float_2023_decoder.Decoder()
         while True:
             measurements = self.serial.read(size=1_000_000)
             # print(f"len={len(measurements)/3}")
-            db.push_bytes(measurements)
+            decoder.push_bytes(measurements)
 
             while True:
-                adc_value_ain_signed32 = db.get_numpy_array()
+                adc_value_ain_signed32 = decoder.get_numpy_array()
                 if adc_value_ain_signed32 is None:
                     # print(".", end="")
                     break
                 # counter += len(adc_value_ain_signed32)
-                if db.get_crc() != 0:
-                    print(f"ERROR crc={db.get_crc()}")
-                if db.get_errors() != 8:
-                    print(f"ERROR errors={db.get_errors()}")
+                if decoder.get_crc() != 0:
+                    print(f"ERROR crc={decoder.get_crc()}")
+                if decoder.get_errors() != 8:
+                    print(f"ERROR errors={decoder.get_errors()}")
 
                 # duration_s = time.monotonic() - begin_s
                 # if duration_s > self.PRINTF_INTERVAL_S:
