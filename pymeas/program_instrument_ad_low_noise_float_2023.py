@@ -9,6 +9,7 @@ import serial
 import serial.tools.list_ports
 import ad_low_noise_float_2023_decoder
 import numpy as np
+from .library_filelock import ExitCode
 
 from . import program_configsetup
 
@@ -65,21 +66,21 @@ class Adc:
     def test_usb_speed(self) -> None:
         begin_ns = time.monotonic_ns()
         counter = 0
-        db = dynamic_buffer.DynamicBuffer()
+        decoder = ad_low_noise_float_2023_decoder.Decoder()
         while True:
             measurements = self.serial.read(size=1_000_000)
             # print(f"len={len(measurements)/3}")
-            db.push_bytes(measurements)
+            decoder.push_bytes(measurements)
 
             while True:
-                numpy_array = db.get_numpy_array()
+                numpy_array = decoder.get_numpy_array()
                 if numpy_array is None:
                     print(".", end="")
                     break
-                if db.get_crc() != 0:
-                    print(f"ERROR crc={db.get_crc()}")
-                if db.get_errors() != 8:
-                    print(f"ERROR errors={db.get_errors()}")
+                if decoder.get_crc() != 0:
+                    print(f"ERROR crc={decoder.get_crc()}")
+                if decoder.get_errors() not in (8, 72):
+                    print(f"ERROR errors={decoder.get_errors()}")
 
                 counter += len(numpy_array)
                 duration_ns = time.monotonic_ns() - begin_ns
@@ -109,7 +110,7 @@ class Adc:
                 # counter += len(adc_value_ain_signed32)
                 if decoder.get_crc() != 0:
                     print(f"ERROR crc={decoder.get_crc()}")
-                if decoder.get_errors() != 8:
+                if decoder.get_errors() not in (8, 72):
                     print(f"ERROR errors={decoder.get_errors()}")
 
                 # duration_s = time.monotonic() - begin_s
@@ -164,8 +165,14 @@ class Instrument:
                 if done:
                     break
 
-        count = 0
-        next_print_s =start_s = time.monotonic()
+        def stop(exit_code: ExitCode, reason: str):
+            assert isinstance(exit_code, ExitCode)
+            assert isinstance(reason, str)
+            stream_output.put_EOF(exit_code=exit_code)
+            logger.info(f"STOP({reason})")
+
+        actual_sample_count = 0
+        next_print_s = start_s = time.monotonic()
         printf_interval_s = 10.0
         factor = (
             self.GAIN
@@ -175,11 +182,15 @@ class Instrument:
             * configstep.input_Vp.V
         )
         for adc_value_ain_signed32 in self.adc.iter_measurements():
-            if count > total_samples:
+            if filelock_measurement.requested_stop_soft():
+                return stop(ExitCode.CTRL_C, "<ctrl-c> or softstop")
+
+            if actual_sample_count > total_samples:
                 flush_stages()
-                return
+                return stop(ExitCode.OK, "time over")
+
             # print(adc_value_V)
-            count += len(adc_value_ain_signed32)
+            actual_sample_count += len(adc_value_ain_signed32)
             adc_value_V = np.multiply(
                 factor,
                 adc_value_ain_signed32,
@@ -189,10 +200,13 @@ class Instrument:
             duration_s = time.monotonic() - start_s
             if next_print_s < time.monotonic():
                 next_print_s += printf_interval_s
-                print(
-                    f"{count} samples of {total_samples} {count/duration_s:0.1f}SPS {count/total_samples*100:0.0f}%. {adc_value_V[0]=:0.6f}"
-                )
-                start_s = time.monotonic()
+                elements = [
+                    f"{adc_value_V[0]:3.6f}V",
+                    f"{actual_sample_count/total_samples*100:0.0f}%",
+                    f"{actual_sample_count/duration_s:,.0f}SPS",
+                    f"{actual_sample_count:,} samples of {total_samples:,}",
+                ]
+                print(" ".join(elements))
             queueFull = stream_output.push(adc_value_V)
             assert not queueFull
 
@@ -202,8 +216,8 @@ def main():
     instrument = Instrument(configstep=None)
     instrument.connect()
 
-    # instrument.adc.test_usb_speed()
-    # return
+    instrument.adc.test_usb_speed()
+    return
     for i, adc_value_ain_V in enumerate(instrument.adc.iter_measurements()):
         if i % 100 == 0:
             print(f"{adc_value_ain_V[0]=:1.6f}")
