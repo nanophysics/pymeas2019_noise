@@ -18,5 +18,5 @@ def get_plot_config() -> PlotConfig:
         unit="V",
         func_matplotlib_fig=_func_matplotlib_fig,
         func_matplotlib_ax=_func_matplotlib_ax,
-        integral_index_start=10.0,
+        integral_index_start=0.1,
     )

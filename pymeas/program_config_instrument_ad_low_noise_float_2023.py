@@ -6,20 +6,27 @@ from .program_configsetup import ConfigSetup, ConfigStep, ConfigStepSkip
 
 logger = logging.getLogger("logger")
 
+REFP_V = 5.0
+AD_FS_V = REFP_V
+GAIN_J2 = 2.0
+GAIN_J5 = 5.0
+GAIN_J10 = 10.0
+
+
 
 class InputRangeADLowNoiseFloat2023(enum.Enum):
-    RANGE_500mV = "500"
-    RANGE_1000mV = "1000"
-    RANGE_2500mV = "2500"
-    RANGE_5000mV = "5000"
+    RANGE_500mV_gain_10_J10 = "500"
+    RANGE_1000mV_gain_5_J5 = "1000"
+    RANGE_2500mV_gain_2_J2 = "2500"
+    RANGE_5000mV_gain_1 = "5000"
 
     @property
     def V(self) -> float:
         return {
-            InputRangeADLowNoiseFloat2023.RANGE_500mV: 0.5,
-            InputRangeADLowNoiseFloat2023.RANGE_1000mV: 1.0,
-            InputRangeADLowNoiseFloat2023.RANGE_2500mV: 2.5,
-            InputRangeADLowNoiseFloat2023.RANGE_5000mV: 5.0,
+            InputRangeADLowNoiseFloat2023.RANGE_500mV_gain_10_J10: AD_FS_V / GAIN_J10,
+            InputRangeADLowNoiseFloat2023.RANGE_1000mV_gain_5_J5: AD_FS_V / GAIN_J5,
+            InputRangeADLowNoiseFloat2023.RANGE_2500mV_gain_2_J2: AD_FS_V / GAIN_J2 ,
+            InputRangeADLowNoiseFloat2023.RANGE_5000mV_gain_1: AD_FS_V ,
         }[self]
 
 

@@ -19,14 +19,9 @@ def get_configsetup() -> ConfigSetup:
     for step in config.configsteps:
         # To choose the best input range, see the description in 'program_config_instrument_picoscope'.
         step.input_Vp = (
-            program_config_instrument_ad_low_noise_float_2023.InputRangeADLowNoiseFloat2023.RANGE_1000mV
+            program_config_instrument_ad_low_noise_float_2023.InputRangeADLowNoiseFloat2023.RANGE_500mV_gain_10_J10
         )
-        # step.input_Vp = program_config_instrument_picoscope.InputRange.R_500mV
         step.skalierungsfaktor = 1.0
 
-    # config.step_0_settle.skip = True
-    # config.step_1_fast.skip = True
-    # # config.step_2_medium.skip = True
-    # # config.step_3_slow.skip = True
 
     return config

@@ -35,7 +35,7 @@ class Adc:
         for port in ports:
             if port.vid == self.VID:
                 if port.pid == self.PID:
-                    return serial.Serial(port=port.device, timeout=0.2)
+                    return serial.Serial(port=port.device, timeout=1.0)
 
         raise ValueError(
             f"No board with VID=0x{self.VID:02X} and PID=0x{self.PID:02X} found!"
@@ -79,7 +79,7 @@ class Adc:
                     break
                 if decoder.get_crc() != 0:
                     print(f"ERROR crc={decoder.get_crc()}")
-                if decoder.get_errors() not in (8, 72):
+                if decoder.get_errors() not in (0, 8, 72):
                     print(f"ERROR errors={decoder.get_errors()}")
 
                 counter += len(numpy_array)
@@ -110,7 +110,7 @@ class Adc:
                 # counter += len(adc_value_ain_signed32)
                 if decoder.get_crc() != 0:
                     print(f"ERROR crc={decoder.get_crc()}")
-                if decoder.get_errors() not in (8, 72):
+                if decoder.get_errors() not in (0, 8, 72):
                     print(f"ERROR errors={decoder.get_errors()}")
 
                 # duration_s = time.monotonic() - begin_s
@@ -127,8 +127,6 @@ class Adc:
 class Instrument:
     def __init__(self, configstep):
         self.adc = Adc()
-        self.REF_V = 5.0
-        self.GAIN = 5.0  # 1.0, 2.0, 5.0, 10.0
 
     def connect(self):
         print("Started")
@@ -174,13 +172,7 @@ class Instrument:
         actual_sample_count = 0
         next_print_s = start_s = time.monotonic()
         printf_interval_s = 10.0
-        factor = (
-            self.GAIN
-            / self.REF_V
-            / (2**23)
-            * configstep.skalierungsfaktor
-            * configstep.input_Vp.V
-        )
+        factor = configstep.input_Vp.V * configstep.skalierungsfaktor / (2**23)
         for adc_value_ain_signed32 in self.adc.iter_measurements():
             if filelock_measurement.requested_stop_soft():
                 return stop(ExitCode.CTRL_C, "<ctrl-c> or softstop")
