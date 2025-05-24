@@ -15,5 +15,5 @@ Unzip and move into `./wheels`.
 # Command Prompt (Not powershell)
 venv\Scripts\activate.bat
 uv pip install --upgrade -r requirements.txt 
-uv pip install wheels\ad_low_noise_float_2023_decoder-0.1.0-cp39-cp39-win_amd64.whl
+uv pip install wheels\ad_low_noise_float_2023_decoder-*-cp39-cp39-win_amd64.whl
 ```

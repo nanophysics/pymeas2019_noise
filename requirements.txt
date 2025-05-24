@@ -5,7 +5,7 @@
 # uv pip install -r requirements.txt
 # https://github.com/hmaerki/fork_python_example
 # Download wheel and install
-# uv pip install wheels/dynamic_buffer-0.1.0-cp39-cp39-win_amd64.whl
+# uv pip install wheels\ad_low_noise_float_2023_decoder-*-cp39-cp39-win_amd64.whl
 numpy==2.0.2
 matplotlib==3.8.4
 scipy>=1.13.1
