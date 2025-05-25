@@ -10,6 +10,7 @@ import serial.tools.list_ports
 import ad_low_noise_float_2023_decoder
 import numpy as np
 from .library_filelock import ExitCode
+from .program_fir import UniformPieces
 
 from . import program_configsetup
 
@@ -162,6 +163,7 @@ class Instrument:
         filelock_measurement,
     ):  # pylint: disable=too-many-statements
         assert isinstance(configstep, program_configsetup.ConfigStep)
+        assert isinstance(stream_output, UniformPieces)
 
         total_samples = int(configstep.duration_s / configstep.dt_s)
 
