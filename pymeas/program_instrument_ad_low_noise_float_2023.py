@@ -19,6 +19,10 @@ logger = logging.getLogger("logger")
 RE_STATUS_BYTE_MASK = re.compile(r"STATUS_BYTE_MASK=0x(\w+)")
 
 
+class OutOfSyncException(Exception):
+    pass
+
+
 class Adc:
     PRINTF_INTERVAL_S = 10.0
     VID = 0x2E8A
@@ -26,6 +30,9 @@ class Adc:
     MEASURMENT_BYTES = 3
     COMMAND_START = b"s"
     COMMAND_STOP = b"p"
+    SEQUENCE_LEN_MAX = 30_000
+    BYTES_PER_MEASUREMENT = 3
+    DECODER_OVERFLOW_SIZE = 2 * BYTES_PER_MEASUREMENT * SEQUENCE_LEN_MAX  # 2: spare
 
     def __init__(self) -> None:
         self.serial = self._open_serial()
@@ -93,8 +100,6 @@ class Adc:
         # Pico:197k  PC Peter 96k (0.1% CPU auslasung)
 
     def iter_measurements(self) -> typing.Iterable[np.ndarray]:
-        # counter = 0
-        # begin_s = time.monotonic()
 
         decoder = ad_low_noise_float_2023_decoder.Decoder()
         while True:
@@ -106,10 +111,17 @@ class Adc:
                 adc_value_ain_signed32 = decoder.get_numpy_array()
                 if adc_value_ain_signed32 is None:
                     # print(".", end="")
+                    if decoder.size() >self. DECODER_OVERFLOW_SIZE:
+                        msg = "Segment overflow!"
+                        # print(msg)
+                        raise OutOfSyncException(msg)
                     break
                 # counter += len(adc_value_ain_signed32)
                 if decoder.get_crc() != 0:
-                    print(f"ERROR crc={decoder.get_crc()}")
+                    msg = f"ERROR crc={decoder.get_crc()}"
+                    # print(msg)
+                    raise OutOfSyncException(msg)
+
                 if decoder.get_errors() not in (0, 8, 72):
                     print(f"ERROR errors={decoder.get_errors()}")
 
@@ -173,34 +185,39 @@ class Instrument:
         next_print_s = start_s = time.monotonic()
         printf_interval_s = 10.0
         factor = configstep.input_Vp.V * configstep.skalierungsfaktor / (2**23)
-        for adc_value_ain_signed32 in self.adc.iter_measurements():
-            if filelock_measurement.requested_stop_soft():
-                return stop(ExitCode.CTRL_C, "<ctrl-c> or softstop")
+        while True:
+            try:
+                for adc_value_ain_signed32 in self.adc.iter_measurements():
+                    if filelock_measurement.requested_stop_soft():
+                        return stop(ExitCode.CTRL_C, "<ctrl-c> or softstop")
 
-            if actual_sample_count > total_samples:
-                flush_stages()
-                return stop(ExitCode.OK, "time over")
+                    if actual_sample_count > total_samples:
+                        flush_stages()
+                        return stop(ExitCode.OK, "time over")
 
-            # print(adc_value_V)
-            actual_sample_count += len(adc_value_ain_signed32)
-            adc_value_V = np.multiply(
-                factor,
-                adc_value_ain_signed32,
-                dtype=np.float32,
-            )  # NUMPY_FLOAT_TYPE
+                    # print(adc_value_V)
+                    actual_sample_count += len(adc_value_ain_signed32)
+                    adc_value_V = np.multiply(
+                        factor,
+                        adc_value_ain_signed32,
+                        dtype=np.float32,
+                    )  # NUMPY_FLOAT_TYPE
 
-            duration_s = time.monotonic() - start_s
-            if next_print_s < time.monotonic():
-                next_print_s += printf_interval_s
-                elements = [
-                    f"{adc_value_V[0]:3.6f}V",
-                    f"{actual_sample_count/total_samples*100:0.0f}%",
-                    f"{actual_sample_count/duration_s:,.0f}SPS",
-                    f"{actual_sample_count:,} samples of {total_samples:,}",
-                ]
-                print(" ".join(elements))
-            queueFull = stream_output.push(adc_value_V)
-            assert not queueFull
+                    duration_s = time.monotonic() - start_s
+                    if next_print_s < time.monotonic():
+                        next_print_s += printf_interval_s
+                        elements = [
+                            f"{adc_value_V[0]:3.6f}V",
+                            f"{actual_sample_count/total_samples*100:0.0f}%",
+                            f"{actual_sample_count/duration_s:,.0f}SPS",
+                            f"{actual_sample_count:,} samples of {total_samples:,}",
+                        ]
+                        print(" ".join(elements))
+                    queueFull = stream_output.push(adc_value_V)
+                    assert not queueFull
+            except OutOfSyncException as e:
+                print(f"OutOfSyncException: {e}")
+                self.connect()
 
 
 def main():
