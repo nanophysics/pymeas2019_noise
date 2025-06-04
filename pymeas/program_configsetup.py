@@ -12,7 +12,9 @@ from . import program_fir
 logger = logging.getLogger("logger")
 
 
-class SamplingProcessConfig(LockingMixin):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
+class SamplingProcessConfig(
+    LockingMixin
+):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):
         self.fir_count: int = 0
         self.fir_count_skipped: int = 0
@@ -43,7 +45,9 @@ class SamplingProcessConfig(LockingMixin):  # pylint: disable=too-few-public-met
         self._freeze()
 
 
-class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
+class ConfigStep(
+    LockingMixin
+):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):
         self.stepname: str = LockingMixin.TO_BE_SET
         self.settle: bool = False
@@ -99,7 +103,9 @@ class ConfigStep(LockingMixin):  # pylint: disable=too-few-public-methods,too-ma
         c.duration_s = self.duration_s
         return c
 
-    def get_filename_capture_raw(self, config_setup: "ConfigSetup", dir_raw: pathlib.Path) -> Optional[pathlib.Path]:
+    def get_filename_capture_raw(
+        self, config_setup: "ConfigSetup", dir_raw: pathlib.Path
+    ) -> Optional[pathlib.Path]:
         if config_setup.capture_raw:
             return dir_raw / f"capture_raw_{self.stepname}.raw"
         return None
@@ -123,7 +129,9 @@ class InputRangeKeysight34401A(enum.Enum):
         }[self]
 
 
-class ConfigStepKeysight34401A(ConfigStep):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
+class ConfigStepKeysight34401A(
+    ConfigStep
+):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):
         super().__init__()
         self.input_channel: str = "42"
@@ -133,7 +141,9 @@ class ConfigStepKeysight34401A(ConfigStep):  # pylint: disable=too-few-public-me
         self.resolution: str = "42"
 
 
-class ConfigStepKeithley6517A(ConfigStep):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
+class ConfigStepKeithley6517A(
+    ConfigStep
+):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):
         super().__init__()
         self.input_channel: str = "42"
@@ -143,7 +153,9 @@ class ConfigStepKeithley6517A(ConfigStep):  # pylint: disable=too-few-public-met
         self.resolution: str = "42"
 
 
-class ConfigStepSkip(ConfigStep):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
+class ConfigStepSkip(
+    ConfigStep
+):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):
         super().__init__()
         self.skalierungsfaktor: float = 42.0
@@ -165,10 +177,10 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
         self.capture_raw: bool = False
         "Save the datastream from the scope directly to a file and do not process it."
         self.capture_raw_hit_anykey: bool = False
-        self.step_0_settle = LockingMixin.TO_BE_SET
-        self.step_1_fast = LockingMixin.TO_BE_SET
-        self.step_2_medium = LockingMixin.TO_BE_SET
-        self.step_3_slow = LockingMixin.TO_BE_SET
+        self.step_0_settle: ConfigStep = LockingMixin.TO_BE_SET
+        self.step_1_fast: ConfigStep = LockingMixin.TO_BE_SET
+        self.step_2_medium: ConfigStep = LockingMixin.TO_BE_SET
+        self.step_3_slow: ConfigStep = LockingMixin.TO_BE_SET
 
         self._lock()
 
@@ -216,7 +228,9 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
             traceback.print_exc()
             ExitCode.ERROR_PICOSCOPE.os_exit(msg=str(e))
 
-    def measure_for_all_steps(self, dir_measurement: pathlib.Path, dir_raw: pathlib.Path):
+    def measure_for_all_steps(
+        self, dir_measurement: pathlib.Path, dir_raw: pathlib.Path
+    ):
         assert isinstance(dir_measurement, pathlib.Path)
         assert isinstance(dir_raw, pathlib.Path)
 
@@ -227,17 +241,28 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
                 continue
             if self.capture_raw_hit_anykey:
                 input("capture_raw_hit_anykey=True: Hit <enter> to start acquistion...")
-            filename_capture_raw = configstep.get_filename_capture_raw(config_setup=self, dir_raw=dir_raw)
+            filename_capture_raw = configstep.get_filename_capture_raw(
+                config_setup=self, dir_raw=dir_raw
+            )
             # if not filename_capture_raw.is_file():
             #     logger.info(f"{filename_capture_raw}: does not exist: No processing!")
             #     continue
             logger.info(f"{filename_capture_raw}: processing...")
 
             _lock.update_status(f"Measuring: {dir_raw.name} / {configstep.stepname}")
-            ad_low_noise_float_2023 = self.module_instrument.Instrument(configstep)  # pylint: disable=no-member
+            ad_low_noise_float_2023 = self.module_instrument.Instrument(
+                configstep
+            )  # pylint: disable=no-member
             ad_low_noise_float_2023.connect()
-            sample_process = program_fir.SamplingProcess(configstep.process_config, dir_raw)
-            ad_low_noise_float_2023.acquire(configstep=configstep, stream_output=sample_process.output, filename_capture_raw=filename_capture_raw, filelock_measurement=_lock)
+            sample_process = program_fir.SamplingProcess(
+                configstep.process_config, dir_raw
+            )
+            ad_low_noise_float_2023.acquire(
+                configstep=configstep,
+                stream_output=sample_process.output,
+                filename_capture_raw=filename_capture_raw,
+                filelock_measurement=_lock,
+            )
             ad_low_noise_float_2023.close()
 
             if _lock.requested_stop_soft():

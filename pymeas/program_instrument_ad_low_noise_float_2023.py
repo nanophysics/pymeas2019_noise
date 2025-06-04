@@ -11,6 +11,7 @@ import ad_low_noise_float_2023_decoder
 import numpy as np
 from .library_filelock import ExitCode
 from .program_fir import UniformPieces
+from .constants_ad_low_noise_float_2023 import ConfigStepAdLowNoiseFloat2023
 
 from . import program_configsetup
 
@@ -29,8 +30,8 @@ class Adc:
     VID = 0x2E8A
     PID = 0x4242
     MEASURMENT_BYTES = 3
-    COMMAND_START = b"s"
-    COMMAND_STOP = b"p"
+    COMMAND_START = "s"
+    COMMAND_STOP = "p"
     SEQUENCE_LEN_MAX = 30_000
     BYTES_PER_MEASUREMENT = 3
     DECODER_OVERFLOW_SIZE = 2 * BYTES_PER_MEASUREMENT * SEQUENCE_LEN_MAX  # 2: spare
@@ -112,7 +113,7 @@ class Adc:
                 adc_value_ain_signed32 = decoder.get_numpy_array()
                 if adc_value_ain_signed32 is None:
                     # print(".", end="")
-                    if decoder.size() >self. DECODER_OVERFLOW_SIZE:
+                    if decoder.size() > self.DECODER_OVERFLOW_SIZE:
                         msg = "Segment overflow!"
                         # print(msg)
                         raise OutOfSyncException(msg)
@@ -138,18 +139,30 @@ class Adc:
 
 
 class Instrument:
-    def __init__(self, configstep):
+    def __init__(self, configstep: ConfigStepAdLowNoiseFloat2023):
+        assert isinstance(configstep, ConfigStepAdLowNoiseFloat2023)
+        self.configstep = configstep
         self.adc = Adc()
+
+    def _send_command(self, command: str) -> None:
+        print(f"send command: {command}")
+        command_bytes = f"\n{command}\n".encode("ascii")
+        self.adc.serial.write(command_bytes)
+
+    def _send_command_reset(self):
+        print(
+            f"send command reset: {self.configstep.register_filter1!r} {self.configstep.register_mux!r}"
+        )
+        command_reset = f"r-{self.configstep.register_filter1:02X}-{self.configstep.register_mux:02X}"
+        self._send_command(command_reset)
 
     def connect(self):
         print("Started")
-        self.adc.serial.write(Adc.COMMAND_STOP)
-        print("drain()")
+        self._send_command(Adc.COMMAND_STOP)
         self.adc.drain()
-        self.adc.serial.write(Adc.COMMAND_STOP)
-        print("status()")
+        self._send_command_reset()
         self.adc.read_status()
-        self.adc.serial.write(Adc.COMMAND_START)
+        self._send_command(Adc.COMMAND_START)
         print("iter_measurements()")
 
     def close(self):
