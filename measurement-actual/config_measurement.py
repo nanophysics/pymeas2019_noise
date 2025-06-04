@@ -23,7 +23,13 @@ def get_configsetup() -> ConfigSetup:
 
     assert isinstance(config.step_3_slow, ConfigStepAdLowNoiseFloat2023)
     config.step_3_slow.duration_s = 10.0 * 3600.0
-    config.step_3_slow.register_filter1 = RegisterFilter1.SPS_03052
+    config.step_3_slow.register_filter1 = RegisterFilter1.SPS_97656
+    # 'additional_SPI_reads' creates additional noise on the SPI tracks
+
+    # config.step_3_slow.additional_SPI_reads = int(
+    #     RegisterFilter1.SPS_97656.SPS / config.step_3_slow.register_filter1.SPS
+    # )
+    
     config.step_3_slow.update_dt_s()
     config.step_3_slow.register_mux = RegisterMux.NORMAL_INPUT_POLARITY
     for step in config.configsteps:

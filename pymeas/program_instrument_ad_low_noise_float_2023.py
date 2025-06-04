@@ -153,7 +153,7 @@ class Instrument:
         print(
             f"send command reset: {self.configstep.register_filter1!r} {self.configstep.register_mux!r}"
         )
-        command_reset = f"r-{self.configstep.register_filter1:02X}-{self.configstep.register_mux:02X}"
+        command_reset = f"r-{self.configstep.register_filter1:02X}-{self.configstep.register_mux:02X}-{self.configstep.additional_SPI_reads:d}"
         self._send_command(command_reset)
 
     def connect(self):

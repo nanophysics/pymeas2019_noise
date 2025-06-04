@@ -4,10 +4,16 @@ from .program_configsetup import ConfigStep
 
 
 class ConfigStepAdLowNoiseFloat2023(ConfigStep):
-    def __init__(self, register_filter1: RegisterFilter1, register_mux: RegisterMux):
+    def __init__(
+        self,
+        register_filter1: RegisterFilter1,
+        register_mux: RegisterMux,
+        additional_SPI_reads=0,
+    ):
         self.register_filter1 = register_filter1
         self.update_dt_s()
         self.register_mux = register_mux
+        self.additional_SPI_reads = additional_SPI_reads
         super().__init__()
 
     def update_dt_s(self) -> None:
