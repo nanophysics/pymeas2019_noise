@@ -1,4 +1,5 @@
 # https://github.com/petermaerki/ad_low_noise_float_2023_git/blob/hmaerki/evaluation_software/evaluation_software/cpp_cdc/2025-03-30a_ads127L21/src/reader.py
+import dataclasses
 import logging
 import re
 import sys
@@ -25,6 +26,86 @@ class OutOfSyncException(Exception):
     pass
 
 
+@dataclasses.dataclass
+class BcbStatus:
+    """
+    status: BEGIN=1
+    status: PROGRAM=ad_low_noise_float_2023(0.3.3)
+    status: REGISTER_FILTER1=0x02
+    status: REGISTER_MUX=0x00
+    status: SEQUENCE_LEN_MIN=1000
+    status: SEQUENCE_LEN_MAX=30000
+    status: ERROR_MOCKED=1
+    status: ERROR_MOCKED=1
+    status: ERROR_ADS127_MOD=2
+    status: ERROR_ADS127_ADC=4
+    status: ERROR_FIFO=8
+    status: ERROR_ADS127_SPI=16
+    status: ERROR_ADS127_POR=32
+    status: ERROR_ADS127_ALV=64
+    status: ERROR_OVLD=128
+    status: ERROR_STATUS_J42=256
+    status: ERROR_STATUS_J43=512
+    status: ERROR_STATUS_J44=1024
+    status: ERROR_STATUS_J45=2048
+    status: ERROR_STATUS_J46=4096
+    status: END=1
+    """
+
+    settings: dict[str, str] = dataclasses.field(default_factory=dict)
+    error_codes: dict[int, str] = dataclasses.field(default_factory=dict)
+
+    def add(self, line: str) -> None:
+        key, value = line.split("=", 1)
+        self.add_setting(key.strip(), value.strip())
+
+    def add_setting(self, key: str, value: str) -> None:
+        assert isinstance(key, str)
+        assert isinstance(value, str)
+        self.settings[key] = value
+
+        if key.startswith("ERROR_"):
+            try:
+                value_int = int(value, 0)
+                bit_position = 0
+                while value_int > 1:
+                    value_int >>= 1
+                    bit_position += 1
+                self.error_codes[bit_position] = key
+            except ValueError:
+                logger.warning(f"Invalid error code: {key}={value}")
+
+    def validate(self) -> None:
+        assert self.settings["BEGIN"] == "1"
+        assert self.settings["END"] == "1"
+
+    def list_errors(self, error_code: int, inclusive_status: bool) -> list[str]:
+        """
+        Returns a list of error messages for the given error code.
+        """
+        assert isinstance(error_code, int)
+        # return a list of bit positions which are set in error_code
+        error_bits = [i for i in range(32) if (error_code & (1 << i)) != 0]
+
+        error_strings = [self.error_codes[bit_position] for bit_position in error_bits]
+        if not inclusive_status:
+            error_strings = [
+                x for x in error_strings if not x.startswith("ERROR_STATUS_")
+            ]
+        return error_strings
+
+    @property
+    def gain_from_jumpers(self) -> float:
+        status_J42_J46 = int(self.settings["STATUS_J42_J46"], 0)
+        status_J42_J43 = status_J42_J46 & 0b11
+        return {
+            0: 1.0,
+            1: 2.0,  # J42
+            2: 5.0,  # J43
+            3: 10.0,  # J42, J43
+        }[status_J42_J43]
+
+
 class Adc:
     PRINTF_INTERVAL_S = 10.0
     VID = 0x2E8A
@@ -38,6 +119,9 @@ class Adc:
 
     def __init__(self) -> None:
         self.serial = self._open_serial()
+        self.success: bool = False
+        self.pcb_status = BcbStatus()
+        self.decoder = ad_low_noise_float_2023_decoder.Decoder()
 
     def _open_serial(self) -> serial.Serial:
         ports = serial.tools.list_ports.comports()
@@ -60,36 +144,42 @@ class Adc:
                 return
 
     def read_status(self) -> bool:
+        self.success, self.pcb_status = self._read_status_inner()
+        self.pcb_status.validate()
+        return self.success
+
+    def _read_status_inner(self) -> tuple[bool, BcbStatus]:
         """
         return True on success
         """
+        status = BcbStatus()
         while True:
             line = self.serial.readline()
             if len(line) == 0:
-                return False
+                return False, status
             line = line.strip().decode("ascii")
+            status.add(line)
             print(f"  status: {line}")
             if line == "END=1":
-                return True
+                return True, status
 
     def test_usb_speed(self) -> None:
         begin_ns = time.monotonic_ns()
         counter = 0
-        decoder = ad_low_noise_float_2023_decoder.Decoder()
         while True:
             measurements = self.serial.read(size=1_000_000)
             # print(f"len={len(measurements)/3}")
-            decoder.push_bytes(measurements)
+            self.decoder.push_bytes(measurements)
 
             while True:
-                numpy_array = decoder.get_numpy_array()
+                numpy_array = self.decoder.get_numpy_array()
                 if numpy_array is None:
                     print(".", end="")
                     break
-                if decoder.get_crc() != 0:
-                    print(f"ERROR crc={decoder.get_crc()}")
-                if decoder.get_errors() not in (0, 8, 72):
-                    print(f"ERROR errors={decoder.get_errors()}")
+                if self.decoder.get_crc() != 0:
+                    print(f"ERROR crc={self.decoder.get_crc()}")
+                if self.decoder.get_errors() not in (0, 8, 72):
+                    print(f"ERROR errors={self.decoder.get_errors()}")
 
                 counter += len(numpy_array)
                 duration_ns = time.monotonic_ns() - begin_ns
@@ -102,30 +192,34 @@ class Adc:
         # Pico:197k  PC Peter 96k (0.1% CPU auslasung)
 
     def iter_measurements(self) -> typing.Iterable[np.ndarray]:
-
-        decoder = ad_low_noise_float_2023_decoder.Decoder()
         while True:
             measurements = self.serial.read(size=1_000_000)
             # print(f"len={len(measurements)/3}")
-            decoder.push_bytes(measurements)
+            self.decoder.push_bytes(measurements)
 
             while True:
-                adc_value_ain_signed32 = decoder.get_numpy_array()
+                adc_value_ain_signed32 = self.decoder.get_numpy_array()
                 if adc_value_ain_signed32 is None:
                     # print(".", end="")
-                    if decoder.size() > self.DECODER_OVERFLOW_SIZE:
+                    if self.decoder.size() > self.DECODER_OVERFLOW_SIZE:
                         msg = "Segment overflow!"
                         # print(msg)
                         raise OutOfSyncException(msg)
                     break
                 # counter += len(adc_value_ain_signed32)
-                if decoder.get_crc() != 0:
-                    msg = f"ERROR crc={decoder.get_crc()}"
+                if self.decoder.get_crc() != 0:
+                    msg = f"ERROR crc={self.decoder.get_crc()}"
                     # print(msg)
                     raise OutOfSyncException(msg)
 
-                if decoder.get_errors() not in (0, 8, 72):
-                    print(f"ERROR errors={decoder.get_errors()}")
+                errors = self.decoder.get_errors()
+                error_strings = self.pcb_status.list_errors(
+                    errors,
+                    inclusive_status=False,
+                )
+                if len(error_strings) > 0:
+                    msg = f"ERROR: {errors}: {' '.join(error_strings)}"
+                    print(msg)
 
                 # duration_s = time.monotonic() - begin_s
                 # if duration_s > self.PRINTF_INTERVAL_S:
@@ -163,7 +257,7 @@ class Instrument:
         self._send_command_reset()
         self.adc.read_status()
         self._send_command(Adc.COMMAND_START)
-        print("iter_measurements()")
+        print(f"iter_measurements(): gain={self.adc.pcb_status.gain_from_jumpers:0.3f}")
 
     def close(self):
         self.adc.close()
