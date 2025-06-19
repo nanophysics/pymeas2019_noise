@@ -7,27 +7,25 @@ from collections.abc import Iterable
 
 from . import program_fir
 from .library_filelock import ExitCode, FilelockMeasurement
-from .program_lockingmixin import LockingMixin
 from .program_lockingmixin_mock import LockingMixinMock
+
+LockingMixin = LockingMixinMock
 
 logger = logging.getLogger("logger")
 
+@dataclasses.dataclass(slots=True)
 
-class SamplingProcessConfig(
-    LockingMixin
-):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
-    def __init__(self):
-        self.fir_count: int = 0
-        self.fir_count_skipped: int = 0
-        self.stepname: str = LockingMixin.TO_BE_SET
-        self.settle: bool = False
-        self.settle_time_ok_s: float = None
-        self.settle_input_part: float = None
-        self.skalierungsfaktor: float = 1.0
-        self.input_Vp: float = 1.0
-        self.duration_s: float = LockingMixin.TO_BE_SET
+class SamplingProcessConfig(LockingMixinMock):
+    fir_count: int = 0
+    fir_count_skipped: int = 0
+    stepname: str = LockingMixin.TO_BE_SET
+    settle: bool = False
+    settle_time_ok_s: float = None
+    settle_input_part: float = None
+    skalierungsfaktor: float = 1.0
+    input_Vp: float = 1.0
+    duration_s: float = LockingMixin.TO_BE_SET
 
-        self._lock()
 
     def validate(self):
         assert isinstance(self.fir_count, int)
