@@ -253,27 +253,3 @@ In addition to the measurement with shorted imputs, a very low noise reference v
 
 ## Limitation
 * Not perfect for signals above 30 MHz. There is no good antialiasing filter for the samplerates 62.5 MHz and 125 MHz. This can lead to spurious measurements if your signal contains frequencies above 30 MHz. Example: you have a sinusoidal signal at 61.5 MHz. Due to the missing antialiasing filter you will see a 1 MHz signal in your measurement: 62.5 MHz - 61.5 MHz = 1 MHz.
-
-## Software installation
-
-### The following steps in the windows "Powershell"
-
-```bash
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-  Installing to C:\Users\maerki\.local\bin
-```
-
-### The following steps in the windows "Cmd"
-
-```bash
-uv venv venv --python 3.13.3
-venv\Scripts\activate uv pip install --upgrade -r requirements.txt
-
-## Install decoder in the windows "Cmd"
-
-# https://github.com/petermaerki/ad_low_noise_float_2023_git/actions
-# Download wheel and install
-
-```bash
-uv pip install wheels\ad_low_noise_float_2023_decoder-*-cp133-cp133-win_amd64.whl
-```

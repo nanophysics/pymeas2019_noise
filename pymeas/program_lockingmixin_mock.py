@@ -17,7 +17,7 @@ class LockingMixinMock:
 
 
     def dump(self, logger, indent="") -> None:
-        logger.error("to be implemented!")
+        logger.error("dump(): to be implemented!")
         return
         for name, value in sorted(self.__dict__.items()):
             if name.startswith("_"):
