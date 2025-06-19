@@ -1,3 +1,4 @@
+import dataclasses
 import enum
 import logging
 import pathlib
@@ -7,6 +8,7 @@ from collections.abc import Iterable
 from . import program_fir
 from .library_filelock import ExitCode, FilelockMeasurement
 from .program_lockingmixin import LockingMixin
+from .program_lockingmixin_mock import LockingMixinMock
 
 logger = logging.getLogger("logger")
 
@@ -43,28 +45,24 @@ class SamplingProcessConfig(
 
         self._freeze()
 
+@dataclasses.dataclass(slots=True)
+class ConfigStep(LockingMixinMock):
+    stepname: str = LockingMixin.TO_BE_SET
+    settle: bool = False
+    settle_time_ok_s: float = None
+    settle_input_part: float = None
+    skalierungsfaktor: float = LockingMixin.TO_BE_SET
+    fir_count: int = 0
+    fir_count_skipped: int = 0
+    input_channel: str = LockingMixin.TO_BE_SET
+    input_Vp: enum.Enum = LockingMixin.TO_BE_SET
+    bandwidth: str = LockingMixin.TO_BE_SET
+    offset: float = LockingMixin.TO_BE_SET
+    resolution: str = LockingMixin.TO_BE_SET
+    duration_s: float = LockingMixin.TO_BE_SET
+    dt_s: float = LockingMixin.TO_BE_SET
+    skip: bool = False
 
-class ConfigStep(
-    LockingMixin
-):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
-    def __init__(self):
-        self.stepname: str = LockingMixin.TO_BE_SET
-        self.settle: bool = False
-        self.settle_time_ok_s: float = None
-        self.settle_input_part: float = None
-        self.skalierungsfaktor: float = LockingMixin.TO_BE_SET
-        self.fir_count: int = 0
-        self.fir_count_skipped: int = 0
-        self.input_channel: str = LockingMixin.TO_BE_SET
-        self.input_Vp: enum.Enum = LockingMixin.TO_BE_SET
-        self.bandwidth: str = LockingMixin.TO_BE_SET
-        self.offset: float = LockingMixin.TO_BE_SET
-        self.resolution: str = LockingMixin.TO_BE_SET
-        self.duration_s: float = LockingMixin.TO_BE_SET
-        self.dt_s: float = LockingMixin.TO_BE_SET
-        self.skip: bool = False
-
-        self._lock()
 
     def validate(self):
         assert isinstance(self.stepname, str)

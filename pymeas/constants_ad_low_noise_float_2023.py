@@ -1,28 +1,9 @@
 from __future__ import annotations
 
+import dataclasses
 import enum
 
 from .program_configsetup import ConfigStep
-
-
-class ConfigStepAdLowNoiseFloat2023(ConfigStep):
-    def __init__(
-        self,
-        register_filter1: RegisterFilter1,
-        register_mux: RegisterMux,
-        additional_SPI_reads=0,
-    ):
-        self.register_filter1 = register_filter1
-        self.update_dt_s()
-        self.register_mux = register_mux
-        self.additional_SPI_reads = additional_SPI_reads
-        super().__init__()
-
-    def update_dt_s(self) -> None:
-        """
-        Muss immer aufgerufen werden, nachdem register_filter1 gesetzt wurde.
-        """
-        self.dt_s = 1.0 / self.register_filter1.SPS
 
 
 class RegisterFilter1(enum.IntEnum):
@@ -84,3 +65,19 @@ class InputRangeADLowNoiseFloat2023(enum.Enum):
             InputRangeADLowNoiseFloat2023.RANGE_2500mV_gain_2_J2: AD_FS_V / GAIN_J2,
             InputRangeADLowNoiseFloat2023.RANGE_5000mV_gain_1: AD_FS_V,
         }[self]
+
+
+@dataclasses.dataclass(slots=True)
+class ConfigStepAdLowNoiseFloat2023(ConfigStep):
+    register_filter1: RegisterFilter1=RegisterFilter1.SPS_97656
+    register_mux: RegisterMux=RegisterMux.NORMAL_INPUT_POLARITY
+    additional_SPI_reads:int=0
+
+    def __post_init__(self)->None:
+        self.update_dt_s()
+
+    def update_dt_s(self) -> None:
+        """
+        Muss immer aufgerufen werden, nachdem register_filter1 gesetzt wurde.
+        """
+        self.dt_s = 1.0 / self.register_filter1.SPS
