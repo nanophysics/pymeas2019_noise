@@ -1,6 +1,5 @@
 from pymeas.constants_ad_low_noise_float_2023 import (
     ConfigStepAdLowNoiseFloat2023,
-    InputRangeADLowNoiseFloat2023,
     RegisterFilter1,
     RegisterMux,
 )
@@ -34,7 +33,6 @@ def get_configsetup() -> ConfigSetup:
     config.step_3_slow.register_mux = RegisterMux.NORMAL_INPUT_POLARITY
     for step in config.configsteps:
         # To choose the best input range, see the description in 'program_config_instrument_picoscope'.
-        step.input_Vp = InputRangeADLowNoiseFloat2023.RANGE_5000mV_gain_1
         step.skalierungsfaktor = 1.0
 
     return config

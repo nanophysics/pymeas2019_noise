@@ -293,7 +293,7 @@ class Instrument:
         actual_sample_count = 0
         next_print_s = start_s = time.monotonic()
         printf_interval_s = 10.0
-        factor = configstep.input_Vp.V * configstep.skalierungsfaktor / (2**23)
+        factor = configstep.input_Vp * configstep.skalierungsfaktor / (2**23)
         while True:
             try:
                 for adc_value_ain_signed32 in self.adc.iter_measurements():

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import dataclasses
 
+TO_BE_SET: str = "TO_BE_SET"
+
+@dataclasses.dataclass(slots=True)
 class LockingMixinMock:
-    TO_BE_SET = "TO_BE_SET"
-
     def _lock(self):
         pass
 
@@ -15,6 +17,8 @@ class LockingMixinMock:
 
 
     def dump(self, logger, indent="") -> None:
+        logger.error("to be implemented!")
+        return
         for name, value in sorted(self.__dict__.items()):
             if name.startswith("_"):
                 continue

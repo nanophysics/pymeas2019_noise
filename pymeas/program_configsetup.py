@@ -7,25 +7,24 @@ from collections.abc import Iterable
 
 from . import program_fir
 from .library_filelock import ExitCode, FilelockMeasurement
-from .program_lockingmixin_mock import LockingMixinMock
+from .program_lockingmixin_mock import LockingMixinMock, TO_BE_SET
 
 LockingMixin = LockingMixinMock
 
 logger = logging.getLogger("logger")
 
-@dataclasses.dataclass(slots=True)
 
+@dataclasses.dataclass(slots=True)
 class SamplingProcessConfig(LockingMixinMock):
     fir_count: int = 0
     fir_count_skipped: int = 0
-    stepname: str = LockingMixin.TO_BE_SET
+    stepname: str = TO_BE_SET
     settle: bool = False
     settle_time_ok_s: float = None
     settle_input_part: float = None
     skalierungsfaktor: float = 1.0
     input_Vp: float = 1.0
-    duration_s: float = LockingMixin.TO_BE_SET
-
+    duration_s: float = TO_BE_SET
 
     def validate(self):
         assert isinstance(self.fir_count, int)
@@ -43,23 +42,34 @@ class SamplingProcessConfig(LockingMixinMock):
 
         self._freeze()
 
+
 @dataclasses.dataclass(slots=True)
 class ConfigStep(LockingMixinMock):
-    stepname: str = LockingMixin.TO_BE_SET
+    stepname: str = TO_BE_SET
     settle: bool = False
     settle_time_ok_s: float = None
     settle_input_part: float = None
-    skalierungsfaktor: float = LockingMixin.TO_BE_SET
+    skalierungsfaktor: float = TO_BE_SET
     fir_count: int = 0
     fir_count_skipped: int = 0
-    input_channel: str = LockingMixin.TO_BE_SET
-    input_Vp: enum.Enum = LockingMixin.TO_BE_SET
-    bandwidth: str = LockingMixin.TO_BE_SET
-    offset: float = LockingMixin.TO_BE_SET
-    resolution: str = LockingMixin.TO_BE_SET
-    duration_s: float = LockingMixin.TO_BE_SET
-    dt_s: float = LockingMixin.TO_BE_SET
+    input_channel: str = TO_BE_SET
+    input_internal_Vp: enum.Enum | float | None = None
+    """
+    None if provided by the instrument.
+    """
+    bandwidth: str = TO_BE_SET
+    offset: float = TO_BE_SET
+    resolution: str = TO_BE_SET
+    duration_s: float = TO_BE_SET
+    dt_s: float = TO_BE_SET
     skip: bool = False
+
+    @property
+    def input_Vp(self)->float:
+        if isinstance(self.input_internal_Vp, enum.Enum):
+            return self.input_internal_Vp.V
+        assert isinstance(self.input_internal_Vp,float)
+        return self.input_internal_Vp
 
 
     def validate(self):
@@ -74,7 +84,7 @@ class ConfigStep(LockingMixinMock):
         assert isinstance(self.fir_count, int)
         assert isinstance(self.fir_count_skipped, int)
         assert isinstance(self.input_channel, str)
-        assert isinstance(self.input_Vp, enum.Enum)
+        assert isinstance(self.input_internal_Vp, enum.Enum | float | None)
         assert isinstance(self.bandwidth, str)
         assert isinstance(self.offset, float)
         assert isinstance(self.resolution, str)
@@ -94,8 +104,9 @@ class ConfigStep(LockingMixinMock):
         c.settle_time_ok_s = self.settle_time_ok_s
         c.settle_input_part = self.settle_input_part
         c.skalierungsfaktor = self.skalierungsfaktor
-        c.input_Vp = self.input_Vp.V  # pylint: disable=no-member
+        c.input_Vp = self.input_Vp
         c.duration_s = self.duration_s
+
         return c
 
     def get_filename_capture_raw(
@@ -155,7 +166,7 @@ class ConfigStepSkip(
         super().__init__()
         self.skalierungsfaktor: float = 42.0
         self.input_channel: str = "42"
-        self.input_Vp: enum.Enum = InputRangeKeysight34401A.RANGE_100V
+        self.input_internal_Vp: enum.Enum = InputRangeKeysight34401A.RANGE_100V
         self.bandwidth: str = "42"
         self.offset: float = 42.0
         self.resolution: str = "42"
@@ -167,15 +178,15 @@ class ConfigStepSkip(
 class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
     def __init__(self):
         self.filename: str = None
-        self.setup_name: str = LockingMixin.TO_BE_SET
-        self.module_instrument: types.ModuleType = LockingMixin.TO_BE_SET
+        self.setup_name: str = TO_BE_SET
+        self.module_instrument: types.ModuleType = TO_BE_SET
         self.capture_raw: bool = False
         "Save the datastream from the scope directly to a file and do not process it."
         self.capture_raw_hit_anykey: bool = False
-        self.step_0_settle: ConfigStep = LockingMixin.TO_BE_SET
-        self.step_1_fast: ConfigStep = LockingMixin.TO_BE_SET
-        self.step_2_medium: ConfigStep = LockingMixin.TO_BE_SET
-        self.step_3_slow: ConfigStep = LockingMixin.TO_BE_SET
+        self.step_0_settle: ConfigStep = TO_BE_SET
+        self.step_1_fast: ConfigStep = TO_BE_SET
+        self.step_2_medium: ConfigStep = TO_BE_SET
+        self.step_3_slow: ConfigStep = TO_BE_SET
 
         self._lock()
 
@@ -245,13 +256,30 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
             logger.info(f"{filename_capture_raw}: processing...")
 
             _lock.update_status(f"Measuring: {dir_raw.name} / {configstep.stepname}")
-            ad_low_noise_float_2023 = self.module_instrument.Instrument(
-                configstep
-            )  # pylint: disable=no-member
+            ad_low_noise_float_2023 = self.module_instrument.Instrument(configstep)
             ad_low_noise_float_2023.connect()
-            sample_process = program_fir.SamplingProcess(
-                configstep.process_config, dir_raw
+
+            from . import (
+                program_config_instrument_ad_low_noise_float_2023,
+                program_instrument_ad_low_noise_float_2023,
             )
+            from .constants_ad_low_noise_float_2023 import AD_FS_V
+
+            if isinstance(
+                configstep,
+                program_config_instrument_ad_low_noise_float_2023.ConfigStepAdLowNoiseFloat2023,
+            ):
+                assert isinstance(
+                    ad_low_noise_float_2023,
+                    program_instrument_ad_low_noise_float_2023.Instrument,
+                )
+                gain_from_jumpers = (
+                    ad_low_noise_float_2023.adc.pcb_status.gain_from_jumpers
+                )
+                configstep.input_internal_Vp = AD_FS_V / gain_from_jumpers
+            process_config = configstep.process_config
+            process_config.validate()
+            sample_process = program_fir.SamplingProcess(process_config, dir_raw)
             ad_low_noise_float_2023.acquire(
                 configstep=configstep,
                 stream_output=sample_process.output,

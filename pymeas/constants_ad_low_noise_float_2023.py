@@ -69,11 +69,11 @@ class InputRangeADLowNoiseFloat2023(enum.Enum):
 
 @dataclasses.dataclass(slots=True)
 class ConfigStepAdLowNoiseFloat2023(ConfigStep):
-    register_filter1: RegisterFilter1=RegisterFilter1.SPS_97656
-    register_mux: RegisterMux=RegisterMux.NORMAL_INPUT_POLARITY
-    additional_SPI_reads:int=0
+    register_filter1: RegisterFilter1 = RegisterFilter1.SPS_97656
+    register_mux: RegisterMux = RegisterMux.NORMAL_INPUT_POLARITY
+    additional_SPI_reads: int = 0
 
-    def __post_init__(self)->None:
+    def __post_init__(self) -> None:
         self.update_dt_s()
 
     def update_dt_s(self) -> None:
