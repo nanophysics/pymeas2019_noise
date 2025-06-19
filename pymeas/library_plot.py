@@ -6,19 +6,17 @@ do_show=True,do_animate=False: GUI. Show the data, no animation.
 do_show=True,do_animate=True: GUI. Show the data, animation.
 
 """
-import sys
 import logging
 import pathlib
 import subprocess
+import sys
 
+import matplotlib.animation
 import matplotlib.pyplot as plt
 import matplotlib.ticker
-import matplotlib.animation
-
 import run_0_measure
 
-from . import library_plot_config
-from . import library_topic
+from . import library_plot_config, library_topic
 
 logger = logging.getLogger("logger")
 

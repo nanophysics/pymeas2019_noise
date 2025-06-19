@@ -1,9 +1,9 @@
 #
 # Make sure that the subrepos are included in the python path
 #
-import sys
 import logging
 import pathlib
+import sys
 
 logger = logging.getLogger("logger")
 
@@ -14,9 +14,7 @@ except ImportError as ex:
     sys.exit(0)
 
 # pylint: disable=wrong-import-position
-from . import library_topic
-from . import library_plot
-from . import program_fir_plot
+from . import library_plot, library_topic, program_fir_plot
 
 DIRECTORY_TOP = pathlib.Path(__file__).absolute().parent
 DIRECTORY_RESULT = "result"

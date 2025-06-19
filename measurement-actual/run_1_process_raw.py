@@ -1,5 +1,5 @@
-import pathlib
 import logging
+import pathlib
 
 # pylint: disable=wrong-import-position
 import library_path
@@ -12,10 +12,12 @@ DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 DIR_MEASUREMENT = library_path.DIR_MEASUREMENT
 
 
-from pymeas import library_logger
-from pymeas import program_instrument_capture_raw
-from pymeas import library_topic
-from pymeas import program
+from pymeas import (
+    library_logger,
+    library_topic,
+    program,
+    program_instrument_capture_raw,
+)
 from pymeas.program_configsetup import ConfigSetup
 
 logger = logging.getLogger("logger")

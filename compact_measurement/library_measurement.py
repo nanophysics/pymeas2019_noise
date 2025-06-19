@@ -1,18 +1,20 @@
+import logging
+import pathlib
+import shutil
+import socket
+import subprocess
 import sys
 import time
-import shutil
-import logging
-import socket
-import pathlib
-import subprocess
 from dataclasses import dataclass
 
-from mp import pyboard_query
 # pylint: disable=wrong-import-position
 import library_path
+from library_combinations import (  # pylint: disable=wrong-import-position
+    Combination,
+    Speed,
+)
 from library_stati import Stati
-
-from library_combinations import Speed, Combination  # pylint: disable=wrong-import-position
+from mp import pyboard_query
 from pymeas.library_filelock import ExitCode  # pylint: disable=wrong-import-position
 
 logger = logging.getLogger("logger")

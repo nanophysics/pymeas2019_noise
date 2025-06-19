@@ -1,13 +1,10 @@
-import pathlib
 import logging
+import pathlib
 
 import numpy as np
 
+from . import library_filelock, program_configsetup, program_fir
 from .library_filelock import ExitCode
-from . import library_filelock
-from . import program_fir
-from . import program_configsetup
-
 
 logger = logging.getLogger("logger")
 

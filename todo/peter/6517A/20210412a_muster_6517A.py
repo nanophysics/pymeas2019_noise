@@ -1,5 +1,6 @@
-import visa
 import time
+
+import visa
 
 rm = visa.ResourceManager()
 
@@ -72,7 +73,7 @@ while False:
     answer = instrument.query("trac:data?")
     answer = answer.replace("NADC", "")
     listanswer = answer.split(",")
-    values_A = [float(i) for i in listanswer[0::3]]     
+    values_A = [float(i) for i in listanswer[0::3]]
     print(values_A)
 
 

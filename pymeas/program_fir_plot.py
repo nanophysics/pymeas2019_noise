@@ -1,20 +1,17 @@
-import re
-import math
-import time
-import pickle
-import pathlib
-import logging
 import itertools
+import logging
+import math
+import pathlib
+import pickle
+import re
 import threading
+import time
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import ticker
 
-from . import library_plot_config
-from . import program_eseries
-from . import program_fir
-from . import library_topic
+from . import library_plot_config, library_topic, program_eseries, program_fir
 
 logger = logging.getLogger("logger")
 

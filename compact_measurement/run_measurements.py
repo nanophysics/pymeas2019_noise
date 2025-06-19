@@ -2,8 +2,13 @@ import library_path
 
 library_path.init(__file__)
 
-from library_measurement import MeasurementContext, Speed  # pylint: disable=wrong-import-position
-from library_controller import MeasurementController  # pylint: disable=wrong-import-position
+from library_controller import (
+    MeasurementController,  # pylint: disable=wrong-import-position
+)
+from library_measurement import (  # pylint: disable=wrong-import-position
+    MeasurementContext,
+    Speed,
+)
 
 DIR_MEASUREMENT = library_path.DIR_MEASUREMENT
 

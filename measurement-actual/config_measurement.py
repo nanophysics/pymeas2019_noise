@@ -1,10 +1,10 @@
-from pymeas.program_configsetup import ConfigSetup
 from pymeas.constants_ad_low_noise_float_2023 import (
+    ConfigStepAdLowNoiseFloat2023,
     InputRangeADLowNoiseFloat2023,
     RegisterFilter1,
     RegisterMux,
-    ConfigStepAdLowNoiseFloat2023,
 )
+from pymeas.program_configsetup import ConfigSetup
 
 TITLE = "Noise"
 
@@ -29,7 +29,7 @@ def get_configsetup() -> ConfigSetup:
     # config.step_3_slow.additional_SPI_reads = int(
     #     RegisterFilter1.SPS_97656.SPS / config.step_3_slow.register_filter1.SPS
     # )
-    
+
     config.step_3_slow.update_dt_s()
     config.step_3_slow.register_mux = RegisterMux.NORMAL_INPUT_POLARITY
     for step in config.configsteps:

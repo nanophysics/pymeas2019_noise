@@ -6,21 +6,18 @@ This code is base on a sample from
   with this source code, and is also available at
   https://docs.python.org/3/license.html
 """
-import time
+import itertools
 import logging
 import pathlib
-import itertools
-
+import time
 import warnings
 
-from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, NavigationToolbar2WxAgg
 import matplotlib.animation
-
 import wx
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, NavigationToolbar2WxAgg
 from wx import xrc
 
-from . import library_filelock
-from . import library_topic
+from . import library_filelock, library_topic
 
 # Hide messages like:
 #   Treat the new Tool classes introduced in v1.5 as experimental for now, the API will likely change in version 2.1 and perhaps the rcParam as well

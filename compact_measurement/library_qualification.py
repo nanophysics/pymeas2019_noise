@@ -4,15 +4,16 @@
 # The measurement time could be set to 60s for example.
 # Just start run_0_measure.bat and observe the result
 
-from enum import Enum
-import pathlib
 import logging
+import pathlib
+from enum import Enum
 
-from library_qualification_data import Line
-from library_measurement import Measurement
 import library_combinations
-from pymeas.library_topic import Topic, get_presentations
+from library_measurement import Measurement
+from library_qualification_data import Line
 from pymeas.library_plot_config import PlotConfig
+from pymeas.library_topic import Topic, get_presentations
+
 from compact_measurement.pyspreadsheet import ExcelReader, Row
 
 logger = logging.getLogger("logger")
@@ -141,7 +142,7 @@ class Qualification:
 
         MIN = -1000.0
         max_value = MIN
-        for x, y in zip(LSD["x"], LSD["y"]):
+        for x, y in zip(LSD["x"], LSD["y"], strict=False):
             x = float(x)
             y = float(y)
             if range_lower < x < range_upper:
@@ -194,7 +195,7 @@ class Qualification:
         comment = f"range_lower={range_lower} {row.cols.UnitRange.text}"
 
         _sum = 0.0
-        for x, y in zip(stepsize["x"], stepsize["y"]):
+        for x, y in zip(stepsize["x"], stepsize["y"], strict=False):
             x = float(x)
             y = float(y)
             if x < range_lower:

@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import enum
+
 from .program_configsetup import ConfigStep
 
 

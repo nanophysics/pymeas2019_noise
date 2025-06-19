@@ -1,8 +1,8 @@
-import os
-import sys
 import hashlib
-import pathlib
 import importlib
+import os
+import pathlib
+import sys
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).parent.absolute()
 

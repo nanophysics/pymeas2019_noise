@@ -1,10 +1,10 @@
+import atexit
+import logging
 import os
+import pathlib
+import signal
 import time
 from enum import Enum
-import signal
-import atexit
-import pathlib
-import logging
 
 from . import library_logger
 

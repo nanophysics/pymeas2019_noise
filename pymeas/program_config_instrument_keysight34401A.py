@@ -1,7 +1,11 @@
 import logging
 
 from . import program_instrument_keysight34401A
-from .program_configsetup import ConfigSetupKeysight34401A, ConfigStepKeysight34401A, InputRangeKeysight34401A
+from .program_configsetup import (
+    ConfigSetupKeysight34401A,
+    ConfigStepKeysight34401A,
+    InputRangeKeysight34401A,
+)
 
 logger = logging.getLogger("logger")
 

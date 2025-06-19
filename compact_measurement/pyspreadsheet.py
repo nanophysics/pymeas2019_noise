@@ -8,6 +8,7 @@
 # https://openpyxl.readthedocs.io/en/stable/
 import datetime
 from pathlib import Path
+
 import openpyxl
 
 TAG_TABLE = 'TABLE'

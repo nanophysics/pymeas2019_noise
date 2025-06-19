@@ -1,5 +1,5 @@
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 
 # Compact DA channels
 COMPACT_DA_FIRST = 1

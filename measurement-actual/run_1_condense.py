@@ -1,16 +1,14 @@
-import sys
 import logging
+import sys
 
 # pylint: disable=wrong-import-position
 import library_path
 
 library_path.init(__file__)
 
-import run_2_composite_plots
 import config_plot
-
-from pymeas import library_logger
-from pymeas import program
+import run_2_composite_plots
+from pymeas import library_logger, program
 
 logger = logging.getLogger("logger")
 

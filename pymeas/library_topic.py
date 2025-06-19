@@ -1,11 +1,12 @@
+import logging
+import math
+import pathlib
+import pickle
 import re
 import sys
-import math
 import time
 import types
-import pickle
-import logging
-import pathlib
+
 import numpy as np
 
 from . import library_plot_config
@@ -397,7 +398,7 @@ class Topic:  # pylint: disable=too-many-public-methods
         def is_border_decade(f):
             return abs(f * 10 ** -(round(np.log10(f))) - 1.0) < 1e-6
 
-        for (_f, value) in zip(f, v):
+        for (_f, value) in zip(f, v, strict=False):
             if is_border_decade(_f):
                 if last_value is not None:
                     f_decade.append(_f)
@@ -413,7 +414,7 @@ class Topic:  # pylint: disable=too-many-public-methods
         f_high = 10.0
         P_sum = 0.0
         n = 0
-        for f, p in zip(PS["x"], PS["y"]):
+        for f, p in zip(PS["x"], PS["y"], strict=False):
             if f > f_low * 1.001:
                 P_sum += p
                 n += 1

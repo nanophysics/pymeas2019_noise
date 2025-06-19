@@ -1,12 +1,10 @@
 import logging
 import pathlib
+
 from pymeas import program_configsetup
 
 # pylint: disable=wrong-import-position
-from . import library_logger
-from . import library_filelock
-from . import program
-from . import library_plot_config
+from . import library_filelock, library_logger, library_plot_config, program
 
 logger = logging.getLogger("logger")
 

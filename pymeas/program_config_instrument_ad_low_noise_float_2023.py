@@ -1,12 +1,12 @@
 import logging
 
 from . import program_instrument_ad_low_noise_float_2023
-from .program_configsetup import ConfigSetup, ConfigStepSkip
 from .constants_ad_low_noise_float_2023 import (
     ConfigStepAdLowNoiseFloat2023,
     RegisterFilter1,
     RegisterMux,
 )
+from .program_configsetup import ConfigSetup, ConfigStepSkip
 
 logger = logging.getLogger("logger")
 

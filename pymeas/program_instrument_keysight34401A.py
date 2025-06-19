@@ -1,11 +1,10 @@
+import logging
 import sys
 import time
-import logging
 
 import numpy as np
 
-from . import program_configsetup
-from . import program_measurement_stream
+from . import program_configsetup, program_measurement_stream
 from .library_filelock import ExitCode
 
 logger = logging.getLogger("logger")

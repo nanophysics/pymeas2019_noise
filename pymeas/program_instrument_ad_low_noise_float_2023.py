@@ -6,15 +6,15 @@ import sys
 import time
 import typing
 
-import serial
-import serial.tools.list_ports
 import ad_low_noise_float_2023_decoder
 import numpy as np
-from .library_filelock import ExitCode
-from .program_fir import UniformPieces
-from .constants_ad_low_noise_float_2023 import ConfigStepAdLowNoiseFloat2023
+import serial
+import serial.tools.list_ports
 
 from . import program_configsetup
+from .constants_ad_low_noise_float_2023 import ConfigStepAdLowNoiseFloat2023
+from .library_filelock import ExitCode
+from .program_fir import UniformPieces
 
 logger = logging.getLogger("logger")
 

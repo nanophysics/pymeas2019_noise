@@ -1,13 +1,12 @@
 import enum
-import types
 import logging
 import pathlib
-from typing import Iterable, Optional
-
-from .program_lockingmixin import LockingMixin
-from .library_filelock import ExitCode, FilelockMeasurement
+import types
+from collections.abc import Iterable
 
 from . import program_fir
+from .library_filelock import ExitCode, FilelockMeasurement
+from .program_lockingmixin import LockingMixin
 
 logger = logging.getLogger("logger")
 
@@ -105,7 +104,7 @@ class ConfigStep(
 
     def get_filename_capture_raw(
         self, config_setup: "ConfigSetup", dir_raw: pathlib.Path
-    ) -> Optional[pathlib.Path]:
+    ) -> pathlib.Path | None:
         if config_setup.capture_raw:
             return dir_raw / f"capture_raw_{self.stepname}.raw"
         return None

@@ -1,10 +1,9 @@
-import sys
-import time
-import queue
-import pathlib
 import logging
-from typing import Optional
+import pathlib
+import queue
+import sys
 import threading
+import time
 
 from pymeas.library_filelock import ExitCode
 
@@ -65,7 +64,7 @@ class InThread:  # pylint: disable=too-many-instance-attributes
     The worker thread of the stream
     """
 
-    def __init__(self, out, dt_s, func_convert, filename_capture_raw: Optional[pathlib.Path], duration_s=None):
+    def __init__(self, out, dt_s, func_convert, filename_capture_raw: pathlib.Path | None, duration_s=None):
         self.out = out
         self.dt_s = dt_s
         self._f_capture_raw = None
@@ -141,6 +140,7 @@ class InThread:  # pylint: disable=too-many-instance-attributes
 
 def run():
     import numpy as np
+
     from pymeas import program_fir
 
     sp = program_fir.SamplingProcess(fir_count=3)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter

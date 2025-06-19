@@ -8,11 +8,7 @@ library_path.init(__file__)
 
 import config_measurement
 import config_plot
-
-from pymeas import library_topic
-from pymeas import library_plot
-from pymeas import library_logger
-
+from pymeas import library_logger, library_plot, library_topic
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 

@@ -1,6 +1,6 @@
 import enum
-import math
 import logging
+import math
 
 from msl.equipment.resources.picotech.picoscope.enums import PS5000ARange
 

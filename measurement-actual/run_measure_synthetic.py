@@ -1,19 +1,15 @@
-import pathlib
 import logging
-
-import numpy as np
+import pathlib
 
 # pylint: disable=wrong-import-position
 import library_path
+import numpy as np
 
 library_path.init(__file__)
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 
-from pymeas import program_fir
-from pymeas import program_configsetup
-
-from pymeas import library_logger
+from pymeas import library_logger, program_configsetup, program_fir
 
 logger = logging.getLogger("logger")
 

@@ -1,6 +1,6 @@
-import time
 import logging
 import pathlib
+import time
 from dataclasses import dataclass
 
 logger = logging.getLogger("logger")

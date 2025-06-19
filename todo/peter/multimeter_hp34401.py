@@ -1,4 +1,5 @@
 import visa
+
 rm = visa.ResourceManager()
 interval_in_ms = 500
 print(rm.list_resources())
@@ -16,8 +17,8 @@ voltage = 0.0
 for i in range(i_average):
     string = instrument.query("READ?")
     voltage += float(string)
-    print('Messung {:d}  Spannung {:.10f} V'.format(i, float(string))) # punkte
+    print(f'Messung {i:d}  Spannung {float(string):.10f} V') # punkte
 voltage = voltage / i_average
-print('Der Mittelwert ist: {:.10f} V\n'.format(voltage))
+print(f'Der Mittelwert ist: {voltage:.10f} V\n')
 
 rm.close() # wuerde den visa treiber wieder schliessen

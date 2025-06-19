@@ -1,15 +1,12 @@
-import sys
+import logging
 import math
 import pathlib
-import logging
+import sys
 
 import numpy as np
 import scipy.signal
 
-from . import program_classify
-from . import program_settle
-from . import program_fir_plot
-from . import program_configsetup
+from . import program_classify, program_configsetup, program_fir_plot, program_settle
 
 logger = logging.getLogger("logger")
 
@@ -23,7 +20,7 @@ SAMPLES_SELECT_MAX = 2 ** 23  # (2**23=8388608)
 
 
 # NUMPY_FLOAT_TYPE=np.float
-#NUMPY_FLOAT_TYPE = np.float32  
+#NUMPY_FLOAT_TYPE = np.float32
 NUMPY_FLOAT_TYPE = np.float64 # Bei 5V Referenz Messung gibt es mit nur float 32 beim downsampling massiv noise bei tiefen Frequenzen.
 
 classify_stepsize = program_classify.Classify()
@@ -164,11 +161,11 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         assert len(array_decimate) % DECIMATE_FACTOR == 0
 
         #CORRECTION_FACTOR = 1.01  # Peter: estimated from measurements with synthetic data, the decimate seams to be a bit off, quick and dirty
-        
+
         #array_decimated = CORRECTION_FACTOR * scipy.signal.decimate(array_decimate, DECIMATE_FACTOR, ftype="iir", zero_phase=True)
         #array_decimated = CORRECTION_FACTOR * scipy.signal.decimate(array_decimate, DECIMATE_FACTOR, n=5, ftype="iir", zero_phase=True)
-        
-        
+
+
         #gut:
         CORRECTION_FACTOR = 1.0
         #array_decimated = CORRECTION_FACTOR * scipy.signal.decimate(array_decimate, DECIMATE_FACTOR, ftype="fir", zero_phase=True)

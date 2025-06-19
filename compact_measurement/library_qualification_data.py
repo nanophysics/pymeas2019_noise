@@ -1,5 +1,5 @@
-import math
 import logging
+import math
 from dataclasses import dataclass
 
 logger = logging.getLogger("logger")
