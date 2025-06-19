@@ -4,6 +4,7 @@ import dataclasses
 
 TO_BE_SET: str = "TO_BE_SET"
 
+
 @dataclasses.dataclass(slots=True)
 class LockingMixinMock:
     def _lock(self):
@@ -15,20 +16,21 @@ class LockingMixinMock:
     def unlock(self):
         pass
 
-
     def dump(self, logger, indent="") -> None:
-        logger.error("dump(): to be implemented!")
-        return
-        for name, value in sorted(self.__dict__.items()):
+        for field in dataclasses.fields(self):
+            name = field.name
             if name.startswith("_"):
                 continue
-            if isinstance(value, (list, tuple)):
-                logger.info(f"{indent}{name} = {[v.info for v in value]}")
+            value = getattr(self, name)
+            if isinstance(value, list | tuple):
+                logger.info(
+                    f"{indent}{name} = {[getattr(v, 'info', v) for v in value]}"
+                )
                 continue
-            if isinstance(value, (float, int, bool, str, type(None))):
+            if isinstance(value, float | int | bool | str | None):
                 logger.info(f"{indent}{name} = {value}")
                 continue
-            if isinstance(value, (LockingMixinMock,)):
+            if isinstance(value, LockingMixinMock):
                 value.dump(logger, indent=f"{indent}{name}.")
                 continue
             logger.info(f"{indent}{name} = type({value.__class__.__name__}):{value}")

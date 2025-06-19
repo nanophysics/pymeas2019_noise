@@ -65,12 +65,11 @@ class ConfigStep(LockingMixinMock):
     skip: bool = False
 
     @property
-    def input_Vp(self)->float:
+    def input_Vp(self) -> float:
         if isinstance(self.input_internal_Vp, enum.Enum):
             return self.input_internal_Vp.V
-        assert isinstance(self.input_internal_Vp,float)
+        assert isinstance(self.input_internal_Vp, float)
         return self.input_internal_Vp
-
 
     def validate(self):
         assert isinstance(self.stepname, str)
@@ -175,20 +174,21 @@ class ConfigStepSkip(
         self.skip: bool = True
 
 
+@dataclasses.dataclass(slots=True)
 class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
-    def __init__(self):
-        self.filename: str = None
-        self.setup_name: str = TO_BE_SET
-        self.module_instrument: types.ModuleType = TO_BE_SET
-        self.capture_raw: bool = False
-        "Save the datastream from the scope directly to a file and do not process it."
-        self.capture_raw_hit_anykey: bool = False
-        self.step_0_settle: ConfigStep = TO_BE_SET
-        self.step_1_fast: ConfigStep = TO_BE_SET
-        self.step_2_medium: ConfigStep = TO_BE_SET
-        self.step_3_slow: ConfigStep = TO_BE_SET
+    filename: str = None
+    setup_name: str = TO_BE_SET
+    module_instrument: types.ModuleType = TO_BE_SET
+    capture_raw: bool = False
+    "Save the datastream from the scope directly to a file and do not process it."
+    capture_raw_hit_anykey: bool = False
+    step_0_settle: ConfigStep = TO_BE_SET
+    step_1_fast: ConfigStep = TO_BE_SET
+    step_2_medium: ConfigStep = TO_BE_SET
+    step_3_slow: ConfigStep = TO_BE_SET
 
-        self._lock()
+    def __post_init__(self):
+        pass
 
     def validate(self):
         assert isinstance(self.filename, (type(None), str))
@@ -277,6 +277,7 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
                     ad_low_noise_float_2023.adc.pcb_status.gain_from_jumpers
                 )
                 configstep.input_internal_Vp = AD_FS_V / gain_from_jumpers
+            configstep.dump(logger=logger, indent="")
             process_config = configstep.process_config
             process_config.validate()
             sample_process = program_fir.SamplingProcess(process_config, dir_raw)
