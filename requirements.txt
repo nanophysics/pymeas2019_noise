@@ -1,21 +1,11 @@
-# The following steps in the windows "Powershell"
-# powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-#   Installing to C:\Users\maerki\.local\bin
-
-# The following steps in the windows "Cmd"
-# uv venv venv --python 3.9.22
-# venv\Scripts\activate
-# uv pip install -r requirements.txt
-# https://github.com/petermaerki/ad_low_noise_float_2023_git/actions
-# Download wheel and install
-# uv pip install wheels\ad_low_noise_float_2023_decoder-*-cp39-cp39-win_amd64.whl
-numpy==2.0.2
-matplotlib==3.8.4
-scipy>=1.13.1
+numpy>=2.3.0
+matplotlib>=3.10.3
+scipy>=1.15.3
 openpyxl>=3.0.5
 types-openpyxl>=3.0.5
-wxPython==4.1.1
+wxPython>=4.2.3
 pyserial>=3.5
-black
+ruff
 mypy
 isort
+

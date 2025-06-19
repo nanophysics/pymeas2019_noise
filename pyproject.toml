@@ -2,6 +2,19 @@
 [project]
 name = "pymeas2019_noise"
 
+dynamic = ["version"]
+description = "Octoprobe HIL Testenvironment for MicroPython release tesing"
+readme = "README.rst"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [
+    { name = "Hans Märki", email = "buhtig.hans.maerki@ergoinfo.ch" },
+    { name = "Peter Märki", email = "github.com.public.peter@ergoinfo.ch" },
+]
+
+dependencies = [
+]
+
 [tool.mypy]
 # strict = true
 # enable_incomplete_feature = ["NewGenericSyntax"]
