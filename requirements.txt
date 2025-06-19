@@ -13,6 +13,7 @@ numpy==2.0.2
 matplotlib==3.8.4
 scipy>=1.13.1
 openpyxl>=3.0.5
+types-openpyxl>=3.0.5
 wxPython==4.1.1
 pyserial>=3.5
 black
