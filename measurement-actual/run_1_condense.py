@@ -6,9 +6,10 @@ import library_path
 
 library_path.init(__file__)
 
+from pymeas import library_logger, program
+
 import config_plot
 import run_2_composite_plots
-from pymeas import library_logger, program
 
 logger = logging.getLogger("logger")
 

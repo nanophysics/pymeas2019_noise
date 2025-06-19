@@ -5,8 +5,9 @@ import library_path
 
 library_path.init(__file__)
 
-import config_plot
 from pymeas import library_gui, library_logger, library_plot, library_topic
+
+import config_plot
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 

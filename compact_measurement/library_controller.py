@@ -1,10 +1,11 @@
 import logging
 import time
 
+from pymeas import library_logger
+
 import library_qualification
 from library_combinations import Combinations, Speed
 from library_measurement import Measurement
-from pymeas import library_logger
 
 logger = logging.getLogger("logger")
 

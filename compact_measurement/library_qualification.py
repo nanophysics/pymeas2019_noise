@@ -8,13 +8,13 @@ import logging
 import pathlib
 from enum import Enum
 
-import library_combinations
-from library_measurement import Measurement
-from library_qualification_data import Line
 from pymeas.library_plot_config import PlotConfig
 from pymeas.library_topic import Topic, get_presentations
 
+import library_combinations
 from compact_measurement.pyspreadsheet import ExcelReader, Row
+from library_measurement import Measurement
+from library_qualification_data import Line
 
 logger = logging.getLogger("logger")
 

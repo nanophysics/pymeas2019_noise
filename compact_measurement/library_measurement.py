@@ -7,6 +7,9 @@ import sys
 import time
 from dataclasses import dataclass
 
+from mp import pyboard_query
+from pymeas.library_filelock import ExitCode  # pylint: disable=wrong-import-position
+
 # pylint: disable=wrong-import-position
 import library_path
 from library_combinations import (  # pylint: disable=wrong-import-position
@@ -14,8 +17,6 @@ from library_combinations import (  # pylint: disable=wrong-import-position
     Speed,
 )
 from library_stati import Stati
-from mp import pyboard_query
-from pymeas.library_filelock import ExitCode  # pylint: disable=wrong-import-position
 
 logger = logging.getLogger("logger")
 

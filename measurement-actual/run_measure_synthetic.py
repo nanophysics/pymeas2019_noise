@@ -1,9 +1,10 @@
 import logging
 import pathlib
 
+import numpy as np
+
 # pylint: disable=wrong-import-position
 import library_path
-import numpy as np
 
 library_path.init(__file__)
 
