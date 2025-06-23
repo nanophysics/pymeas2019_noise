@@ -115,7 +115,7 @@ class Adc:
     COMMAND_STOP = "p"
     SEQUENCE_LEN_MAX = 30_000
     BYTES_PER_MEASUREMENT = 3
-    DECODER_OVERFLOW_SIZE = 2 * BYTES_PER_MEASUREMENT * SEQUENCE_LEN_MAX  # 2: spare
+    DECODER_OVERFLOW_SIZE = 4 * BYTES_PER_MEASUREMENT * SEQUENCE_LEN_MAX  # 2 waren zu wenig
 
     def __init__(self) -> None:
         self.serial = self._open_serial()
@@ -197,12 +197,14 @@ class Adc:
             # print(f"len={len(measurements)/3}")
             self.decoder.push_bytes(measurements)
 
+
             while True:
                 adc_value_ain_signed32 = self.decoder.get_numpy_array()
                 if adc_value_ain_signed32 is None:
+                    print(f' self.decoder.size() {self.decoder.size()}')
                     # print(".", end="")
                     if self.decoder.size() > self.DECODER_OVERFLOW_SIZE:
-                        msg = "Segment overflow!"
+                        msg = "f'Segment overflow! decoder.size {self.decoder.size()} > DECODER_OVERFLOW_SIZE {self.DECODER_OVERFLOW_SIZE}'"
                         # print(msg)
                         raise OutOfSyncException(msg)
                     break
