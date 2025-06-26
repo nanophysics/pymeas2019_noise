@@ -11,7 +11,7 @@ from .program_configsetup import ConfigSetup, ConfigStepSkip
 logger = logging.getLogger("logger")
 
 
-fir_count_3_slow = 20
+fir_count_3_slow = 30
 
 
 def get_config_setup() -> ConfigSetup:  # pylint: disable=too-many-statements

@@ -21,7 +21,7 @@ def get_configsetup() -> ConfigSetup:
     config.step_0_settle.settle_input_part = 0.5
 
     assert isinstance(config.step_3_slow, ConfigStepAdLowNoiseFloat2023)
-    config.step_3_slow.duration_s = 10.0 * 3600.0
+    config.step_3_slow.duration_s = 7 * 24.0 * 3600.0
     config.step_3_slow.register_filter1 = RegisterFilter1.SPS_97656
     # 'additional_SPI_reads' creates additional noise on the SPI tracks
 
