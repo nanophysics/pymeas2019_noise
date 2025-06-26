@@ -113,9 +113,12 @@ class Adc:
     MEASURMENT_BYTES = 3
     COMMAND_START = "s"
     COMMAND_STOP = "p"
+    COMMAND_MOCKED_ERROR = "e"
+    COMMAND_MOCKED_CRC = "c"
+
     SEQUENCE_LEN_MAX = 30_000
     BYTES_PER_MEASUREMENT = 3
-    DECODER_OVERFLOW_SIZE = 4 * BYTES_PER_MEASUREMENT * SEQUENCE_LEN_MAX  # 2 waren zu wenig
+    DECODER_OVERFLOW_SIZE = 2 * BYTES_PER_MEASUREMENT * SEQUENCE_LEN_MAX
 
     def __init__(self) -> None:
         self.serial = self._open_serial()
@@ -197,11 +200,9 @@ class Adc:
             # print(f"len={len(measurements)/3}")
             self.decoder.push_bytes(measurements)
 
-
             while True:
                 adc_value_ain_signed32 = self.decoder.get_numpy_array()
                 if adc_value_ain_signed32 is None:
-                    print(f' self.decoder.size() {self.decoder.size()}')
                     # print(".", end="")
                     if self.decoder.size() > self.DECODER_OVERFLOW_SIZE:
                         msg = "f'Segment overflow! decoder.size {self.decoder.size()} > DECODER_OVERFLOW_SIZE {self.DECODER_OVERFLOW_SIZE}'"
@@ -316,6 +317,10 @@ class Instrument:
 
                     duration_s = time.monotonic() - start_s
                     if next_print_s < time.monotonic():
+                        if False:
+                            # Mock errors to test recovery
+                            self._send_command(Adc.COMMAND_MOCKED_CRC)
+
                         next_print_s += printf_interval_s
                         elements = [
                             f"{adc_value_V[0]:3.6f}V",
@@ -327,8 +332,11 @@ class Instrument:
                     queueFull = stream_output.push(adc_value_V)
                     assert not queueFull
             except OutOfSyncException as e:
-                print(f"OutOfSyncException: {e}")
-                self.connect()
+                logger.error(f"OutOfSyncException: {e}")
+                bytes_purged = self.adc.decoder.purge_until_and_with_separator()
+                print(f"Purged {bytes_purged} bytes!")
+
+                # self.connect()
 
 
 def main():
