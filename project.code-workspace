@@ -5,13 +5,5 @@
 		}
 	],
 	"settings": {
-		"python.envFile": "${workspaceFolder}/project.pythonenv",
-		"python.linting.pylintEnabled": true,
-		"python.linting.enabled": true,
-		"python.formatting.provider": "black",
-		"python.formatting.blackArgs": [
-			"--config",
-			"${workspaceFolder}/.blackconfig.yaml"
-		],
 	}
 }
