@@ -27,7 +27,7 @@ def init_logger_composite_plots(directory):
 
 
 def init_logger_measurement(directory):
-    assert isinstance(directory, (type(None), pathlib.Path))
+    assert isinstance(directory, None | pathlib.Path)
     if directory is None:
         directory = DIRECTORY_OF_THIS_FILE
     init_logger(directory, ("logger_measurement.txt",))
@@ -57,7 +57,7 @@ def init_logger_append(filename, fmt=LOGGING_DEFAULT_FMT, datefmt=LOGGING_DEFAUL
 
 def init_logger(directory, filenames):
     assert isinstance(directory, pathlib.Path)
-    assert isinstance(filenames, (list, tuple))
+    assert isinstance(filenames, list | tuple)
 
     if Dummy.INITIALIZED:
         logger.warning("Logger already initialized")

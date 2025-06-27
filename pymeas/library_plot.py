@@ -24,7 +24,7 @@ logger = logging.getLogger("logger")
 
 class PlotContext:
     def __init__(self, plotData: library_topic.PlotDataMultipleDirectories, plot_config:library_plot_config.PlotConfig, presentations: library_topic.Presentations):
-        assert isinstance(plotData, (library_topic.PlotDataSingleDirectory, library_topic.PlotDataMultipleDirectories))
+        assert isinstance(plotData, library_topic.PlotDataSingleDirectory | library_topic.PlotDataMultipleDirectories)
         assert isinstance(plot_config, library_plot_config.PlotConfig)
         assert isinstance(presentations, library_topic.Presentations)
         self._plot_config = plot_config
@@ -185,7 +185,7 @@ class PlotContext:
             yield topic.topic, topic
 
     def iter_stages(self, topic):
-        assert isinstance(topic, (type(None), library_topic.Topic))
+        assert isinstance(topic, None | library_topic.Topic)
         if topic is None:
             # If topic is not defined. This may happen if ALL topics have been selected.
             # In this case, we return the stages of the first topic
@@ -203,8 +203,8 @@ class PlotContext:
 
     def select_topic_stage(self, presentation, topic, stage) -> None:
         assert isinstance(presentation, library_topic.Presentation)
-        assert isinstance(topic, (type(None), library_topic.Topic))
-        assert isinstance(stage, (type(None), library_topic.Stage))
+        assert isinstance(topic, None | library_topic.Topic)
+        assert isinstance(stage, None | library_topic.Stage)
 
         if self.__topic != topic:
             self.invalidate()
@@ -242,7 +242,7 @@ class PlotFile:
         self._presentations = presentations
         self.title = title
         self.write_files = write_files
-        assert isinstance(write_files_directory, (type(None), pathlib.Path))
+        assert isinstance(write_files_directory, None | pathlib.Path)
         if write_files_directory is None:
             # The current directory
             write_files_directory = pathlib.Path(__file__).absolute().parent

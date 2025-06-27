@@ -139,11 +139,11 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         assert isinstance(skip, bool)
 
         # return [DensityPlot(filename) for filename in cls.pickle_files_from_directory(dir_input, skip)]
-        l = []
+        l0 = []
         for filename in cls.pickle_files_from_directory(dir_input, skip):
             dp = DensityPlot(filename)
-            l.append(dp)
-        return l
+            l0.append(dp)
+        return l0
 
     @classmethod
     def directory_plot_obsolete(cls, directory_in, dir_plot):
@@ -276,9 +276,9 @@ class DensityPoint:
 
     @property
     def line(self):
-        l = (self.stepname, str(self.stage), bool(self.skip), self.f, self.d)
-        l = [str(e) for e in l]
-        return DensityPoint.DELIMITER.join(l)
+        l0 = (self.stepname, str(self.stage), bool(self.skip), self.f, self.d)
+        l1 = [str(e) for e in l0]
+        return DensityPoint.DELIMITER.join(l1)
 
 
 class Selector:
@@ -377,7 +377,7 @@ class LsdSummary:
 
         list_density = sorted(list_density, key=DensityPlot.sort_key, reverse=True)
         for density in list_density:
-            self.__dict_stages[density.stage] = dict(
+            self.__dict_stages[density.stage] = dict(  # noqa: C408
                 stage=density.stage,
                 dt_s=density.dt_s,
                 stepsize_bins_V=density.stepsize_bins_V,

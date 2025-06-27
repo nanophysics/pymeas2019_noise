@@ -31,8 +31,8 @@ class SamplingProcessConfig(LockingMixinMock):
         assert isinstance(self.fir_count_skipped, int)
         assert isinstance(self.stepname, str)
         assert isinstance(self.settle, bool)
-        assert isinstance(self.settle_time_ok_s, (type(None), float))
-        assert isinstance(self.settle_input_part, (type(None), float))
+        assert isinstance(self.settle_time_ok_s, None | float)
+        assert isinstance(self.settle_input_part, None | float)
         if self.settle:
             assert isinstance(self.settle_time_ok_s, float)
             assert isinstance(self.settle_input_part, float)
@@ -74,8 +74,8 @@ class ConfigStep(LockingMixinMock):
     def validate(self):
         assert isinstance(self.stepname, str)
         assert isinstance(self.settle, bool)
-        assert isinstance(self.settle_time_ok_s, (type(None), float))
-        assert isinstance(self.settle_input_part, (type(None), float))
+        assert isinstance(self.settle_time_ok_s, None | float)
+        assert isinstance(self.settle_input_part, None | float)
         if self.settle:
             assert isinstance(self.settle_time_ok_s, float)
             assert isinstance(self.settle_input_part, float)
@@ -153,7 +153,7 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
         pass
 
     def validate(self):
-        assert isinstance(self.filename, (type(None), str))
+        assert isinstance(self.filename, None | str)
         assert isinstance(self.setup_name, str)
         assert isinstance(self.module_instrument, types.ModuleType)
         assert isinstance(self.capture_raw, bool)

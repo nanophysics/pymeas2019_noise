@@ -44,8 +44,8 @@ def test():
     count = classify.bins_factory()
 
     def timeit_intersect():
-        l = ((1e-12, 0), (1e-4, 61), (1e-5, 49), (1e2, 133))
-        for v, _expected_idx in l:
+        l0 = ((1e-12, 0), (1e-4, 61), (1e-5, 49), (1e2, 133))
+        for v, _expected_idx in l0:
             count.add(v)
 
     timeit_intersect()

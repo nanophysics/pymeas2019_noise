@@ -151,7 +151,7 @@ def run():
         time_total_s = 10.0
         t = np.arange(0, time_total_s, i.dt_s)
         # nse = np.random.randn(len(t))
-        r = np.exp(-t / 0.05)  # pylint: disable=unused-variable
+        _r = np.exp(-t / 0.05)  # pylint: disable=unused-variable
         # cnse = np.convolve(nse, r) * dt_s
         # cnse = cnse[:len(t)]
         _s = 1.0 * np.sin(2 * np.pi * t / 2.0)  # + 0 * cnse

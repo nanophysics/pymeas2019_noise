@@ -100,7 +100,7 @@ class PickleResultSummary:
         prs.x_directory = directory
         prs.x_filename = filename_summary_pickle
         try:
-            prs.dict_stages
+            prs.dict_stages  # noqa: B018
         except AttributeError:
             prs.dict_stages = {}
 
@@ -220,9 +220,9 @@ class Topic:  # pylint: disable=too-many-public-methods
         return TopicMinusBasenoise(self)
 
     def get_as_dict(self):
-        return dict(
+        return dict(  # noqa: C408
             topic=self.topic,
-            raw_data=dict(
+            raw_data=dict(  # noqa: C408
                 d=self.d,
                 f=self.f,
                 enbw=self.enbw,
@@ -248,7 +248,7 @@ class Topic:  # pylint: disable=too-many-public-methods
         self.basenoise = basenoise
 
     def reload_if_changed(self, presentation, stage):
-        assert isinstance(stage, (type(None), Stage))
+        assert isinstance(stage, None | Stage)
         if self.__plot_line is None:
             logger.warning(f"'self.__plot_line is None' for {self.topic}.")
             return False
@@ -295,9 +295,9 @@ class Topic:  # pylint: disable=too-many-public-methods
 
     @property
     def stages(self) -> list:
-        l = [Stage(self, dict_stage) for dict_stage in self.__prs.dict_stages.values()]
-        l.sort(key=lambda stage: stage.stage)
-        return l
+        l0 = [Stage(self, dict_stage) for dict_stage in self.__prs.dict_stages.values()]
+        l0.sort(key=lambda stage: stage.stage)
+        return l0
 
     def find_stage(self, stage):
         stage_100ms = 0.09
@@ -448,10 +448,10 @@ class ResizedArrays:
     """
 
     def __init__(self, f, base_f, d, base_d):
-        assert isinstance(f, (list, tuple))
-        assert isinstance(base_f, (list, tuple))
-        assert isinstance(d, (list, tuple))
-        assert isinstance(base_d, (list, tuple))
+        assert isinstance(f, list | tuple)
+        assert isinstance(base_f, list | tuple)
+        assert isinstance(d, list | tuple)
+        assert isinstance(base_d, list | tuple)
 
         new_f = np.zeros(len(f), dtype=np.float32)
         new_d = np.zeros(len(f), dtype=np.float32)
@@ -507,7 +507,7 @@ class Presentation:
 
     def get_xy(self, topic, stage=None):
         assert isinstance(topic, Topic)
-        assert isinstance(stage, (type(None), Stage))
+        assert isinstance(stage, None | Stage)
         if self.supports_diff_basenoise:
             if topic.basenoise:
                 return self.__xy_func(topic.topic_minus_basenoise, stage)
@@ -518,7 +518,7 @@ class Presentation:
         if self.requires_stage:
             stage = topic.find_stage(None)
         x, y = self.get_xy(topic=topic, stage=stage)
-        return dict(
+        return dict(  # noqa: C408
             tag=self.tag,
             help_text=self.help_text,
             x_label=self.x_label,

@@ -14,7 +14,7 @@ except ImportError as ex:
     sys.exit(0)
 
 # pylint: disable=wrong-import-position
-from . import library_plot, library_topic, program_fir_plot
+from pymeas import library_plot, library_topic, program_fir_plot
 
 DIRECTORY_TOP = pathlib.Path(__file__).absolute().parent
 DIRECTORY_RESULT = "result"
@@ -155,11 +155,11 @@ class SpecializedPrettyPrint:
                 if isinstance(i, str):
                     self._stream.write(key_string + repr(i) + ",\n")
                     continue
-                if isinstance(i, (list, tuple, np.ndarray)):
+                if isinstance(i, list | tuple | np.ndarray):
                     self._stream.write(key_string + "[")
 
                     def _repr(v):
-                        assert isinstance(v, (float, np.float64, np.float32, np.int32))
+                        assert isinstance(v, float | np.float64 | np.float32 | np.int32)
                         return repr(v)
 
                     self._stream.write(", ".join([_repr(v) for v in i]))

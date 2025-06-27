@@ -106,7 +106,7 @@ class FilelockMeasurement:
         for filename in (FILENAME_LOCK, FILENAME_STATUS, FILENAME_STOP_SOFT, FILENAME_STOP_HARD, FILENAME_SKIP_SETTLE):
             try:
                 filename.unlink()
-            except:  # pylint: disable=bare-except
+            except:  # pylint: disable=bare-except  # noqa: E722
                 pass
 
     @classmethod
@@ -187,7 +187,7 @@ class FilelockGui:
             # The file was not locked anymore
             FilelockMeasurement.cleanup_all_files()
             return False
-        except:  # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except  # noqa: E722
             pass
 
         return True
@@ -199,7 +199,7 @@ class FilelockGui:
         try:
             FILENAME_STOP_SOFT.unlink()
             logger.info(f"successfully removed {FILENAME_STOP_SOFT.name}")
-        except:  # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except  # noqa: E722
             pass
 
     @classmethod
@@ -219,7 +219,7 @@ class FilelockGui:
         try:
             FILENAME_STOP_HARD.unlink()
             logger.info(f"successfully removed {FILENAME_STOP_HARD.name}")
-        except:  # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except  # noqa: E722
             pass
 
     @classmethod
