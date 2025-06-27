@@ -48,15 +48,6 @@ Before commit, run the `Black` launch-target in VSCode.
   - Wait till the measurement finished
   - Start a new measurement
 
-### Use case - Compact measurement
-- compact_measurement:
-  - For each channel
-    - pyboard_compact: Select channels
-    - start measurement, this will create `tmp_filelock_lock.txt`
-    - Wait till `tmp_filelock_lock.txt` unlocked
-    - Break if `comm_measurement_status.txt` is not `STOPPED_SUCCESS`
-
-
 ### Communication mechanisms
 
 - File `tmp_filelock_lock.txt`

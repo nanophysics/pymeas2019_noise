@@ -51,6 +51,7 @@ def path_sha256():
 
 
 def add_msl_equipment():
+    return
     global MSL_EQUIPMENT_PATH  # pylint: disable=global-statement
     MSL_EQUIPMENT_PATH = TOPDIR / "libraries" / "msl-equipment"
     assert (MSL_EQUIPMENT_PATH / "README.rst").is_file(), f"Subrepo is missing (did you clone with --recursive?): {MSL_EQUIPMENT_PATH}"

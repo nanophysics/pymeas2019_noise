@@ -10,4 +10,4 @@
 # To verify the path, use this code in the top-level of a module:
 #   print('>>>' + str(sys.path) + '<<<')
 # 
-PYTHONPATH=.;compact_measurement;measurement-actual;libraries/msl-equipment
+PYTHONPATH=.;measurement-actual;libraries/msl-equipment

@@ -40,7 +40,7 @@
         {
             "label": "mypy",
             "type": "shell",
-            "command": "python -m mypy --config-file pyproject.toml compact_measurement",
+            "command": "python -m mypy --config-file pyproject.toml pymease",
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
@@ -56,7 +56,7 @@
         {
             "label": "pylint",
             "type": "shell",
-            "command": "python -m pylint compact_measurement",
+            "command": "python -m pylint pymeas",
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
