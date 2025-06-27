@@ -17,11 +17,6 @@ We just developed for our needs, over some weekends and during long evenings.
 
 Tested on Windows 10, Windows 7 and with the versions shown below.
 
-### Picoscope Oscilloscope SW
-www.picotech.com/downloads
-Windows PicoScope 6.14.44
-SDK 10.7.2 64bit
-
 ### python
 https://www.python.org/ftp/python/3.9.7/python-3.9.7-amd64.exe
 python 3.9.7 64 bit
@@ -49,10 +44,6 @@ cd pymeas2019_noise
 python -m pip install --user -r requirements.txt
 ```
 
-With picoscope:
-```
-python -m pip install --user -r requirements.txt -r requirements_picoscope.txt
-```
 
 restart pc
 
@@ -233,23 +224,7 @@ f_lowest = 1 / (1.3 * aquisition_time)
 
 ## Noise Picoscope
 
-![](images/PS_5442D_MSO_2019_noise.png)
-
-This measurement was done with a picoscope bought in 2019.
-
-With a preamplifier with a gain of 1000 we measured this noise contribution of the picoscope. The noise level could be quite different from device to device.
-The 100mV range shows about the same noise as the ranges below. Therefore you should use the 100mV range or above.
-
-To geht the noise level at the oscilloscope input, multiply the values shown in the diagram by 1000.
-
-The noise level of the picoscope is not overwhelming but for the price an size it's ok. 
-
-![](images/PS_5442D_2023_noise.png)
-
-This measurement was done with a picoscope bought in 2023. The noise level is very similar to the one bought in 2019.
-The measurements have been done without a gain of 1000 for the preamlifier.
-
-In addition to the measurement with shorted imputs, a very low noise reference voltage has been measured: 6.374V in the 10V range and 10V in the 20V range. The noise of the reference is far below the noise of the picoscope. The measurement of the reference voltage does not show a big increase of the noise level. Therefore I conclude the noise of the builtin voltage reference in the picoscope has lower noise than the noise of the AD conversion and therefore does not contribute to the total noise. If you do not understand this statement: if you measure with 0V at the input of the picoscope, the reference voltage used inside picoscope does not contribute to the noise. If you measure a DC voltage like 10V, this 10 V at the input will be compared to the reference voltage built in picoscope. The 10V at the input and the reference in the picoscope can contribute to the measured noise level. Example: the reference voltage of the picoscope increases by 1%, the reportet voltage by the picoscope will decrease by 1%. A very noisy reference voltage would increase noise level therefore.
+Removed by Hans
 
 ## Limitation
 * Not perfect for signals above 30 MHz. There is no good antialiasing filter for the samplerates 62.5 MHz and 125 MHz. This can lead to spurious measurements if your signal contains frequencies above 30 MHz. Example: you have a sinusoidal signal at 61.5 MHz. Due to the missing antialiasing filter you will see a 1 MHz signal in your measurement: 62.5 MHz - 61.5 MHz = 1 MHz.

@@ -49,14 +49,6 @@ def path_sha256():
     m.update(path.encode("utf-8"))
     return m.hexdigest()
 
-
-def add_msl_equipment():
-    global MSL_EQUIPMENT_PATH  # pylint: disable=global-statement
-    MSL_EQUIPMENT_PATH = TOPDIR / "libraries" / "msl-equipment"
-    assert (MSL_EQUIPMENT_PATH / "README.rst").is_file(), f"Subrepo is missing (did you clone with --recursive?): {MSL_EQUIPMENT_PATH}"
-    sys.path.insert(0, str(MSL_EQUIPMENT_PATH))
-
-
 def init(startfile):
     global TOPDIR  # pylint: disable=global-statement
     global DIR_MEASUREMENT  # pylint: disable=global-statement
@@ -69,6 +61,5 @@ def init(startfile):
     os.chdir(str(DIR_MEASUREMENT))
     TOPDIR = find_topdir()
     clean_path(TOPDIR)
-    add_msl_equipment()
     importlib.invalidate_caches()
     PATH_SHA256 = path_sha256()

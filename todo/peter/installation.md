@@ -2,11 +2,6 @@
 
 Tested on Windows 10, Windows 7 and with the versions shown below.
 
-### Picoscope Oscilloscope SW
-www.picotech.com/downloads
-Windows PicoScope 6.14.10
-SDK: This is NOT required
-
 ### python
 we use:
 https://www.python.org/downloads/release/python-372/
