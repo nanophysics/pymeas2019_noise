@@ -15,20 +15,20 @@
                 "--verbose",
                 "pymeas",
                 "measurement-actual",
-                "measurement_34401A-actual"
             ],
             "console": "integratedTerminal"
         },
         {
-            "name": "Black",
+            "name": "Ruff",
             "type": "debugpy",
             "request": "launch",
-            "module": "black",
+            "module": "ruff",
             "cwd": "${workspaceFolder}",
             "args": [
+                "check",
                 "--config",
-                "pymeas/",
-                "measurement-actual/*.py"
+                "pyproject.toml",
+                "--fix"
             ],
             "console": "integratedTerminal"
         },
@@ -99,6 +99,6 @@
             "program": "${workspaceFolder}/measurement-actual/run_2_composite_plots.py",
             "cwd": "${workspaceFolder}/measurement-actual",
             "console": "integratedTerminal"
-        },       
+        },
     ]
 }

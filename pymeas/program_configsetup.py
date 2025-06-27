@@ -53,7 +53,7 @@ class ConfigStep(LockingMixinMock):
     fir_count: int = 0
     fir_count_skipped: int = 0
     input_channel: str = TO_BE_SET
-    input_internal_Vp: enum.Enum | float | None = None
+    input_internal_Vp: float | None = None
     """
     None if provided by the instrument.
     """
@@ -116,46 +116,8 @@ class ConfigStep(LockingMixinMock):
         return None
 
 
-class InputRangeKeysight34401A(enum.Enum):
-    RANGE_100mV = "0.1"
-    RANGE_1V = "1"
-    RANGE_10V = "10"
-    RANGE_100V = "100"
-    RANGE_1000V = "1000"
-
-    @property
-    def V(self) -> float:
-        return {
-            InputRangeKeysight34401A.RANGE_100mV: 0.1,
-            InputRangeKeysight34401A.RANGE_1V: 1.0,
-            InputRangeKeysight34401A.RANGE_10V: 10.0,
-            InputRangeKeysight34401A.RANGE_100V: 100.0,
-            InputRangeKeysight34401A.RANGE_1000V: 1000.0,
-        }[self]
 
 
-class ConfigStepKeysight34401A(
-    ConfigStep
-):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
-    def __init__(self):
-        super().__init__()
-        self.input_channel: str = "42"
-        self.input_Vp: enum.Enum = InputRangeKeysight34401A.RANGE_100V
-        self.bandwidth: str = "42"
-        self.offset: float = 42.0
-        self.resolution: str = "42"
-
-
-class ConfigStepKeithley6517A(
-    ConfigStep
-):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
-    def __init__(self):
-        super().__init__()
-        self.input_channel: str = "42"
-        self.input_Vp: enum.Enum = InputRangeKeysight34401A.RANGE_100V
-        self.bandwidth: str = "42"
-        self.offset: float = 42.0
-        self.resolution: str = "42"
 
 
 class ConfigStepSkip(
@@ -165,7 +127,7 @@ class ConfigStepSkip(
         super().__init__()
         self.skalierungsfaktor: float = 42.0
         self.input_channel: str = "42"
-        self.input_internal_Vp: enum.Enum = InputRangeKeysight34401A.RANGE_100V
+        self.input_internal_Vp: enum.Enum = None
         self.bandwidth: str = "42"
         self.offset: float = 42.0
         self.resolution: str = "42"
@@ -293,21 +255,3 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
                 return
 
 
-class ConfigSetupKeysight34401A(ConfigSetup):  # pylint: disable=too-few-public-methods
-    def __init__(self):
-        super().__init__()
-        step = ConfigStepSkip()
-        step.stepname = "0_settle"
-        self.step_0_settle = step
-
-        step = ConfigStepSkip()
-        step.stepname = "1_fast"
-        self.step_1_fast = step
-
-        step = ConfigStepSkip()
-        step.stepname = "2_medium"
-        self.step_2_medium = step
-
-    @property
-    def configsteps(self):
-        yield self.step_3_slow
