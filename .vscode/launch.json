@@ -5,34 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Lint",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "pylint",
-            "cwd": "${workspaceFolder}",
-            "args": [
-                "--rcfile=${workspaceFolder}/.pylintrc",
-                "--verbose",
-                "pymeas",
-                "measurement-actual",
-            ],
-            "console": "integratedTerminal"
-        },
-        {
-            "name": "Ruff",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "ruff",
-            "cwd": "${workspaceFolder}",
-            "args": [
-                "check",
-                "--config",
-                "pyproject.toml",
-                "--fix"
-            ],
-            "console": "integratedTerminal"
-        },
-        {
             "name": "Python: Aktuelle Datei",
             "type": "debugpy",
             "request": "launch",
@@ -52,8 +24,8 @@
             "name": "Python: run_0_measure.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/measurement-actual/run_0_measure.py",
-            "cwd": "${workspaceFolder}/measurement-actual",
+            "program": "${workspaceFolder}/measurement_actual/run_0_measure.py",
+            "cwd": "${workspaceFolder}/measurement_actual",
             "console": "integratedTerminal",
             "justMyCode": false
         },
@@ -69,16 +41,16 @@
             "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
-            "program": "${workspaceFolder}/measurement-actual/run_0_plot_interactive.py",
-            "cwd": "${workspaceFolder}/measurement-actual",
+            "program": "${workspaceFolder}/measurement_actual/run_0_plot_interactive.py",
+            "cwd": "${workspaceFolder}/measurement_actual",
             "console": "integratedTerminal"
         },
         {
             "name": "Python: run_1_process_raw.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/measurement-actual/run_1_process_raw.py",
-            "cwd": "${workspaceFolder}/measurement-actual",
+            "program": "${workspaceFolder}/measurement_actual/run_1_process_raw.py",
+            "cwd": "${workspaceFolder}/measurement_actual",
             "console": "integratedTerminal"
         },
         {
@@ -86,8 +58,8 @@
             "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
-            "program": "${workspaceFolder}/measurement-actual/run_1_condense.py",
-            "cwd": "${workspaceFolder}/measurement-actual",
+            "program": "${workspaceFolder}/measurement_actual/run_1_condense.py",
+            "cwd": "${workspaceFolder}/measurement_actual",
             "args": [],
             "console": "integratedTerminal"
         },
@@ -96,8 +68,8 @@
             "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
-            "program": "${workspaceFolder}/measurement-actual/run_2_composite_plots.py",
-            "cwd": "${workspaceFolder}/measurement-actual",
+            "program": "${workspaceFolder}/measurement_actual/run_2_composite_plots.py",
+            "cwd": "${workspaceFolder}/measurement_actual",
             "console": "integratedTerminal"
         },
     ]

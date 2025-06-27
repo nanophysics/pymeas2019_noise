@@ -1,15 +1,15 @@
-from pymeas.constants_ad_low_noise_float_2023 import (
+from pymeas2019_noise.constants_ad_low_noise_float_2023 import (
     ConfigStepAdLowNoiseFloat2023,
     RegisterFilter1,
     RegisterMux,
 )
-from pymeas.program_configsetup import ConfigSetup
+from pymeas2019_noise.program_configsetup import ConfigSetup
 
 TITLE = "Noise"
 
 
 def get_configsetup() -> ConfigSetup:
-    from pymeas import program_config_instrument_ad_low_noise_float_2023
+    from pymeas2019_noise import program_config_instrument_ad_low_noise_float_2023
 
     config = program_config_instrument_ad_low_noise_float_2023.get_config_setup()
     config.filename = __file__

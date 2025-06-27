@@ -47,14 +47,14 @@ python -m pip install --user -r requirements.txt
 
 restart pc
 
-* file explorer: pymeas2019_noise/measurement-actual
+* file explorer: pymeas2019_noise/measurement_actual
 * double click run_0_plot_interactive.bat`
 click start
 
 ## Directory structure
 
 - `<TOPDIR>` The directory containing the file `TOPDIR.TXT`
-  - `<TOPDIR>\measurement-actual` \
+  - `<TOPDIR>\measurement_actual` \
     The results of the actual measurement. \
     If the measurements are done, the directory may be moved away.
 
@@ -139,7 +139,7 @@ You could:
 * delete folders
 * restart animate
 
-Now, as this measurement is done, you can copy the folder measurement-actual to an other place.
+Now, as this measurement is done, you can copy the folder measurement_actual to an other place.
 To measurement_ref_XYZ for example. Here you can keep your measurement.
 
 You can delete all files with a filenames starting with 'result_' and generate them again with run_2_composite_plots.py ??? 

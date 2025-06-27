@@ -106,7 +106,7 @@ class PlotPanel(wx.Panel):
         def endless_iter():
             yield from itertools.count(start=42)
 
-        self._plot_context.plotData.startup_duration.log("FuncAnimation() - before")
+        self._plot_context.plot_data.startup_duration.log("FuncAnimation() - before")
         self.animation = matplotlib.animation.FuncAnimation(
             fig=self._plot_context.fig,
             func=self.animate,
@@ -117,10 +117,10 @@ class PlotPanel(wx.Panel):
             init_func=None,
             repeat=False,
         )
-        self._plot_context.plotData.startup_duration.log("FuncAnimation() - after")
+        self._plot_context.plot_data.startup_duration.log("FuncAnimation() - after")
 
         # Important: If this statement is BEFORE 'FuncAnimation', the animation sometimes does not start!
-        with Duration("update_presentation():") as elapsed:
+        with Duration("update_presentation():") as _elapsed:
             self._plot_context.update_presentation()
 
     def GetToolBar(self):
@@ -130,7 +130,7 @@ class PlotPanel(wx.Panel):
 
     @log_duration
     def animate(self, i):
-        self._plot_context.plotData.startup_duration.log("animate() - beginning")
+        self._plot_context.plot_data.startup_duration.log("animate() - beginning")
 
         if self.canvas_last_resize_s:
             # The frame has been resized
@@ -172,7 +172,7 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         wx.App.__init__(self)
 
     def OnInit(self):  # pylint: disable=too-many-statements
-        self._plot_context.plotData.startup_duration.log("OnInit() - beginning")
+        self._plot_context.plot_data.startup_duration.log("OnInit() - beginning")
 
         xrcfile = pathlib.Path(__file__).absolute().with_suffix(".xrc")
         logger.debug(f"Load {xrcfile}")
@@ -256,7 +256,7 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
         self.OnButtonReloadTopic(event=None)
 
-        self._plot_context.plotData.startup_duration.log("OnInit() - done")
+        self._plot_context.plot_data.startup_duration.log("OnInit() - done")
         return True
 
     def OnTimer(self, event):

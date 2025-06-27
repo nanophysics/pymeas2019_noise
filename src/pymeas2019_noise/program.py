@@ -5,16 +5,12 @@ import logging
 import pathlib
 import sys
 
+import numpy as np
+
+from pymeas2019_noise import library_plot, library_topic, program_fir_plot
+
 logger = logging.getLogger("logger")
 
-try:
-    import numpy as np
-except ImportError as ex:
-    logger.error(f"ERROR: Failed to import ({ex}). Try: pip install -r requirements.txt")
-    sys.exit(0)
-
-# pylint: disable=wrong-import-position
-from pymeas import library_plot, library_topic, program_fir_plot
 
 DIRECTORY_TOP = pathlib.Path(__file__).absolute().parent
 DIRECTORY_RESULT = "result"
@@ -29,11 +25,14 @@ def examine_dir_raw(dir_measurement):
         dir_arg = sys.argv[1]
         logger.info(f"command line: directory_name={dir_arg}")
 
-    dir_raw = dir_measurement / library_topic.ResultAttributes.result_dir_actual(dir_arg)
+    dir_raw = dir_measurement / library_topic.ResultAttributes.result_dir_actual(
+        dir_arg
+    )
 
     create_or_empty_directory(dir_raw)
 
     return dir_raw
+
 
 def create_or_empty_directory(dir_raw):
     if dir_raw.exists():
@@ -49,24 +48,32 @@ def create_or_empty_directory(dir_raw):
         dir_raw.mkdir(parents=True, exist_ok=True)
 
 
-
 def reload_if_changed(dir_raw, plot_config):
     if program_fir_plot.DensityPlot.file_changed(dir_input=dir_raw):
         try:
-            list_density = program_fir_plot.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=True)
+            list_density = program_fir_plot.DensityPlot.plots_from_directory(
+                dir_input=dir_raw, skip=True
+            )
         except EOFError:
             # File "c:\Projekte\ETH-Fir\pymeas2019_noise\program_fir.py", line 321, in __init__
             # data = pickle.load(f)
             # EOFError: Ran out of input
             return False
-        lsd_summary = program_fir_plot.LsdSummary(plot_config=plot_config, list_density=list_density, directory=dir_raw, trace=False)
+        lsd_summary = program_fir_plot.LsdSummary(
+            plot_config=plot_config,
+            list_density=list_density,
+            directory=dir_raw,
+            trace=False,
+        )
         lsd_summary.write_summary_pickle()
         return True
     return False
 
 
 def iter_dir_raw(dir_measurement):
-    for dir_raw in dir_measurement.glob(library_topic.ResultAttributes.RESULT_DIR_PATTERN):
+    for dir_raw in dir_measurement.glob(
+        library_topic.ResultAttributes.RESULT_DIR_PATTERN
+    ):
         if not dir_raw.is_dir():
             continue
         yield dir_raw
@@ -97,21 +104,33 @@ def run_condense_dir_raw(dir_raw, plot_config, do_plot=True):
 
     presentations = library_topic.get_presentations(plot_config=plot_config)
 
-    run_condense_0to1(dir_raw=dir_raw, plot_config=plot_config, do_plot=do_plot, trace=False)
-    run_condense_0to1(dir_raw=dir_raw, plot_config=plot_config, do_plot=do_plot, trace=True)
+    run_condense_0to1(
+        dir_raw=dir_raw, plot_config=plot_config, do_plot=do_plot, trace=False
+    )
+    run_condense_0to1(
+        dir_raw=dir_raw, plot_config=plot_config, do_plot=do_plot, trace=True
+    )
 
-    plotData = library_topic.PlotDataSingleDirectory(dir_raw=dir_raw, plot_config=plot_config)
-    write_presentation_summary_file(plotData, dir_raw)
+    plot_data = library_topic.PlotDataSingleDirectory(
+        dir_raw=dir_raw, plot_config=plot_config
+    )
+    write_presentation_summary_file(plot_data, dir_raw)
     if do_plot:
         title = dir_raw.parent.name
-        plotFile = library_plot.PlotFile(plotData=plotData, write_files_directory=dir_raw, title=title, plot_config=plot_config, presentations=presentations)
+        plotFile = library_plot.PlotFile(
+            plot_data=plot_data,
+            write_files_directory=dir_raw,
+            title=title,
+            plot_config=plot_config,
+            presentations=presentations,
+        )
 
         plotFile.plot_presentations()
 
 
-def write_presentation_summary_file(plotData, directory):
-    assert len(plotData.list_topics) == 1
-    dict_result = plotData.list_topics[0].get_as_dict()
+def write_presentation_summary_file(plot_data, directory):
+    assert len(plot_data.list_topics) == 1
+    dict_result = plot_data.list_topics[0].get_as_dict()
 
     with (directory / "result_presentation.txt").open("w") as f:
         # pprint.PrettyPrinter(indent=2, width=1024, stream=f).pprint(dict_result)
@@ -121,12 +140,16 @@ def write_presentation_summary_file(plotData, directory):
 def run_condense_0to1(dir_raw, plot_config, trace=False, do_plot=True):
     assert isinstance(dir_raw, pathlib.Path)
 
-    list_density = program_fir_plot.DensityPlot.plots_from_directory(dir_input=dir_raw, skip=not trace)
+    list_density = program_fir_plot.DensityPlot.plots_from_directory(
+        dir_input=dir_raw, skip=not trace
+    )
     if len(list_density) == 0:
         logger.info(f"SKIPPED: No data for directory {dir_raw}")
         return
 
-    lsd_summary = program_fir_plot.LsdSummary(plot_config, list_density, directory=dir_raw, trace=trace)
+    lsd_summary = program_fir_plot.LsdSummary(
+        plot_config, list_density, directory=dir_raw, trace=trace
+    )
     lsd_summary.write_summary_file(trace=trace)
     if not trace:
         lsd_summary.write_summary_pickle()

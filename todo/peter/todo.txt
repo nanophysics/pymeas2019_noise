@@ -22,13 +22,13 @@ stück im diagramm fehlt, erkennen, nochmals probieren?
 
 
 falls noch gar keine Messung im Ordner 
-C:\data\pymeas2019_noise_git\measurement-actual
+C:\data\pymeas2019_noise_git\measurement_actual
 
 
 ist, so kommt beim Starten von run_0_plot_interactive.bat
 
-C:\data\pymeas2019_noise_git\measurement-actual>python run_0_plot_interactive.py
-logging to C:\data\pymeas2019_noise_git\measurement-actual\logger_gui.txt
+C:\data\pymeas2019_noise_git\measurement_actual>python run_0_plot_interactive.py
+logging to C:\data\pymeas2019_noise_git\measurement_actual\logger_gui.txt
 No handles with labels found to put in legend.
 Traceback (most recent call last):
   File "C:\data\pymeas2019_noise_git\pymeas\library_gui.py", line 249, in OnInit
@@ -38,14 +38,14 @@ Traceback (most recent call last):
   File "C:\data\pymeas2019_noise_git\pymeas\library_gui.py", line 323, in OnButtonReloadStage
     for title, stage in self._plot_context.iter_stages(self.topic):
   File "C:\data\pymeas2019_noise_git\pymeas\library_plot.py", line 175, in iter_stages
-    _topic = self.plotData.list_topics[0]
+    _topic = self.plot_data.list_topics[0]
 IndexError: list index out of range
 OnInit returned false, exiting...
 
-C:\data\pymeas2019_noise_git\measurement-actual>echo ERRORLEVEL 1
+C:\data\pymeas2019_noise_git\measurement_actual>echo ERRORLEVEL 1
 ERRORLEVEL 1
 
-C:\data\pymeas2019_noise_git\measurement-actual>pause
+C:\data\pymeas2019_noise_git\measurement_actual>pause
 Drücken Sie eine beliebige Taste . . .
 
 

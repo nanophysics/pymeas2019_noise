@@ -12,16 +12,16 @@ logger = logging.getLogger("logger")
 
 DEBUG_FIFO = False
 
-SAMPLES_DENSITY = 2 ** 12  # length of periodogram (2**12=4096)
+SAMPLES_DENSITY = 2**12  # length of periodogram (2**12=4096)
 # PERIODOGRAM_OVERLAP = 2 ** 5  # number of overlaps (2**5=32)
-PERIODOGRAM_OVERLAP = 2 ** 4  # number of overlaps (2**4=16)
+PERIODOGRAM_OVERLAP = 2**4  # number of overlaps (2**4=16)
 assert SAMPLES_DENSITY % PERIODOGRAM_OVERLAP == 0
-SAMPLES_SELECT_MAX = 2 ** 23  # (2**23=8388608)
+SAMPLES_SELECT_MAX = 2**23  # (2**23=8388608)
 
 
 # NUMPY_FLOAT_TYPE=np.float
-#NUMPY_FLOAT_TYPE = np.float32
-NUMPY_FLOAT_TYPE = np.float64 # Bei 5V Referenz Messung gibt es mit nur float 32 beim downsampling massiv noise bei tiefen Frequenzen.
+# NUMPY_FLOAT_TYPE = np.float32
+NUMPY_FLOAT_TYPE = np.float64  # Bei 5V Referenz Messung gibt es mit nur float 32 beim downsampling massiv noise bei tiefen Frequenzen.
 
 classify_stepsize = program_classify.Classify()
 
@@ -47,7 +47,9 @@ class PushCalculator:
         self.dt_s = dt_s
         self.push_size_samples = self.__calculate_push_size_samples()
         self.previous_fir_samples_select = self.push_size_samples * DECIMATE_FACTOR
-        self.previous_fir_samples_input = self.previous_fir_samples_select + SAMPLES_LEFT_RIGHT
+        self.previous_fir_samples_input = (
+            self.previous_fir_samples_select + SAMPLES_LEFT_RIGHT
+        )
 
     def __calculate_push_size_samples(self):
         # 0.536870912s push_size_sample=1048576
@@ -96,11 +98,15 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         self.TAG_PUSH = f"FIR {self.stage}"
         decimated_dt_s = dt_s * DECIMATE_FACTOR
         self.pushcalulator_next = PushCalculator(decimated_dt_s)
-        logger.debug(f"stage {self.stage} push_size_samples {self.pushcalulator_next.push_size_samples} time_s {self.pushcalulator_next.dt_s*self.pushcalulator_next.push_size_samples}")
+        logger.debug(
+            f"stage {self.stage} push_size_samples {self.pushcalulator_next.push_size_samples} time_s {self.pushcalulator_next.dt_s * self.pushcalulator_next.push_size_samples}"
+        )
         self.out.init(stage=stage + 1, dt_s=decimated_dt_s, prev=self)
 
     def done(self):
-        logger.debug(f"Statistics {self.stage}: count {self.statistics_count}, samples in {self.statistics_samples_in*self.__dt_s:0.3f}s, samples out {self.statistics_samples_out*self.__dt_s*DECIMATE_FACTOR:0.3f}s")
+        logger.debug(
+            f"Statistics {self.stage}: count {self.statistics_count}, samples in {self.statistics_samples_in * self.__dt_s:0.3f}s, samples out {self.statistics_samples_out * self.__dt_s * DECIMATE_FACTOR:0.3f}s"
+        )
         self.out.done()
 
     def print_size(self, f):
@@ -126,12 +132,16 @@ class FIR:  # pylint: disable=too-many-instance-attributes
                 # Give the next stage a chance to decimate!
                 return self.out.push(None)
 
-            array_decimate = self.decimate(self.array[: self.pushcalulator_next.previous_fir_samples_input])
+            array_decimate = self.decimate(
+                self.array[: self.pushcalulator_next.previous_fir_samples_input]
+            )
             assert len(array_decimate) == self.pushcalulator_next.push_size_samples
             self.statistics_samples_out += len(array_decimate)
             self.out.push(array_decimate)
             # Save the remainting part to 'self.array'
-            self.array = self.array[self.pushcalulator_next.previous_fir_samples_select :]
+            self.array = self.array[
+                self.pushcalulator_next.previous_fir_samples_select :
+            ]
             assert len(self.array) >= SAMPLES_LEFT_RIGHT
             return self.TAG_PUSH
 
@@ -147,7 +157,9 @@ class FIR:  # pylint: disable=too-many-instance-attributes
 
         if DEBUG_FIFO:
             if self.__dt_s >= 0.01:
-                logger.debug(f"stage {self.stage} decimate received push {len(array_in)} samples, total {len(self.array)} samples")
+                logger.debug(
+                    f"stage {self.stage} decimate received push {len(array_in)} samples, total {len(self.array)} samples"
+                )
 
         return None
 
@@ -160,17 +172,18 @@ class FIR:  # pylint: disable=too-many-instance-attributes
         assert len(array_decimate) > SAMPLES_LEFT_RIGHT
         assert len(array_decimate) % DECIMATE_FACTOR == 0
 
-        #CORRECTION_FACTOR = 1.01  # Peter: estimated from measurements with synthetic data, the decimate seams to be a bit off, quick and dirty
+        # CORRECTION_FACTOR = 1.01  # Peter: estimated from measurements with synthetic data, the decimate seams to be a bit off, quick and dirty
 
-        #array_decimated = CORRECTION_FACTOR * scipy.signal.decimate(array_decimate, DECIMATE_FACTOR, ftype="iir", zero_phase=True)
-        #array_decimated = CORRECTION_FACTOR * scipy.signal.decimate(array_decimate, DECIMATE_FACTOR, n=5, ftype="iir", zero_phase=True)
+        # array_decimated = CORRECTION_FACTOR * scipy.signal.decimate(array_decimate, DECIMATE_FACTOR, ftype="iir", zero_phase=True)
+        # array_decimated = CORRECTION_FACTOR * scipy.signal.decimate(array_decimate, DECIMATE_FACTOR, n=5, ftype="iir", zero_phase=True)
 
-
-        #gut:
+        # gut:
         CORRECTION_FACTOR = 1.0
-        #array_decimated = CORRECTION_FACTOR * scipy.signal.decimate(array_decimate, DECIMATE_FACTOR, ftype="fir", zero_phase=True)
+        # array_decimated = CORRECTION_FACTOR * scipy.signal.decimate(array_decimate, DECIMATE_FACTOR, ftype="fir", zero_phase=True)
 
-        array_decimated = CORRECTION_FACTOR * scipy.signal.decimate(array_decimate, DECIMATE_FACTOR,  ftype="fir", zero_phase=False)
+        array_decimated = CORRECTION_FACTOR * scipy.signal.decimate(
+            array_decimate, DECIMATE_FACTOR, ftype="fir", zero_phase=False
+        )
 
         assert len(array_decimated) == len(array_decimate) // DECIMATE_FACTOR
         index_from = SAMPLES_LEFT // DECIMATE_FACTOR
@@ -213,10 +226,12 @@ class Density:  # pylint: disable=too-many-instance-attributes
         common = f"stage {self.__stage} Density: Pxx_n: {self.__Pxx_n}"
         if self.__mode_fifo:
             fifo_len = len(self.__fifo)
-            print(f"{common}, fifo_len: {fifo_len}, {fifo_len*self.__dt_s:0.2e}s")
+            print(f"{common}, fifo_len: {fifo_len}, {fifo_len * self.__dt_s:0.2e}s")
         else:
             push_size_samples = self.__pushcalulator.push_size_samples
-            print(f"{common}, push_size_samples: {push_size_samples}, {push_size_samples*self.__dt_s:0.2e}s")
+            print(
+                f"{common}, push_size_samples: {push_size_samples}, {push_size_samples * self.__dt_s:0.2e}s"
+            )
 
         self.out.print_size(f)
 
@@ -257,7 +272,7 @@ class Density:  # pylint: disable=too-many-instance-attributes
         #    1    50
         #    2    75
         #  100   100
-        samples = round(SAMPLES_LEFT - SAMPLES_LEFT / (DECIMATE_FACTOR ** self.__stage))
+        samples = round(SAMPLES_LEFT - SAMPLES_LEFT / (DECIMATE_FACTOR**self.__stage))
         assert samples <= SAMPLES_LEFT
         return samples
 
@@ -277,7 +292,9 @@ class Density:  # pylint: disable=too-many-instance-attributes
 
         if self.fifo_size_s < prev_density.fifo_size_s * 1.01:
             return False
-        logger.debug(f"Preview {self.__stage} {self.fifo_size_s}s > {prev_density.fifo_size_s}s")
+        logger.debug(
+            f"Preview {self.__stage} {self.fifo_size_s}s > {prev_density.fifo_size_s}s"
+        )
         return True
 
     def push(self, array_in):
@@ -301,7 +318,9 @@ class Density:  # pylint: disable=too-many-instance-attributes
                 len_before = len(self.__fifo)
                 self.__fifo = self.__fifo[self.__pushcalulator.push_size_samples :]
                 if DEBUG_FIFO:
-                    logger.debug(f"stage {self.__stage} density squash fifo from  {len_before} to {len(self.__fifo)} samples")
+                    logger.debug(
+                        f"stage {self.__stage} density squash fifo from  {len_before} to {len(self.__fifo)} samples"
+                    )
             else:
                 self.__fifo = None
             return self.__TAG_PUSH
@@ -322,7 +341,9 @@ class Density:  # pylint: disable=too-many-instance-attributes
 
             if DEBUG_FIFO:
                 if self.__dt_s >= 0.01:
-                    logger.debug(f"stage {self.__stage} density received push {len(array_in)} samples, total {len(self.__fifo)} samples")
+                    logger.debug(
+                        f"stage {self.__stage} density received push {len(array_in)} samples, total {len(self.__fifo)} samples"
+                    )
 
             if self.do_preview():
                 self.density_preview(self.__fifo)
@@ -338,7 +359,9 @@ class Density:  # pylint: disable=too-many-instance-attributes
     def density(self, array):
         # logger.debug(f"Density Stage {self.__stage:02d} dt_s {self.__dt_s:016.12f}, len(array)={len(array)} calculation")
 
-        self.frequencies, Pxx = scipy.signal.periodogram(array[:SAMPLES_DENSITY], 1 / self.__dt_s, window="hamming", detrend="linear")  # Hz, V^2/Hz
+        self.frequencies, Pxx = scipy.signal.periodogram(
+            array[:SAMPLES_DENSITY], 1 / self.__dt_s, window="hamming", detrend="linear"
+        )  # Hz, V^2/Hz
 
         # Averaging
         assert len(self.__Pxx_sum) == len(Pxx)
@@ -354,14 +377,40 @@ class Density:  # pylint: disable=too-many-instance-attributes
             self.__stepsize_bins.add(stepsize_V)
 
         bins_total_count = np.sum(self.__stepsize_bins.count)
-        stepsize_bins_count = self.__stepsize_bins.count / (self.__dt_s * bins_total_count)
+        stepsize_bins_count = self.__stepsize_bins.count / (
+            self.__dt_s * bins_total_count
+        )
 
-        _filenameFull = program_fir_plot.DensityPlot.save(config=self.__config, directory=self.__directory, stage=self.__stage, dt_s=self.__dt_s, frequencies=self.frequencies, Pxx_n=self.__Pxx_n, Pxx_sum=self.__Pxx_sum, stepsize_bins_count=stepsize_bins_count, stepsize_bins_V=self.__stepsize_bins.V, samples_V=array)
+        _filenameFull = program_fir_plot.DensityPlot.save(
+            config=self.__config,
+            directory=self.__directory,
+            stage=self.__stage,
+            dt_s=self.__dt_s,
+            frequencies=self.frequencies,
+            Pxx_n=self.__Pxx_n,
+            Pxx_sum=self.__Pxx_sum,
+            stepsize_bins_count=stepsize_bins_count,
+            stepsize_bins_V=self.__stepsize_bins.V,
+            samples_V=array,
+        )
 
     def density_preview(self, array):
-        self.frequencies, Pxx = scipy.signal.periodogram(array, 1 / self.__dt_s, window="hamming", detrend="linear")  # Hz, V^2/Hz
+        self.frequencies, Pxx = scipy.signal.periodogram(
+            array, 1 / self.__dt_s, window="hamming", detrend="linear"
+        )  # Hz, V^2/Hz
 
-        _filenameFull = program_fir_plot.DensityPlot.save(config=self.__config, directory=self.__directory, stage=self.__stage, dt_s=self.__dt_s, frequencies=self.frequencies, Pxx_n=1, Pxx_sum=Pxx, stepsize_bins_count=self.__stepsize_bins.count, stepsize_bins_V=self.__stepsize_bins.V, samples_V=array)
+        _filenameFull = program_fir_plot.DensityPlot.save(
+            config=self.__config,
+            directory=self.__directory,
+            stage=self.__stage,
+            dt_s=self.__dt_s,
+            frequencies=self.frequencies,
+            Pxx_n=1,
+            Pxx_sum=Pxx,
+            stepsize_bins_count=self.__stepsize_bins.count,
+            stepsize_bins_V=self.__stepsize_bins.V,
+            samples_V=array,
+        )
 
 
 class OutTrash:
@@ -369,7 +418,7 @@ class OutTrash:
     Stream-Sink: Implements a Stream-Interface
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.prev = None
         self.stage = None
         self.dt_s = None
@@ -415,7 +464,11 @@ class InSynthetic:
         sample_start = 0
 
         while sample_start < self.total_samples:
-            array = self.signal.calculate(dt_s=self.dt_s, sample_start=sample_start, push_size_samples=push_size_samples)
+            array = self.signal.calculate(
+                dt_s=self.dt_s,
+                sample_start=sample_start,
+                push_size_samples=push_size_samples,
+            )
             assert len(array) == push_size_samples
             self.out.push(array)
             sample_start += push_size_samples
@@ -490,7 +543,9 @@ class UniformPieces:
                     return None
             self._calculation_not_finished_counter += 1
             if self._calculation_not_finished_counter >= 20:
-                logger.warning(f"calculation_not_finished_counter: {self._calculation_not_finished_counter}")
+                logger.warning(
+                    f"calculation_not_finished_counter: {self._calculation_not_finished_counter}"
+                )
             # logger.debug('m', end='')
         return None
 
@@ -505,7 +560,9 @@ class SamplingProcess:
         self.directory_raw = directory_raw
 
         if config.settle:
-            self.output = program_settle.Settle(config=config, directory=self.directory_raw)
+            self.output = program_settle.Settle(
+                config=config, directory=self.directory_raw
+            )
             return
 
         o = OutTrash()

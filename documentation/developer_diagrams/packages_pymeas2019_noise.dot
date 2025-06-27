@@ -1,13 +1,13 @@
 digraph "packages_pymeas2019_noise" {
 charset="utf-8"
 rankdir=BT
-"0" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\config_measurement.py", shape="box"];
-"1" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\library_1_postprocess.py", shape="box"];
-"2" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\library_path.py", shape="box"];
-"3" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\run_0_measure.py", shape="box"];
-"4" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\run_0_plot_interactive.py", shape="box"];
-"5" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\run_1_condense.py", shape="box"];
-"6" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement-actual\run_2_composite_plots.py", shape="box"];
+"0" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement_actual\config_measurement.py", shape="box"];
+"1" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement_actual\library_1_postprocess.py", shape="box"];
+"2" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement_actual\library_path.py", shape="box"];
+"3" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement_actual\run_0_measure.py", shape="box"];
+"4" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement_actual\run_0_plot_interactive.py", shape="box"];
+"5" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement_actual\run_1_condense.py", shape="box"];
+"6" [label="C:\Projekte\ETH-Fir\pymeas2019_noise\measurement_actual\run_2_composite_plots.py", shape="box"];
 "7" [label="config_common", shape="box"];
 "8" [label="library_filelock", shape="box"];
 "9" [label="library_gui", shape="box"];

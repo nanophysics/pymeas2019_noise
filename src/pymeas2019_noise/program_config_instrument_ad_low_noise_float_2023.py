@@ -19,29 +19,29 @@ def get_config_setup() -> ConfigSetup:  # pylint: disable=too-many-statements
     setup.setup_name = "Measure"
     setup.module_instrument = program_instrument_ad_low_noise_float_2023
 
-    step = setup.step_0_settle = ConfigStepSkip()
-    step.stepname = "0_settle"
-    step.settle = True
-    step.input_channel = "B"  # old, picoscope
-    step.bandwidth = "BW_20MHZ"  # old, picoscope
-    step.offset = 0.0
-    step.resolution = "16bit"  # old, picoscope
+    step0 = setup.step_0_settle = ConfigStepSkip()
+    step0.stepname = "0_settle"
+    step0.settle = True
+    step0.input_channel = "B"  # old, picoscope
+    step0.bandwidth = "BW_20MHZ"  # old, picoscope
+    step0.offset = 0.0
+    step0.resolution = "16bit"  # old, picoscope
 
-    step = setup.step_1_fast = ConfigStepSkip()
-    step.stepname = "1_fast"
+    step1 = setup.step_1_fast = ConfigStepSkip()
+    step1.stepname = "1_fast"
 
-    step = setup.step_2_medium = ConfigStepSkip()
-    step.stepname = "2_medium"
+    step2 = setup.step_2_medium = ConfigStepSkip()
+    step2.stepname = "2_medium"
 
-    step = setup.step_3_slow = ConfigStepAdLowNoiseFloat2023(
+    step3 = setup.step_3_slow = ConfigStepAdLowNoiseFloat2023(
         register_filter1=RegisterFilter1.SPS_97656,
         register_mux=RegisterMux.NORMAL_INPUT_POLARITY,
     )
-    step.stepname = "3_slow"
-    step.fir_count = fir_count_3_slow
-    step.bandwidth = "BW_20MHZ"  # old, picoscope
-    step.offset = 0.0
-    step.resolution = "16bit"  # old, picoscope
-    step.input_channel = "A"
+    step3.stepname = "3_slow"
+    step3.fir_count = fir_count_3_slow
+    step3.bandwidth = "BW_20MHZ"  # old, picoscope
+    step3.offset = 0.0
+    step3.resolution = "16bit"  # old, picoscope
+    step3.input_channel = "A"
 
     return setup

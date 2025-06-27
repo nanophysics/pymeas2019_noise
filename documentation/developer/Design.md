@@ -27,21 +27,21 @@
 
 ### Two processes
 
-- The measuring process writes files in `measurement-actual\raw-blue-measurement1`.
+- The measuring process writes files in `measurement_actual\raw-blue-measurement1`.
 - The gui process detects changes of the modification dates of the files. This triggers the display to redraw.
 
 ### Redraw triggering
 
 These events may occur
 
-- A directory `measurement-actual\raw-blue-measurement1` appears or dissapears.
+- A directory `measurement_actual\raw-blue-measurement1` appears or dissapears.
   - Implemented in `PlotDataMultipleDirectories.directories_changed()`
 
-- A file `measurement-actual\raw-blue-measurement1\densitystep_*.pickle` dissappears.
+- A file `measurement_actual\raw-blue-measurement1\densitystep_*.pickle` dissappears.
     This is not detected
 
-- The modification date of a file `measurement-actual\raw-blue-measurement1\densitystep_*.pickle` changes.
-- A file `measurement-actual\raw-blue-measurement1\densitystep_*.pickle` appears.
+- The modification date of a file `measurement_actual\raw-blue-measurement1\densitystep_*.pickle` changes.
+- A file `measurement_actual\raw-blue-measurement1\densitystep_*.pickle` appears.
   - Implemented in `program.py reload_if_changed()`
   - Implemented in `DensityPlot.file_changed()`
 

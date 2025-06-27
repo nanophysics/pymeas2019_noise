@@ -140,7 +140,7 @@ class Adc:
     def close(self) -> None:
         self.serial.close()
 
-    def drain(self) -> bool:
+    def drain(self) -> None:
         while True:
             line = self.serial.read()
             if len(line) == 0:
@@ -157,10 +157,10 @@ class Adc:
         """
         status = BcbStatus()
         while True:
-            line = self.serial.readline()
-            if len(line) == 0:
+            line_bytes = self.serial.readline()
+            if len(line_bytes) == 0:
                 return False, status
-            line = line.strip().decode("ascii")
+            line = line_bytes.decode("ascii").strip()
             status.add(line)
             print(f"  status: {line}")
             if line == "END=1":
@@ -186,7 +186,7 @@ class Adc:
 
                 counter += len(numpy_array)
                 duration_ns = time.monotonic_ns() - begin_ns
-                print(f"{1e9*counter/duration_ns:0.1f} SPS")
+                print(f"{1e9 * counter / duration_ns:0.1f} SPS")
 
                 # counter += len(measurements) // 3
                 # duration_ns = time.monotonic_ns() - begin_ns
@@ -324,8 +324,8 @@ class Instrument:
                         next_print_s += printf_interval_s
                         elements = [
                             f"{adc_value_V[0]:3.6f}V",
-                            f"{actual_sample_count/total_samples*100:0.0f}%",
-                            f"{actual_sample_count/duration_s:,.0f}SPS",
+                            f"{actual_sample_count / total_samples * 100:0.0f}%",
+                            f"{actual_sample_count / duration_s:,.0f}SPS",
                             f"{actual_sample_count:,} samples of {total_samples:,}",
                         ]
                         print(" ".join(elements))

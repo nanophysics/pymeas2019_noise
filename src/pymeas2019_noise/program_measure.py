@@ -1,7 +1,7 @@
 import logging
 import pathlib
 
-from pymeas import program_configsetup
+from pymeas2019_noise import program_configsetup
 
 # pylint: disable=wrong-import-position
 from . import library_filelock, library_logger, library_plot_config, program

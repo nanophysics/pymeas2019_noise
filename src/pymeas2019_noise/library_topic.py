@@ -19,8 +19,10 @@ DIRECTORY_NAME_RAW_PREFIX = "raw-"
 class Stage100msNotFoundException(Exception):
     pass
 
+
 class FrequencyNotFound(Exception):
     pass
+
 
 class ResultAttributes:
     RESULT_DIR_PATTERN = "raw-*"
@@ -30,7 +32,9 @@ class ResultAttributes:
         self.dir_raw = dir_raw
         match = ResultAttributes.REG_DIR.match(dir_raw.name)
         if match is None:
-            raise Exception(f'Expected directory {dir_raw.name} to match the pattern "result-color-topic"!')
+            raise Exception(
+                f'Expected directory {dir_raw.name} to match the pattern "result-color-topic"!'
+            )
         d = match.groupdict()
         self.color = d["color"]
         self.topic = d["topic"]
@@ -59,7 +63,12 @@ class PickleResultSummary:
 
     def __getstate__(self):
         # Only these elements will be pickled
-        return {"f": self.f, "d": self.d, "enbw": self.enbw, "dict_stages": self.dict_stages}
+        return {
+            "f": self.f,
+            "d": self.d,
+            "enbw": self.enbw,
+            "dict_stages": self.dict_stages,
+        }
 
     @classmethod
     def filename(cls, directory):
@@ -86,11 +95,15 @@ class PickleResultSummary:
             with filename_summary_pickle.open("rb") as fin:
                 # For compatibility with the old source structure
                 # May be remove when old pickle files have gone.
-                sys.modules["library_topic"] = sys.modules["pymeas.library_topic"]
+                sys.modules["library_topic"] = sys.modules[
+                    "pymeas2019_noise.library_topic"
+                ]
                 try:
                     prs = pickle.load(fin)
                 except pickle.UnpicklingError as e:
-                    logger.error(f"ERROR Unpicking f{filename_summary_pickle.name}: {e}")
+                    logger.error(
+                        f"ERROR Unpicking f{filename_summary_pickle.name}: {e}"
+                    )
                     logger.exception(e)
             assert isinstance(prs, PickleResultSummary)
         if prs is None:
@@ -152,7 +165,9 @@ class TopicMinusBasenoise:
     def __init__(self, topic):
         assert topic.basenoise is not None
         self._topic = topic
-        self.resized_f_d = ResizedArrays(topic.f, topic.basenoise.f, topic.d, topic.basenoise.d)
+        self.resized_f_d = ResizedArrays(
+            topic.f, topic.basenoise.f, topic.d, topic.basenoise.d
+        )
 
     @property
     def f(self):
@@ -199,7 +214,14 @@ class TopicMinusBasenoise:
 class Topic:  # pylint: disable=too-many-public-methods
     TAG_BASENOISE = "BASENOISE"
 
-    def __init__(self, ra, prs, dir_raw, plot_config: library_plot_config.PlotConfig, presentations:"Presentations"):
+    def __init__(
+        self,
+        ra,
+        prs,
+        dir_raw,
+        plot_config: library_plot_config.PlotConfig,
+        presentations: "Presentations",
+    ):
         assert isinstance(ra, ResultAttributes)
         assert isinstance(prs, PickleResultSummary)
         assert isinstance(dir_raw, pathlib.Path)
@@ -267,12 +289,18 @@ class Topic:  # pylint: disable=too-many-public-methods
         self.__plot_line.set_data(x, y)
 
     @classmethod
-    def load(cls, dir_raw, plot_config,  presentations):
+    def load(cls, dir_raw, plot_config, presentations):
         assert isinstance(dir_raw, pathlib.Path)
 
         prs = PickleResultSummary.load(dir_raw)
         ra = ResultAttributes(dir_raw=dir_raw)
-        return Topic(ra=ra, prs=prs, dir_raw=dir_raw, plot_config=plot_config, presentations=presentations)
+        return Topic(
+            ra=ra,
+            prs=prs,
+            dir_raw=dir_raw,
+            plot_config=plot_config,
+            presentations=presentations,
+        )
 
     @property
     def topic(self) -> str:
@@ -325,7 +353,9 @@ class Topic:  # pylint: disable=too-many-public-methods
         # Mask all array-elements with bins_count == 0
         # stepsize_bins_count = np.ma.masked_equal(stepsize_bins_count, 0)
         stepsize_bins_V = np.ma.masked_where(stepsize_bins_count == 0, stepsize_bins_V)
-        stepsize_bins_count = np.ma.masked_where(stepsize_bins_count == 0, stepsize_bins_count)
+        stepsize_bins_count = np.ma.masked_where(
+            stepsize_bins_count == 0, stepsize_bins_count
+        )
         stepsize_bins_V = stepsize_bins_V.compressed()  # pylint: disable=no-member
         stepsize_bins_count = stepsize_bins_count.compressed()  # pylint: disable=no-member
         return (stepsize_bins_V, stepsize_bins_count)
@@ -334,7 +364,9 @@ class Topic:  # pylint: disable=too-many-public-methods
         assert isinstance(stage, Stage)
         assert stage.belongs_to_topic(self)
         # TODO(Hans): Cache this array
-        x = np.linspace(start=0.0, stop=stage.dt_s * len(stage.samples_V), num=len(stage.samples_V))
+        x = np.linspace(
+            start=0.0, stop=stage.dt_s * len(stage.samples_V), num=len(stage.samples_V)
+        )
         return (x, stage.samples_V)
 
     @property
@@ -378,7 +410,9 @@ class Topic:  # pylint: disable=too-many-public-methods
 
     @property
     def scaling_INTEGRAL(self):
-        return np.sqrt(np.cumsum(self.scaling_PS[self._integral_index_start() :]))  # todo: start sum above frequency_complete_low_limit
+        return np.sqrt(
+            np.cumsum(self.scaling_PS[self._integral_index_start() :])
+        )  # todo: start sum above frequency_complete_low_limit
 
     @property
     def decade_f_d(self):
@@ -398,11 +432,11 @@ class Topic:  # pylint: disable=too-many-public-methods
         def is_border_decade(f):
             return abs(f * 10 ** -(round(np.log10(f))) - 1.0) < 1e-6
 
-        for (_f, value) in zip(f, v, strict=False):
+        for _f, value in zip(f, v, strict=False):
             if is_border_decade(_f):
                 if last_value is not None:
                     f_decade.append(_f)
-                    value_decade.append(np.sqrt(value ** 2 - last_value ** 2))
+                    value_decade.append(np.sqrt(value**2 - last_value**2))
                 last_value = value
         return f_decade, value_decade
 
@@ -434,8 +468,12 @@ class Topic:  # pylint: disable=too-many-public-methods
             if self.basenoise is not None:
                 assert not self.is_basenoise
                 # A basenoise exists. Get the flickernoise and subtract
-                _flickernoise_basenoise_Vrms, _dummy_Vrms, _comment = self.basenoise.flickernoise()
-                flickernoise_minus_basenoise_Vrms = math.sqrt(max(0.0, flickernoise_Vrms ** 2 - _flickernoise_basenoise_Vrms ** 2))
+                _flickernoise_basenoise_Vrms, _dummy_Vrms, _comment = (
+                    self.basenoise.flickernoise()
+                )
+                flickernoise_minus_basenoise_Vrms = math.sqrt(
+                    max(0.0, flickernoise_Vrms**2 - _flickernoise_basenoise_Vrms**2)
+                )
 
         return flickernoise_Vrms, flickernoise_minus_basenoise_Vrms, comment
 
@@ -489,7 +527,16 @@ class ResizedArrays:
 
 
 class Presentation:
-    def __init__(self, tag, supports_diff_basenoise, help_text, xy_func, x_label, y_label, logarithmic_scales=True):  # pylint: disable=too-many-arguments
+    def __init__(
+        self,
+        tag,
+        supports_diff_basenoise,
+        help_text,
+        xy_func,
+        x_label,
+        y_label,
+        logarithmic_scales=True,
+    ):  # pylint: disable=too-many-arguments
         assert isinstance(tag, str)
         assert isinstance(supports_diff_basenoise, bool)
         assert isinstance(help_text, str)
@@ -560,15 +607,15 @@ class Presentations:
                 x_label=X_LABEL,
                 y_label=f"power spectral density [{unit}^2/Hz]",
                 help_text=f"power spectral density [{unit}^2/Hz] ist just the square of the LSD. This representation of random noise is useful if you want to sum up the signal over a given frequency interval. ",
-                xy_func=lambda topic, stage: (topic.f, topic.scaling_PSD)
+                xy_func=lambda topic, stage: (topic.f, topic.scaling_PSD),
             ),
             Presentation(
                 tag="LS",
-                supports_diff_basenoise=False, # Peter: abz Basenoise macht nicht viel Sinn weil LS typisch fuer eine Frequenz, z.B. 50 Hz gebraucht wird. Je nach Phasenlage ist das subtrahieren irrefuehrend. Daher nicht implementieren.
+                supports_diff_basenoise=False,  # Peter: abz Basenoise macht nicht viel Sinn weil LS typisch fuer eine Frequenz, z.B. 50 Hz gebraucht wird. Je nach Phasenlage ist das subtrahieren irrefuehrend. Daher nicht implementieren.
                 x_label=X_LABEL,
                 y_label=f"linear spectrum [{unit} rms]",
                 help_text=f"linear spectrum [{unit} rms] represents the quantity in a frequency range. Useful if you want to measure the amplitude of a sinusoidal signal.",
-                xy_func=lambda topic, stage: (topic.f, topic.scaling_LS)
+                xy_func=lambda topic, stage: (topic.f, topic.scaling_LS),
             ),
             Presentation(
                 tag="PS",
@@ -592,7 +639,7 @@ class Presentations:
                 x_label=X_LABEL,
                 y_label=f"decade left of the point (noch falsch, nicht brauchen!) [{unit} rms]",
                 help_text=f"decade left of the point (noch falsch, nicht brauchen!) [{unit} rms] Example: The value at 100 Hz represents the quantity between 100Hz/10 = 10 Hz and 100 Hz.",
-                xy_func=lambda topic, stage: topic.decade_f_d
+                xy_func=lambda topic, stage: topic.decade_f_d,
             ),
             Presentation(
                 tag=PRESENTATION_STEPSIZE,
@@ -600,7 +647,7 @@ class Presentations:
                 x_label=f"stepsize [{unit}]",
                 y_label="count samples [samples/s]",
                 help_text="TODO-PRESENTATION_STEPSIZE",
-                xy_func=lambda topic, stage: topic.get_stepsize(stage)
+                xy_func=lambda topic, stage: topic.get_stepsize(stage),
             ),
             Presentation(
                 tag=PRESENTATION_TIMESERIE,
@@ -609,7 +656,7 @@ class Presentations:
                 y_label=f"sample [{unit}]",
                 help_text="TODO-PRESENTATION_TIMESERIE",
                 xy_func=lambda topic, stage: topic.get_timeserie(stage),
-                logarithmic_scales=False
+                logarithmic_scales=False,
             ),
         )
 
@@ -620,7 +667,9 @@ class Presentations:
         try:
             return self.dict[tag]
         except KeyError as e:
-            raise Exception(f"Presentation {tag} not found! Choose one of {self.tags}.") from e
+            raise Exception(
+                f"Presentation {tag} not found! Choose one of {self.tags}."
+            ) from e
 
     def get_as_dict(self, topic):
         d = {}
@@ -635,6 +684,7 @@ class Presentations:
 def get_presentations(plot_config: library_plot_config.PlotConfig) -> Presentations:
     return Presentations(plot_config)
 
+
 class StartupDuration:
     """
     Measure the duration during application startup
@@ -643,7 +693,7 @@ class StartupDuration:
 
     MAX_DURATION_S = 10
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.__on = True
         self.initialized_s = time.time()
 
@@ -654,14 +704,21 @@ class StartupDuration:
 
             if duration_s > StartupDuration.MAX_DURATION_S:
                 self.__on = False
-                logger.debug(f"time={duration_s:1.1f}: Switch off duration logging after {StartupDuration.MAX_DURATION_S:1.1f}s")
+                logger.debug(
+                    f"time={duration_s:1.1f}: Switch off duration logging after {StartupDuration.MAX_DURATION_S:1.1f}s"
+                )
 
     def off(self):
         self.__on = False
 
 
 class PlotDataMultipleDirectories:
-    def __init__(self, topdir: pathlib.Path, plot_config: library_plot_config.PlotConfig, presentations: Presentations):
+    def __init__(
+        self,
+        topdir: pathlib.Path,
+        plot_config: library_plot_config.PlotConfig,
+        presentations: Presentations,
+    ):
         assert isinstance(topdir, pathlib.Path)
         assert isinstance(plot_config, library_plot_config.PlotConfig)
         assert isinstance(presentations, Presentations)
@@ -674,7 +731,9 @@ class PlotDataMultipleDirectories:
         self.load_data(plot_config=plot_config, presentations=presentations)
         self.startup_duration.log("After load_data()")
 
-    def load_data(self, plot_config: library_plot_config.PlotConfig, presentations: Presentations):
+    def load_data(
+        self, plot_config: library_plot_config.PlotConfig, presentations: Presentations
+    ):
         self.topic_basenoise = None
 
         list_directories = self.read_directories()
@@ -695,7 +754,11 @@ class PlotDataMultipleDirectories:
         for dir_raw in list_directories:
             topic = topic_exists(dir_raw)
             if topic is None:
-                topic = Topic.load(dir_raw=dir_raw, plot_config=plot_config,  presentations=presentations)
+                topic = Topic.load(
+                    dir_raw=dir_raw,
+                    plot_config=plot_config,
+                    presentations=presentations,
+                )
             self.list_topics.append(topic)
 
         self.list_topics.sort(key=lambda topic: topic.topic.upper())
@@ -704,7 +767,9 @@ class PlotDataMultipleDirectories:
         for topic in self.list_topics:
             if topic.is_basenoise:
                 if self.topic_basenoise is not None:
-                    raise Exception(f"More that one directory with '{Topic.TAG_BASENOISE}'")
+                    raise Exception(
+                        f"More that one directory with '{Topic.TAG_BASENOISE}'"
+                    )
                 self.topic_basenoise = topic
                 logger.info(f"Selected basenoise from '{topic.color_topic}'!")
 
@@ -731,6 +796,10 @@ class PlotDataSingleDirectory:
     def __init__(self, dir_raw, plot_config: library_plot_config.PlotConfig):
         assert isinstance(dir_raw, pathlib.Path)
 
-        presentations=get_presentations(plot_config=plot_config)
+        presentations = get_presentations(plot_config=plot_config)
 
-        self.list_topics = [Topic.load(dir_raw=dir_raw, plot_config=plot_config, presentations=presentations)]
+        self.list_topics = [
+            Topic.load(
+                dir_raw=dir_raw, plot_config=plot_config, presentations=presentations
+            )
+        ]

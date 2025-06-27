@@ -116,14 +116,8 @@ class ConfigStep(LockingMixinMock):
         return None
 
 
-
-
-
-
-class ConfigStepSkip(
-    ConfigStep
-):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
-    def __init__(self):
+class ConfigStepSkip(ConfigStep):
+    def __init__(self) -> None:
         super().__init__()
         self.skalierungsfaktor: float = 42.0
         self.input_channel: str = "42"
@@ -253,5 +247,3 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
 
             if _lock.requested_stop_soft():
                 return
-
-

@@ -5,11 +5,11 @@ import sys
 import threading
 import time
 
-from pymeas.library_filelock import ExitCode
+from pymeas2019_noise.library_filelock import ExitCode
 
 logger = logging.getLogger("logger")
 
-IS64BIT = sys.maxsize > 2 ** 32
+IS64BIT = sys.maxsize > 2**32
 if IS64BIT:
     SIZE_MAX_BYTES = 1e9
 else:
@@ -64,7 +64,14 @@ class InThread:  # pylint: disable=too-many-instance-attributes
     The worker thread of the stream
     """
 
-    def __init__(self, out, dt_s, func_convert, filename_capture_raw: pathlib.Path | None, duration_s=None):
+    def __init__(
+        self,
+        out,
+        dt_s,
+        func_convert,
+        filename_capture_raw: pathlib.Path | None,
+        duration_s=None,
+    ):
         self.out = out
         self.dt_s = dt_s
         self._f_capture_raw = None
@@ -73,10 +80,9 @@ class InThread:  # pylint: disable=too-many-instance-attributes
         self.done = False
         self.exitcode = ExitCode.OK
         self.__func_convert = func_convert
-        self.list_overflow = []
         self.thread = None
         self.__samples_processed = 0
-        self.__queue = queue.Queue()
+        self.__queue: queue.Queue = queue.Queue()
         self.__queue_size = 0
         self.__queue_size_max = SIZE_MAX_INT16 / 50  # 2%
         self.out.init(stage=0, dt_s=dt_s)
@@ -130,7 +136,9 @@ class InThread:  # pylint: disable=too-many-instance-attributes
             self.__queue_size += samples
         if self.__queue_size > self.__queue_size_max:
             self.__queue_size_max = min(int(1.5 * self.__queue_size), SIZE_MAX_INT16)
-            logger.info(f"Size of queue used: {100.0*self.__queue_size/SIZE_MAX_INT16:.0f}%")
+            logger.info(
+                f"Size of queue used: {100.0 * self.__queue_size / SIZE_MAX_INT16:.0f}%"
+            )
         # Return True if queue is full
         return self.__queue_size > SIZE_MAX_INT16
 
@@ -141,7 +149,7 @@ class InThread:  # pylint: disable=too-many-instance-attributes
 def run():
     import numpy as np
 
-    from pymeas import program_fir
+    from pymeas2019_noise import program_fir
 
     sp = program_fir.SamplingProcess(fir_count=3)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
     i = InThread(sp.output, dt_s=0.01)  # pylint: disable=no-value-for-parameter

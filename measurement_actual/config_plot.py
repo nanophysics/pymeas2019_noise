@@ -1,4 +1,4 @@
-from pymeas.library_plot_config import PlotConfig
+from pymeas2019_noise.library_plot_config import PlotConfig
 
 
 def _func_matplotlib_fig(fig):

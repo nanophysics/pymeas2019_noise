@@ -3,14 +3,13 @@ import pathlib
 
 import numpy as np
 
-# pylint: disable=wrong-import-position
 import library_path
+from pymeas2019_noise import library_logger, program_configsetup, program_fir
 
 library_path.init(__file__)
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 
-from pymeas import library_logger, program_configsetup, program_fir
 
 logger = logging.getLogger("logger")
 

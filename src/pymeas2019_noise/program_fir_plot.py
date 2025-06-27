@@ -15,10 +15,11 @@ from . import library_plot_config, library_topic, program_eseries, program_fir
 
 logger = logging.getLogger("logger")
 
+
 class FilenameDensityStepMatcher:
     FILENAME_TAG_SKIP = "_SKIP"
     GLOB_PATTERN = "densitystep_*.pickle"
-    PATTERN = fr"^densitystep_(?P<stepname>.*?)_(?P<stage>\d+)(?P<skiptext>{FILENAME_TAG_SKIP})?.pickle$"
+    PATTERN = rf"^densitystep_(?P<stepname>.*?)_(?P<stage>\d+)(?P<skiptext>{FILENAME_TAG_SKIP})?.pickle$"
     RE = re.compile(PATTERN)
 
     @classmethod
@@ -46,7 +47,7 @@ class FilenameDensityStepMatcher:
 
 
 class Average:
-    def __init__(self):
+    def __init__(self) -> None:
         self.reset()
 
     def reset(self):
@@ -70,7 +71,19 @@ class Average:
 
 class DensityPlot:  # pylint: disable=too-many-instance-attributes
     @classmethod
-    def save(cls, config, directory, stage, dt_s, frequencies, Pxx_n, Pxx_sum, stepsize_bins_count, stepsize_bins_V, samples_V):  # pylint: disable=too-many-arguments
+    def save(
+        cls,
+        config,
+        directory,
+        stage,
+        dt_s,
+        frequencies,
+        Pxx_n,
+        Pxx_sum,
+        stepsize_bins_count,
+        stepsize_bins_V,
+        samples_V,
+    ):  # pylint: disable=too-many-arguments
         assert isinstance(directory, pathlib.Path)
         assert isinstance(stage, int)
         assert isinstance(dt_s, float)
@@ -82,7 +95,9 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         assert isinstance(samples_V, np.ndarray)
 
         skip = stage < config.fir_count_skipped
-        filename = FilenameDensityStepMatcher.filename_from_stepname_stage(stepname=config.stepname, stage=stage, skip=skip)
+        filename = FilenameDensityStepMatcher.filename_from_stepname_stage(
+            stepname=config.stepname, stage=stage, skip=skip
+        )
         data = {
             "stepname": config.stepname,
             "stage": stage,
@@ -92,7 +107,9 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
             "Pxx_sum": Pxx_sum,
             "skip": skip,
             "stepsize_bins_count": stepsize_bins_count,
-            "stepsize_bins_V": np.array(stepsize_bins_V, dtype=program_fir.NUMPY_FLOAT_TYPE),
+            "stepsize_bins_V": np.array(
+                stepsize_bins_V, dtype=program_fir.NUMPY_FLOAT_TYPE
+            ),
             "samples_V": samples_V,
         }
         # We expect that the directory was created (and emptied) before.
@@ -109,7 +126,9 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         timestamp_summary = 0.0
         if filename_summary.exists():
             timestamp_summary = filename_summary.stat().st_mtime
-        for pickle_file in cls.pickle_files_from_directory(dir_input=dir_input, skip=True):
+        for pickle_file in cls.pickle_files_from_directory(
+            dir_input=dir_input, skip=True
+        ):
             if pickle_file.stat().st_mtime > timestamp_summary:
                 # At least one file is newer
                 return True
@@ -225,7 +244,10 @@ class DensityPlot:  # pylint: disable=too-many-instance-attributes
         assert isinstance(directory, pathlib.Path)
 
         directory.mkdir(parents=True, exist_ok=True)
-        filenameFull = directory / f"densitystep_{self.stepname}_{self.stage:02d}_{self.dt_s:016.12f}.png"
+        filenameFull = (
+            directory
+            / f"densitystep_{self.stepname}_{self.stage:02d}_{self.dt_s:016.12f}.png"
+        )
         if self.Pxx_n is None:
             logger.info(f"No Pxx: skipped {filenameFull}")
             return
@@ -285,20 +307,26 @@ class Selector:
     USEFUL_PART = 0.75  # depending on the downsampling, useful part is the non influenced part by the low pass filtering of the FIR stage
 
     def __init__(self, series):
-        self.__eseries_borders = program_eseries.eseries(series=series, minimal=1e-6, maximal=1e8, borders=True)
+        self.__eseries_borders = program_eseries.eseries(
+            series=series, minimal=1e-6, maximal=1e8, borders=True
+        )
 
-    def fill_bins(self, density, firstDensityPoint, lastDensity, trace=False):
+    def fill_bins(
+        self, density, firstDensityPoint, lastDensity, trace=False
+    ) -> list[DensityPoint]:
         # contribute, fill_bins
         assert isinstance(density, DensityPlot)
 
         avg = Average()
         idx_fft = 0
         Pxx = density.Pxx
-        list_density_points = []
+        list_density_points: list[DensityPoint] = []
 
         fmax_Hz = 1.0 / (density.dt_s * 2.0)  # highest frequency in spectogram
         f_high_limit_Hz = Selector.USEFUL_PART * fmax_Hz
-        f_low_limit_Hz = f_high_limit_Hz / program_fir.DECIMATE_FACTOR  # every FIR stage reduces sampling frequency by factor DECIMATE_FACTOR
+        f_low_limit_Hz = (
+            f_high_limit_Hz / program_fir.DECIMATE_FACTOR
+        )  # every FIR stage reduces sampling frequency by factor DECIMATE_FACTOR
 
         for f_eserie_left, f_eserie, f_eserie_right in self.__eseries_borders:
             if not trace:
@@ -329,7 +357,12 @@ class Selector:
                     P = avg.avg()
                     if P is not None:
                         d = math.sqrt(P)
-                        dp = DensityPoint(f=f_eserie, d=d, densityPlot=density, enbw=f_eserie_right - f_eserie_left)
+                        dp = DensityPoint(
+                            f=f_eserie,
+                            d=d,
+                            densityPlot=density,
+                            enbw=f_eserie_right - f_eserie_left,
+                        )
                         list_density_points.append(dp)
                     break  # Continue in next eserie.
 
@@ -355,7 +388,7 @@ class ColorRotator:
         # 'yellow',
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.iter = itertools.cycle(ColorRotator.COLORS)
 
     @property
@@ -364,7 +397,13 @@ class ColorRotator:
 
 
 class LsdSummary:
-    def __init__(self,plot_config:library_plot_config.PlotConfig, list_density, directory, trace=False):
+    def __init__(
+        self,
+        plot_config: library_plot_config.PlotConfig,
+        list_density,
+        directory,
+        trace=False,
+    ):
         assert isinstance(plot_config, library_plot_config.PlotConfig)
         assert isinstance(list_density, list)
         assert isinstance(directory, pathlib.Path)
@@ -394,7 +433,12 @@ class LsdSummary:
             selector = Selector(series=plot_config.eseries)
             first_density_point = len(self.__list_density_points) == 0
             last_density = density == list_density[-1]
-            list_density_points = selector.fill_bins(density, firstDensityPoint=first_density_point, lastDensity=last_density, trace=self.__trace)
+            list_density_points = selector.fill_bins(
+                density,
+                firstDensityPoint=first_density_point,
+                lastDensity=last_density,
+                trace=self.__trace,
+            )
             self.__list_density_points.extend(list_density_points)
 
     def write_summary_file(self, trace):
@@ -409,7 +453,9 @@ class LsdSummary:
         f = [dp.f for dp in self.__list_density_points if not dp.skip]
         d = [dp.d for dp in self.__list_density_points if not dp.skip]
         enbw = [dp.enbw for dp in self.__list_density_points if not dp.skip]
-        library_topic.PickleResultSummary.save(self.__directory, f, d, enbw, self.__dict_stages)
+        library_topic.PickleResultSummary.save(
+            self.__directory, f, d, enbw, self.__dict_stages
+        )
 
     def plot(self, file_tag="", title=""):  # pylint: disable=too-many-locals
         fig, ax = plt.subplots()
@@ -418,10 +464,19 @@ class LsdSummary:
         MARKERS = ".+x*"
         colorRotator = ColorRotator()
 
-        stepnames = [(stepname, list(g)) for stepname, g in itertools.groupby(self.__list_density_points, lambda density: density.stepname)]
+        stepnames = [
+            (stepname, list(g))
+            for stepname, g in itertools.groupby(
+                self.__list_density_points, lambda density: density.stepname
+            )
+        ]
         for stepnumber, (_stepname, list_step_density) in enumerate(stepnames):
-
-            stages = [(stage, list(g)) for stage, g in itertools.groupby(list_step_density, lambda dp: dp.stage)]
+            stages = [
+                (stage, list(g))
+                for stage, g in itertools.groupby(
+                    list_step_density, lambda dp: dp.stage
+                )
+            ]
             for _stage, list_density_points in stages:
                 f = [dp.f for dp in list_density_points]
                 d = [dp.d for dp in list_density_points]
@@ -435,15 +490,32 @@ class LsdSummary:
                     dp = list_density_points[0]
                     marker = MARKERS[stepnumber % len(MARKERS)]
                     markersize = 2 if dp.skip else 4
-                ax.loglog(f, d, linestyle=linestyle, linewidth=0.1, marker=marker, markersize=markersize, color=color)
+                ax.loglog(
+                    f,
+                    d,
+                    linestyle=linestyle,
+                    linewidth=0.1,
+                    marker=marker,
+                    markersize=markersize,
+                    color=color,
+                )
 
         plt.ylabel("Density [V/Hz^0.5]")
         plt.xlabel("Frequency [Hz]")
         # plt.ylim( 1e-11,1e-6)
         # plt.xlim(1e-2, 1e5) # temp Peter
         # plt.grid(True)
-        plt.grid(True, which="major", axis="both", linestyle="-", color="gray", linewidth=0.5)
-        plt.grid(True, which="minor", axis="both", linestyle="-", color="silver", linewidth=0.1)
+        plt.grid(
+            True, which="major", axis="both", linestyle="-", color="gray", linewidth=0.5
+        )
+        plt.grid(
+            True,
+            which="minor",
+            axis="both",
+            linestyle="-",
+            color="silver",
+            linewidth=0.1,
+        )
         ax.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=30))
         if title:
             plt.title(title)

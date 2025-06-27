@@ -1,24 +1,21 @@
 import logging
 import pathlib
 
-# pylint: disable=wrong-import-position
-import library_path
-
-library_path.init(__file__)
-
 import config_measurement  # pylint: disable=wrong-import-position
-
-DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
-DIR_MEASUREMENT = library_path.DIR_MEASUREMENT
-
-
-from pymeas import (
+import library_path
+from pymeas2019_noise import (
     library_logger,
     library_topic,
     program,
     program_instrument_capture_raw,
 )
-from pymeas.program_configsetup import ConfigSetup
+from pymeas2019_noise.program_configsetup import ConfigSetup
+
+library_path.init(__file__)
+
+DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
+DIR_MEASUREMENT = library_path.DIR_MEASUREMENT
+
 
 logger = logging.getLogger("logger")
 

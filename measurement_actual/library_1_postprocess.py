@@ -10,13 +10,13 @@ import pathlib
 logger = logging.getLogger("logger")
 
 
-def postprocess(dir_measurement, plotData):
+def postprocess(dir_measurement, plot_data):
     isinstance(dir_measurement, pathlib.Path)
 
     with (dir_measurement / "result_flickernoise.txt").open("w") as f:
         f.write("Flickernoise: 0.1 ... 10 Hz\n")
         f.write(f"{'Topic':50s}\t{'Vrms':8s}\t{'Vrms-BASENOISE':8s}\tcomment\n")
-        for topic in plotData.list_topics:
+        for topic in plot_data.list_topics:
             flickernoise_Vrms, flickernoise_minus_basenoise_Vrms, comment = topic.flickernoise()
             f.write(f"{topic.topic:50s}\t{flickernoise_Vrms:8.3e}\t{flickernoise_minus_basenoise_Vrms:8.3e}\t{comment}\n")
 

@@ -23,8 +23,8 @@ logger = logging.getLogger("logger")
 
 
 class PlotContext:
-    def __init__(self, plotData: library_topic.PlotDataMultipleDirectories, plot_config:library_plot_config.PlotConfig, presentations: library_topic.Presentations):
-        assert isinstance(plotData, library_topic.PlotDataSingleDirectory | library_topic.PlotDataMultipleDirectories)
+    def __init__(self, plot_data: library_topic.PlotDataMultipleDirectories, plot_config:library_plot_config.PlotConfig, presentations: library_topic.Presentations):
+        assert isinstance(plot_data, library_topic.PlotDataSingleDirectory | library_topic.PlotDataMultipleDirectories)
         assert isinstance(plot_config, library_plot_config.PlotConfig)
         assert isinstance(presentations, library_topic.Presentations)
         self._plot_config = plot_config
@@ -32,7 +32,7 @@ class PlotContext:
         # The currently active presentation
         self.__presentation = presentations.get(library_topic.DEFAULT_PRESENTATION)
         # The data to be displayed
-        self.plotData = plotData
+        self.plot_data = plot_data
         self.__plot_is_invalid = True
         self.__topic = None
         self.__stage = None
@@ -90,11 +90,11 @@ class PlotContext:
                 line.remove()
 
     def update_presentation(self):
-        assert self.plotData is not None
+        assert self.plot_data is not None
 
         if self.__plot_is_invalid:
             self.__plot_is_invalid = False
-            for topic in self.plotData.list_topics:
+            for topic in self.plot_data.list_topics:
                 topic.reset_plot_line()
             self.clear_figure()
             self.initialize_plot_lines()
@@ -151,14 +151,14 @@ class PlotContext:
     @property
     def list_selected_topics(self) -> list:
         if self.__topic is None:
-            return self.plotData.list_topics
-        return [topic for topic in self.plotData.list_topics if self.__topic == topic]
+            return self.plot_data.list_topics
+        return [topic for topic in self.plot_data.list_topics if self.__topic == topic]
 
     def animate(self):
-        if self.plotData.directories_changed():
+        if self.plot_data.directories_changed():
             logger.info("Directories changed: Reload all data!")
             self.invalidate()
-            self.plotData.load_data(plot_config=self._plot_config, presentations=self._presentations)
+            self.plot_data.load_data(plot_config=self._plot_config, presentations=self._presentations)
 
         if self.__plot_is_invalid:
             self.update_presentation()
@@ -181,7 +181,7 @@ class PlotContext:
     @property
     def iter_topics(self):
         yield "all", None
-        for topic in self.plotData.list_topics:
+        for topic in self.plot_data.list_topics:
             yield topic.topic, topic
 
     def iter_stages(self, topic):
@@ -189,14 +189,14 @@ class PlotContext:
         if topic is None:
             # If topic is not defined. This may happen if ALL topics have been selected.
             # In this case, we return the stages of the first topic
-            if len(self.plotData.list_topics) == 0:
+            if len(self.plot_data.list_topics) == 0:
                 return
-            _topic = self.plotData.list_topics[0]
+            _topic = self.plot_data.list_topics[0]
             for stage in _topic.stages:
                 yield stage.label, stage
             return
 
-        for _topic in self.plotData.list_topics:
+        for _topic in self.plot_data.list_topics:
             if _topic.topic == topic.topic:
                 for stage in _topic.stages:
                     yield stage.label, stage
@@ -233,11 +233,11 @@ class PlotContext:
 
 
 class PlotFile:
-    def __init__(self, plotData, plot_config: library_plot_config.PlotConfig, presentations: library_topic.Presentations, title=None, write_files=("png",), write_files_directory=None):
+    def __init__(self, plot_data, plot_config: library_plot_config.PlotConfig, presentations: library_topic.Presentations, title=None, write_files=("png",), write_files_directory=None):
         assert isinstance(plot_config, library_plot_config.PlotConfig)
         assert isinstance(presentations, library_topic.Presentations)
         # Possible values: write_files=("png", "svg")
-        self.plotData = plotData
+        self.plot_data = plot_data
         self._plot_config = plot_config
         self._presentations = presentations
         self.title = title
@@ -259,7 +259,7 @@ class PlotFile:
                 logger.error(f"Presentation {presentation.tag}: {exc}")
 
     def plot_presentation(self, presentation):
-        plot_context = PlotContext(plotData=self.plotData, plot_config=self._plot_config, presentations=self._presentations)
+        plot_context = PlotContext(plot_data=self.plot_data, plot_config=self._plot_config, presentations=self._presentations)
         try:
             if self.title:
                 plt.title(self.title)

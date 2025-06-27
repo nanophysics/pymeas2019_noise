@@ -12,7 +12,7 @@ logger = logging.getLogger("logger")
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 
-TOPDIR = DIRECTORY_OF_THIS_FILE.parent
+TOPDIR = DIRECTORY_OF_THIS_FILE.parent.parent
 assert (TOPDIR / "TOPDIR.TXT").exists()
 
 
@@ -63,7 +63,7 @@ class FilelockMeasurement:
     REQUESTED_SKIP_SETTLE = False
     REQUESTED_STOP_NEXT_S = time.time() + REQUEST_CHECKINTERVAL_S
 
-    def __init__(self):
+    def __init__(self) -> None:
         if FilelockMeasurement.FILE_LOCK is not None:
             # Singleton-pattern: We may be instantiated multiple times and still refer to the same data
             return
@@ -80,7 +80,7 @@ class FilelockMeasurement:
             assert FilelockMeasurement.FILE_LOCK is not None
             try:
                 FilelockMeasurement.FILE_LOCK.close()
-            except:  # pylint: disable=bare-except
+            except:  # pylint: disable=bare-except  # noqa: E722
                 pass
             FilelockMeasurement.cleanup_all_files()
 
@@ -95,7 +95,9 @@ class FilelockMeasurement:
                 return
             # Second time: Request a hard stop
             FilelockMeasurement.REQUESTED_STOP_HARD = True
-            logger.info(f"{msg} - request hard stop. Next <ctrl-c> will be handled by the operating system")
+            logger.info(
+                f"{msg} - request hard stop. Next <ctrl-c> will be handled by the operating system"
+            )
             # Reset the handler. Next time <ctrl-c> will kill the process by the operating system
             signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -103,7 +105,13 @@ class FilelockMeasurement:
 
     @classmethod
     def cleanup_all_files(cls):
-        for filename in (FILENAME_LOCK, FILENAME_STATUS, FILENAME_STOP_SOFT, FILENAME_STOP_HARD, FILENAME_SKIP_SETTLE):
+        for filename in (
+            FILENAME_LOCK,
+            FILENAME_STATUS,
+            FILENAME_STOP_SOFT,
+            FILENAME_STOP_HARD,
+            FILENAME_SKIP_SETTLE,
+        ):
             try:
                 filename.unlink()
             except:  # pylint: disable=bare-except  # noqa: E722
@@ -116,23 +124,31 @@ class FilelockMeasurement:
         if FilelockMeasurement.REQUESTED_STOP_NEXT_S > time.time():
             return
 
-        FilelockMeasurement.REQUESTED_STOP_NEXT_S = time.time() + REQUEST_CHECKINTERVAL_S
+        FilelockMeasurement.REQUESTED_STOP_NEXT_S = (
+            time.time() + REQUEST_CHECKINTERVAL_S
+        )
 
         if not FilelockMeasurement.REQUESTED_STOP_HARD:
             if not FILENAME_STOP_HARD.exists():
-                logger.info(f"Stop requested: File '{FILENAME_STOP_HARD.name}' is missing!")
+                logger.info(
+                    f"Stop requested: File '{FILENAME_STOP_HARD.name}' is missing!"
+                )
                 FilelockMeasurement.REQUESTED_STOP = True
                 FilelockMeasurement.REQUESTED_STOP_HARD = True
 
         if not FilelockMeasurement.REQUESTED_STOP_SOFT:
             if not FILENAME_STOP_SOFT.exists():
-                logger.info(f"Stop requested: File '{FILENAME_STOP_SOFT.name}' is missing!")
+                logger.info(
+                    f"Stop requested: File '{FILENAME_STOP_SOFT.name}' is missing!"
+                )
                 FilelockMeasurement.REQUESTED_STOP = True
                 FilelockMeasurement.REQUESTED_STOP_SOFT = True
 
         if not FilelockMeasurement.REQUESTED_SKIP_SETTLE:
             if not FILENAME_SKIP_SETTLE.exists():
-                logger.info(f"Stop requested: File '{FILENAME_SKIP_SETTLE.name}' is missing!")
+                logger.info(
+                    f"Stop requested: File '{FILENAME_SKIP_SETTLE.name}' is missing!"
+                )
                 FilelockMeasurement.REQUESTED_SKIP_SETTLE = True
 
     @classmethod
@@ -177,7 +193,9 @@ class FilelockMeasurement:
 class FilelockGui:
     @classmethod
     def is_measurement_running(cls):
-        assert FilelockMeasurement.FILE_LOCK is None, 'We are the gui. "FilelockMeasurement" must not be initialized!'
+        assert FilelockMeasurement.FILE_LOCK is None, (
+            'We are the gui. "FilelockMeasurement" must not be initialized!'
+        )
 
         if not FILENAME_LOCK.exists():
             FilelockMeasurement.cleanup_all_files()
@@ -194,7 +212,9 @@ class FilelockGui:
 
     @classmethod
     def stop_measurement_soft(cls):
-        assert FilelockMeasurement.FILE_LOCK is None, 'We are the gui. "FilelockMeasurement" must not be initialized!'
+        assert FilelockMeasurement.FILE_LOCK is None, (
+            'We are the gui. "FilelockMeasurement" must not be initialized!'
+        )
 
         try:
             FILENAME_STOP_SOFT.unlink()
@@ -204,17 +224,21 @@ class FilelockGui:
 
     @classmethod
     def skip_settle(cls):
-        assert FilelockMeasurement.FILE_LOCK is None, 'We are the gui. "FilelockMeasurement" must not be initialized!'
+        assert FilelockMeasurement.FILE_LOCK is None, (
+            'We are the gui. "FilelockMeasurement" must not be initialized!'
+        )
 
         try:
             FILENAME_SKIP_SETTLE.unlink()
             logger.info(f"successfully removed {FILENAME_SKIP_SETTLE.name}")
-        except:  # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except  # noqa: E722
             pass
 
     @classmethod
     def stop_measurement_hard(cls):
-        assert FilelockMeasurement.FILE_LOCK is None, 'We are the gui. "FilelockMeasurement" must not be initialized!'
+        assert FilelockMeasurement.FILE_LOCK is None, (
+            'We are the gui. "FilelockMeasurement" must not be initialized!'
+        )
 
         try:
             FILENAME_STOP_HARD.unlink()

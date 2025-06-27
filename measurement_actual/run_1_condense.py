@@ -1,16 +1,12 @@
 import logging
 import sys
 
-# pylint: disable=wrong-import-position
+import config_plot
 import library_path
+import run_2_composite_plots
+from pymeas2019_noise import library_logger, program
 
 library_path.init(__file__)
-
-from pymeas import library_logger, program
-
-import config_plot
-import run_2_composite_plots
-
 logger = logging.getLogger("logger")
 
 DIR_MEASUREMENT = library_path.DIR_MEASUREMENT

@@ -21,7 +21,7 @@ def clean_path(topdir):
             if not entry_pathlib.exists():
                 sys.path.remove(entry)
                 return
-            if entry_pathlib.name == "measurement-actual":
+            if entry_pathlib.name == "measurement_actual":
                 # This entry was added by ${workspaceFolder}/project.pythonenv
                 # Remove it to add it again but as 'DIR_MEASUREMENT'
                 sys.path.remove(entry)
