@@ -118,7 +118,7 @@ class Adc:
 
     SEQUENCE_LEN_MAX = 30_000
     BYTES_PER_MEASUREMENT = 3
-    DECODER_OVERFLOW_SIZE = 2 * BYTES_PER_MEASUREMENT * SEQUENCE_LEN_MAX
+    DECODER_OVERFLOW_SIZE = 4 * BYTES_PER_MEASUREMENT * SEQUENCE_LEN_MAX
 
     def __init__(self) -> None:
         self.serial = self._open_serial()
