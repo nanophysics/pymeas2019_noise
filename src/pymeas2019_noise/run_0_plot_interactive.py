@@ -1,8 +1,8 @@
 import pathlib
 
 import config_plot
-from . import library_gui, library_logger, library_plot, library_topic
 
+from . import library_gui, library_logger, library_plot, library_topic
 
 directory_cwd = pathlib.Path.cwd()
 library_logger.init_logger_gui(directory_cwd)

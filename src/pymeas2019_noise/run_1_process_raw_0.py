@@ -2,6 +2,7 @@ import logging
 import pathlib
 
 import config_measurement
+
 from . import (
     library_logger,
     library_topic,
@@ -9,8 +10,6 @@ from . import (
     program_instrument_capture_raw,
 )
 from .program_configsetup import ConfigSetup
-
-
 
 logger = logging.getLogger("logger")
 

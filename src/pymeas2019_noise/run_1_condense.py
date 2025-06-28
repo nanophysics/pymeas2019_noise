@@ -3,8 +3,8 @@ import pathlib
 import sys
 
 import config_plot
-from . import run_2_composite_plots
-from . import library_logger, program
+
+from . import library_logger, program, run_2_composite_plots
 
 logger = logging.getLogger("logger")
 

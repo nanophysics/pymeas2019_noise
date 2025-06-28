@@ -6,6 +6,7 @@ do_show=True,do_animate=False: GUI. Show the data, no animation.
 do_show=True,do_animate=True: GUI. Show the data, animation.
 
 """
+
 import logging
 import pathlib
 import subprocess
@@ -15,16 +16,23 @@ import matplotlib.animation
 import matplotlib.pyplot as plt
 import matplotlib.ticker
 
-from . import run_0_measure
-
-from . import library_plot_config, library_topic
+from . import library_plot_config, library_topic, run_0_measure
 
 logger = logging.getLogger("logger")
 
 
 class PlotContext:
-    def __init__(self, plot_data: library_topic.PlotDataMultipleDirectories, plot_config:library_plot_config.PlotConfig, presentations: library_topic.Presentations):
-        assert isinstance(plot_data, library_topic.PlotDataSingleDirectory | library_topic.PlotDataMultipleDirectories)
+    def __init__(
+        self,
+        plot_data: library_topic.PlotDataMultipleDirectories,
+        plot_config: library_plot_config.PlotConfig,
+        presentations: library_topic.Presentations,
+    ):
+        assert isinstance(
+            plot_data,
+            library_topic.PlotDataSingleDirectory
+            | library_topic.PlotDataMultipleDirectories,
+        )
         assert isinstance(plot_config, library_plot_config.PlotConfig)
         assert isinstance(presentations, library_topic.Presentations)
         self._plot_config = plot_config
@@ -68,7 +76,16 @@ class PlotContext:
             x = (0, 1)
             y = (0, 1)
             assert len(x) == len(y)
-            (plot_line,) = self.__ax.plot(x, y, linestyle="none", linewidth=0.1, marker=".", markersize=3, color=topic.color, label=topic.topic_basenoise(self.__presentation))
+            (plot_line,) = self.__ax.plot(
+                x,
+                y,
+                linestyle="none",
+                linewidth=0.1,
+                marker=".",
+                markersize=3,
+                color=topic.color,
+                label=topic.topic_basenoise(self.__presentation),
+            )
             scale = "log" if self.__presentation.logarithmic_scales else "linear"
             self.__ax.set_xscale(scale)
             self.__ax.set_yscale(scale)
@@ -113,7 +130,10 @@ class PlotContext:
                     label_stepsize.add(stage.label)
             try:
                 topic.recalculate_data(presentation=self.__presentation, stage=stage)
-            except (library_topic.Stage100msNotFoundException, library_topic.FrequencyNotFound) as exc:
+            except (
+                library_topic.Stage100msNotFoundException,
+                library_topic.FrequencyNotFound,
+            ) as exc:
                 logger.error(f"SKIPPED: Topic {topic.topic}: {exc}")
                 continue
 
@@ -127,15 +147,33 @@ class PlotContext:
         for ax in self.__fig.get_axes():
             ax.relim()
             ax.autoscale()
-            plt.grid(True, which="major", axis="both", linestyle="-", color="gray", linewidth=0.5)
-            plt.grid(True, which="minor", axis="both", linestyle="-", color="silver", linewidth=0.1)
+            plt.grid(
+                True,
+                which="major",
+                axis="both",
+                linestyle="-",
+                color="gray",
+                linewidth=0.5,
+            )
+            plt.grid(
+                True,
+                which="minor",
+                axis="both",
+                linestyle="-",
+                color="silver",
+                linewidth=0.1,
+            )
             if self.__presentation.logarithmic_scales:
-                ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
-                ax.yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, numticks=20))
+                ax.xaxis.set_major_locator(
+                    matplotlib.ticker.LogLocator(base=10.0, numticks=20)
+                )
+                ax.yaxis.set_major_locator(
+                    matplotlib.ticker.LogLocator(base=10.0, numticks=20)
+                )
                 # Uncomment to modify figure
                 # self.__fig.set_size_inches(13.0, 7.0)
-                #ax.set_xlim(1e-3, 1e4)
-                #ax.set_ylim(1e-9, 1e-5)
+                # ax.set_xlim(1e-3, 1e4)
+                # ax.set_ylim(1e-9, 1e-5)
                 if self._plot_config.func_matplotlib_ax is not None:
                     if self.__presentation.tag != library_topic.PRESENTATION_STEPSIZE:
                         self._plot_config.func_matplotlib_ax(ax=ax)
@@ -147,7 +185,6 @@ class PlotContext:
             if self._plot_config.func_matplotlib_fig is not None:
                 self._plot_config.func_matplotlib_fig(fig=self.__fig)
 
-
     @property
     def list_selected_topics(self) -> list:
         if self.__topic is None:
@@ -158,25 +195,33 @@ class PlotContext:
         if self.plot_data.directories_changed():
             logger.info("Directories changed: Reload all data!")
             self.invalidate()
-            self.plot_data.load_data(plot_config=self._plot_config, presentations=self._presentations)
+            self.plot_data.load_data(
+                plot_config=self._plot_config, presentations=self._presentations
+            )
 
         if self.__plot_is_invalid:
             self.update_presentation()
             return
 
         for topic in self.list_selected_topics:
-            topic.reload_if_changed(presentation=self.__presentation, stage=self.__stage)
+            topic.reload_if_changed(
+                presentation=self.__presentation, stage=self.__stage
+            )
 
     def start_measurement(self, dir_raw):
         # The start button has been pressed
         # proc = subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw])
         # proc = subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw], start_new_session=True, startupinfo=subprocess.DETACHED_PROCESS)
-        proc = subprocess.Popen(args=[
-            sys.executable, "-m", run_0_measure.__name__, dir_raw,
-                                 ], 
-                                 creationflags=subprocess.CREATE_NEW_CONSOLE,
-cwd=pathlib.Path.cwd()              ,        
-           )
+        proc = subprocess.Popen(
+            args=[
+                sys.executable,
+                "-m",
+                run_0_measure.__name__,
+                dir_raw,
+            ],
+            creationflags=subprocess.CREATE_NEW_CONSOLE,
+            cwd=pathlib.Path.cwd(),
+        )
         logger.info(f"Started measurement in folder '{dir_raw}' with pid={proc.pid}.")
 
     def open_directory_in_explorer(self):
@@ -222,12 +267,16 @@ cwd=pathlib.Path.cwd()              ,
         self.set_presentation(presentation=presentation)
 
     def open_display_clone(self):
-        import run_0_plot_interactive
+        from . import run_0_plot_interactive
 
-        subprocess.Popen([sys.executable,"-m",
-                           run_0_plot_interactive.__name__,
-                           ], cwd=pathlib.Path.cwd(),
-                           )
+        subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                run_0_plot_interactive.__name__,
+            ],
+            cwd=pathlib.Path.cwd(),
+        )
 
     def savefig(self, filename, dpi):
         self.__fig.savefig(filename, dpi=dpi)
@@ -240,7 +289,15 @@ cwd=pathlib.Path.cwd()              ,
 
 
 class PlotFile:
-    def __init__(self, plot_data, plot_config: library_plot_config.PlotConfig, presentations: library_topic.Presentations, title=None, write_files=("png",), write_files_directory=None):
+    def __init__(
+        self,
+        plot_data,
+        plot_config: library_plot_config.PlotConfig,
+        presentations: library_topic.Presentations,
+        title=None,
+        write_files=("png",),
+        write_files_directory=None,
+    ):
         assert isinstance(plot_config, library_plot_config.PlotConfig)
         assert isinstance(presentations, library_topic.Presentations)
         # Possible values: write_files=("png", "svg")
@@ -262,11 +319,18 @@ class PlotFile:
         for presentation in self._presentations.list:
             try:
                 self.plot_presentation(presentation=presentation)
-            except (library_topic.Stage100msNotFoundException, library_topic.FrequencyNotFound) as exc:
+            except (
+                library_topic.Stage100msNotFoundException,
+                library_topic.FrequencyNotFound,
+            ) as exc:
                 logger.error(f"Presentation {presentation.tag}: {exc}")
 
     def plot_presentation(self, presentation):
-        plot_context = PlotContext(plot_data=self.plot_data, plot_config=self._plot_config, presentations=self._presentations)
+        plot_context = PlotContext(
+            plot_data=self.plot_data,
+            plot_config=self._plot_config,
+            presentations=self._presentations,
+        )
         try:
             if self.title:
                 plt.title(self.title)
@@ -275,7 +339,10 @@ class PlotFile:
             plot_context.update_presentation()
 
             for ext in self.write_files:
-                filename = self.write_files_directory / f"result_{plot_context.presentation_tag}.{ext}"
+                filename = (
+                    self.write_files_directory
+                    / f"result_{plot_context.presentation_tag}.{ext}"
+                )
                 logger.info(filename)
                 plot_context.savefig(filename=filename, dpi=300)
 

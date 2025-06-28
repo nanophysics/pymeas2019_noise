@@ -1,10 +1,14 @@
 import logging
 import pathlib
 
-from . import program_configsetup
-
 # pylint: disable=wrong-import-position
-from . import library_filelock, library_logger, library_plot_config, program
+from . import (
+    library_filelock,
+    library_logger,
+    library_plot_config,
+    program,
+    program_configsetup,
+)
 
 logger = logging.getLogger("logger")
 
