@@ -7,6 +7,7 @@ import numpy as np
 import scipy.signal
 
 from . import program_classify, program_configsetup, program_fir_plot, program_settle
+from .library_filelock import ExitCode
 
 logger = logging.getLogger("logger")
 
@@ -108,6 +109,10 @@ class FIR:  # pylint: disable=too-many-instance-attributes
             f"Statistics {self.stage}: count {self.statistics_count}, samples in {self.statistics_samples_in * self.__dt_s:0.3f}s, samples out {self.statistics_samples_out * self.__dt_s * DECIMATE_FACTOR:0.3f}s"
         )
         self.out.done()
+
+    def put_EOF(self, exit_code: ExitCode) -> None:
+        assert isinstance(exit_code, ExitCode)
+        self.out.put_EOF(exit_code)
 
     def print_size(self, f):
         array_len = -1 if self.array is None else len(self.array)
@@ -257,6 +262,10 @@ class Density:  # pylint: disable=too-many-instance-attributes
 
     def done(self):
         self.out.done()
+
+    def put_EOF(self, exit_code: ExitCode) -> None:
+        assert isinstance(exit_code, ExitCode)
+        self.out.put_EOF(exit_code)
 
     @property
     def fifo_size_s(self) -> float:
@@ -432,6 +441,9 @@ class OutTrash:
     def done(self):
         pass
 
+    def put_EOF(self, exit_code: ExitCode) -> None:
+        pass
+
     def print_size(self, f):
         pass
 
@@ -548,6 +560,10 @@ class UniformPieces:
                 )
             # logger.debug('m', end='')
         return None
+
+    def put_EOF(self, exit_code: ExitCode) -> None:
+        assert isinstance(exit_code, ExitCode)
+        self.out.put_EOF(exit_code)
 
 
 class SamplingProcess:

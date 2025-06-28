@@ -124,7 +124,7 @@ class InThread:  # pylint: disable=too-many-instance-attributes
         self.thread = threading.Thread(target=self.worker)
         self.thread.start()
 
-    def put_EOF(self, exit_code):
+    def put_EOF(self, exit_code: ExitCode) -> None:
         assert isinstance(exit_code, ExitCode)
         self.__queue.put(exit_code)
 
