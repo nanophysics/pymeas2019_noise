@@ -3,8 +3,8 @@ import pathlib
 import sys
 
 import config_plot
-import run_2_composite_plots
-from pymeas2019_noise import library_logger, program
+from . import run_2_composite_plots
+from .import library_logger, program
 
 logger = logging.getLogger("logger")
 

@@ -3,7 +3,7 @@ import pathlib
 
 import numpy as np
 
-from pymeas2019_noise import library_logger, program_configsetup, program_fir
+from .import library_logger, program_configsetup, program_fir
 
 logger = logging.getLogger("logger")
 

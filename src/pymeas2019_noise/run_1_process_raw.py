@@ -2,13 +2,13 @@ import logging
 import pathlib
 
 import config_measurement
-from pymeas2019_noise import (
+from .import (
     library_logger,
     library_topic,
     program,
     program_instrument_capture_raw,
 )
-from pymeas2019_noise.program_configsetup import ConfigSetup
+from .program_configsetup import ConfigSetup
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 dir_measurement = pathlib.Path.cwd()

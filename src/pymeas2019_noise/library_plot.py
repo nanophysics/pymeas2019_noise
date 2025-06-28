@@ -15,7 +15,7 @@ import matplotlib.animation
 import matplotlib.pyplot as plt
 import matplotlib.ticker
 
-import run_0_measure
+from . import run_0_measure
 
 from . import library_plot_config, library_topic
 
@@ -171,7 +171,12 @@ class PlotContext:
         # The start button has been pressed
         # proc = subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw])
         # proc = subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw], start_new_session=True, startupinfo=subprocess.DETACHED_PROCESS)
-        proc = subprocess.Popen([sys.executable, run_0_measure.__file__, dir_raw], creationflags=subprocess.CREATE_NEW_CONSOLE)  # pylint: disable=consider-using-with
+        proc = subprocess.Popen(args=[
+            sys.executable, "-m", run_0_measure.__name__, dir_raw,
+                                 ], 
+                                 creationflags=subprocess.CREATE_NEW_CONSOLE,
+cwd=pathlib.Path.cwd()              ,        
+           )
         logger.info(f"Started measurement in folder '{dir_raw}' with pid={proc.pid}.")
 
     def open_directory_in_explorer(self):
@@ -217,10 +222,12 @@ class PlotContext:
         self.set_presentation(presentation=presentation)
 
     def open_display_clone(self):
-        directory = pathlib.Path(run_0_measure.__file__).absolute().parent
         import run_0_plot_interactive
 
-        subprocess.Popen([sys.executable, run_0_plot_interactive.__file__], cwd=directory)  # pylint: disable=consider-using-with
+        subprocess.Popen([sys.executable,"-m",
+                           run_0_plot_interactive.__name__,
+                           ], cwd=pathlib.Path.cwd(),
+                           )
 
     def savefig(self, filename, dpi):
         self.__fig.savefig(filename, dpi=dpi)

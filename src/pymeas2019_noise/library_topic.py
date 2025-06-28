@@ -120,7 +120,7 @@ class PickleResultSummary:
         return prs
 
     def reload_if_changed(self):
-        import run_1_condense
+        from . import run_1_condense
 
         changed = run_1_condense.reload_if_changed(dir_raw=self.x_directory)
         if changed:

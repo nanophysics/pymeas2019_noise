@@ -3,7 +3,7 @@ import pathlib
 
 import config_measurement
 import config_plot
-from pymeas2019_noise import library_logger, library_plot, library_topic
+from .import library_logger, library_plot, library_topic
 
 logger = logging.getLogger("logger")
 

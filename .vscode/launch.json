@@ -24,7 +24,7 @@
             "name": "Python: run_0_measure.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/measurement_actual/run_0_measure.py",
+            "module": "pymeas2019_noise.run_0_measure",
             "cwd": "${workspaceFolder}/measurement_actual",
             "console": "integratedTerminal",
             "justMyCode": false
@@ -40,9 +40,9 @@
             "name": "Python: run_0_plot_interactive.py",
             "type": "debugpy",
             "request": "launch",
-            "justMyCode": false,
-            "program": "${workspaceFolder}/measurement_actual/run_0_plot_interactive.py",
+            "module": "pymeas2019_noise.run_0_plot_interactive",
             "cwd": "${workspaceFolder}/measurement_actual",
+            "justMyCode": false,
             "console": "integratedTerminal"
         },
         {

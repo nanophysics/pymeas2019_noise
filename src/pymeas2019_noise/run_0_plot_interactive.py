@@ -1,11 +1,11 @@
 import pathlib
 
 import config_plot
-from pymeas2019_noise import library_gui, library_logger, library_plot, library_topic
+from .import library_gui, library_logger, library_plot, library_topic
 
-DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).parent
 
-library_logger.init_logger_gui(DIRECTORY_OF_THIS_FILE)
+directory_cwd = pathlib.Path.cwd()
+library_logger.init_logger_gui(directory_cwd)
 
 
 def run():
@@ -13,7 +13,7 @@ def run():
     presentations = library_topic.get_presentations(plot_config=plot_config)
 
     plot_data = library_topic.PlotDataMultipleDirectories(
-        topdir=DIRECTORY_OF_THIS_FILE,
+        topdir=directory_cwd,
         plot_config=plot_config,
         presentations=presentations,
     )

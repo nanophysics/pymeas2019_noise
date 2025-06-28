@@ -12,15 +12,15 @@ from . import library_logger
 
 logger = logging.getLogger("logger")
 
-FILENAME_TOPDIR_TXT = "TOPDIR.TXT"
+
+FILENAME_CONFIG_MEASUREMENTS = "config_measurement.py"
 
 
 def find_topdir() -> pathlib.Path:
     cwd = pathlib.Path.cwd()
-    for topdir in cwd.parents:
-        if (topdir / FILENAME_TOPDIR_TXT).exists():
-            return topdir
-    raise Exception(f'No file "{FILENAME_TOPDIR_TXT}" not found in parent directories!')
+    config_measurement = cwd / FILENAME_CONFIG_MEASUREMENTS
+    assert config_measurement.is_file(), str(config_measurement)
+    return cwd
 
 
 class ExitCode(Enum):
@@ -164,7 +164,7 @@ class FilelockMeasurement:
         if not FilelockMeasurement.REQUESTED_STOP_HARD:
             if not LockTag.FILENAME_STOP_HARD.exists():
                 logger.info(
-                    f"Stop requested: File '{LockTag.FILENAME_STOP_HARD.name}' is missing!"
+                    f"Stop requested: File '{LockTag.FILENAME_STOP_HARD}' is missing!"
                 )
                 FilelockMeasurement.REQUESTED_STOP = True
                 FilelockMeasurement.REQUESTED_STOP_HARD = True
@@ -172,7 +172,7 @@ class FilelockMeasurement:
         if not FilelockMeasurement.REQUESTED_STOP_SOFT:
             if not LockTag.FILENAME_STOP_SOFT.exists():
                 logger.info(
-                    f"Stop requested: File '{LockTag.FILENAME_STOP_SOFT.name}' is missing!"
+                    f"Stop requested: File '{LockTag.FILENAME_STOP_SOFT}' is missing!"
                 )
                 FilelockMeasurement.REQUESTED_STOP = True
                 FilelockMeasurement.REQUESTED_STOP_SOFT = True
@@ -180,7 +180,7 @@ class FilelockMeasurement:
         if not FilelockMeasurement.REQUESTED_SKIP_SETTLE:
             if not LockTag.FILENAME_SKIP_SETTLE.exists():
                 logger.info(
-                    f"Stop requested: File '{LockTag.FILENAME_SKIP_SETTLE.name}' is missing!"
+                    f"Stop requested: File '{LockTag.FILENAME_SKIP_SETTLE}' is missing!"
                 )
                 FilelockMeasurement.REQUESTED_SKIP_SETTLE = True
 
@@ -251,7 +251,7 @@ class FilelockGui:
 
         try:
             LockTag.FILENAME_STOP_SOFT.unlink()
-            logger.info(f"successfully removed {LockTag.FILENAME_STOP_SOFT.name}")
+            logger.info(f"successfully removed '{LockTag.FILENAME_STOP_SOFT}'")
         except:  # pylint: disable=bare-except  # noqa: E722
             pass
 
@@ -263,7 +263,7 @@ class FilelockGui:
 
         try:
             LockTag.FILENAME_SKIP_SETTLE.unlink()
-            logger.info(f"successfully removed {LockTag.FILENAME_SKIP_SETTLE.name}")
+            logger.info(f"successfully removed '{LockTag.FILENAME_SKIP_SETTLE}'")
         except:  # pylint: disable=bare-except  # noqa: E722
             pass
 
@@ -275,7 +275,7 @@ class FilelockGui:
 
         try:
             LockTag.FILENAME_STOP_HARD.unlink()
-            logger.info(f"successfully removed {LockTag.FILENAME_STOP_HARD.name}")
+            logger.info(f"successfully removed '{LockTag.FILENAME_STOP_HARD}'")
         except:  # pylint: disable=bare-except  # noqa: E722
             pass
 

@@ -19,6 +19,9 @@ s**/*.egg-info/**
 versuche/*
 **/*.ipynb_checkpoints
 todo/peter/tests/*
+**/logger_condense.txt
+**/logger_gui.txt
 measurement_actual/logger_condense.txt
 **/hidden/
 venv/*
+compact_measurements/**

@@ -1,7 +1,7 @@
 import logging
 import pathlib
 
-from pymeas2019_noise import program_configsetup
+from .import program_configsetup
 
 # pylint: disable=wrong-import-position
 from . import library_filelock, library_logger, library_plot_config, program
@@ -38,6 +38,3 @@ def measure(configsetup, dir_measurement: pathlib.Path):
     measure2(configsetup, dir_raw)
 
 
-def measure0(configsetup, file):
-    assert isinstance(file, str)
-    measure(configsetup=configsetup, dir_measurement=pathlib.Path(file).parent)
