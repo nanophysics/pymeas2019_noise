@@ -41,7 +41,7 @@ dependencies = [
     "ruff",
     "mypy",
     "isort",
-    "ad_low_noise_float_2023_decoder",
+    "ad-low-noise-float-2023-decoder",
 ]
 
 [project.urls]
@@ -50,7 +50,7 @@ Documentation = "https://github.com/nanophysics/pymeas2019_noise"
 Repository = "https://github.com/nanophysics/pymeas2019_noise"
 
 [[tool.uv.index]]
-name = "ad_low_noise_float_2023_decoder"
+name = "ad-low-noise-float-2023-decoder"
 url = "https://www.maerki.com/hans/download/pymeas2019_noise"
 
 [tool.uv]
@@ -126,7 +126,7 @@ module = "scipy.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "ad_low_noise_float_2023_decoder.*"
+module = "ad-low-noise-float-2023-decoder.*"
 ignore_missing_imports = true
 
 [tool.pylint."MESSAGES CONTROL"]
