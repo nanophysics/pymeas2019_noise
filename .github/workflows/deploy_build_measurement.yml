@@ -1,0 +1,37 @@
+name: Deploy build_measurement_windows.zip
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.13'
+
+      # - name: Install dependencies
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     # Add any additional dependencies here
+
+      - name: Run ci_build_measurement_actual.py
+        run: python src/pymeas2019_noise/ci_build_measurement_actual.py
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pymeas2019_noise_template_directories
+          path: artifacts/*.zip
+          

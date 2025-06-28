@@ -7,7 +7,7 @@ import sys
 
 import numpy as np
 
-from .import library_plot, library_topic, program_fir_plot
+from . import library_plot, library_topic, program_fir_plot
 
 logger = logging.getLogger("logger")
 

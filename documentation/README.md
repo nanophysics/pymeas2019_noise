@@ -53,6 +53,8 @@ click start
 
 ## Directory structure
 
+TODO(hans)
+
 - `<TOPDIR>` The directory containing the file `TOPDIR.TXT`
   - `<TOPDIR>\measurement_actual` \
     The results of the actual measurement. \

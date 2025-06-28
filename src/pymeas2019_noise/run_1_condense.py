@@ -4,21 +4,16 @@ import sys
 
 import config_plot
 from . import run_2_composite_plots
-from .import library_logger, program
+from . import library_logger, program
 
 logger = logging.getLogger("logger")
-
-dir_measurement = pathlib.Path.cwd()
-
 
 def reload_if_changed(dir_raw):
     plot_config = config_plot.get_plot_config()
     return program.reload_if_changed(dir_raw=dir_raw, plot_config=plot_config)
 
 
-def run():
-    library_logger.init_logger_condense(dir_measurement)
-
+def doit(dir_measurement:pathlib.Path):
     plot_config = config_plot.get_plot_config()
 
     if len(sys.argv) > 1:
@@ -43,6 +38,12 @@ def run():
     )
     run_2_composite_plots.run(dir_measurement=dir_measurement)
 
+def main():
+    dir_measurement = pathlib.Path.cwd()
+
+    library_logger.init_logger_condense(dir_measurement)
+
+    doit(dir_measurement=dir_measurement)
 
 if __name__ == "__main__":
-    run()
+    main()

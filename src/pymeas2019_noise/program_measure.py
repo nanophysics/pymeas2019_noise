@@ -1,7 +1,7 @@
 import logging
 import pathlib
 
-from .import program_configsetup
+from . import program_configsetup
 
 # pylint: disable=wrong-import-position
 from . import library_filelock, library_logger, library_plot_config, program

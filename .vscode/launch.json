@@ -5,23 +5,32 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Aktuelle Datei",
+            "name": "Aktuelle Datei",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal"
         },
         {
-            "name": "Python: program_instrument_ad_low_noise_float_2023.py",
+            "name": "program_instrument_ad_low_noise_float_2023",
             "type": "debugpy",
             "request": "launch",
-            "module": "pymeas.program_instrument_ad_low_noise_float_2023",
+            "module": "pymeas2019_noise.program_instrument_ad_low_noise_float_2023",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "justMyCode": false
         },
         {
-            "name": "Python: run_0_measure.py",
+            "name": "ci_build_measurement_actual",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pymeas2019_noise.ci_build_measurement_actual",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "run_0_measure.py",
             "type": "debugpy",
             "request": "launch",
             "module": "pymeas2019_noise.run_0_measure",
@@ -30,14 +39,14 @@
             "justMyCode": false
         },
         {
-            "name": "Python: run_measure_synthetic.py",
+            "name": "run_measure_synthetic.py",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/run_measure_synthetic.py",
             "console": "integratedTerminal"
         },
         {
-            "name": "Python: run_0_plot_interactive.py",
+            "name": "run_0_plot_interactive.py",
             "type": "debugpy",
             "request": "launch",
             "module": "pymeas2019_noise.run_0_plot_interactive",
@@ -46,7 +55,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Python: run_1_process_raw.py",
+            "name": "run_1_process_raw.py",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/measurement_actual/run_1_process_raw.py",
@@ -54,7 +63,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Python: run_1_condense.py",
+            "name": "run_1_condense.py",
             "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
@@ -64,7 +73,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Python: run_2_composite_plots.py",
+            "name": "run_2_composite_plots.py",
             "type": "debugpy",
             "request": "launch",
             "justMyCode": false,

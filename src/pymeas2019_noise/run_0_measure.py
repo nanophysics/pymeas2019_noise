@@ -1,6 +1,6 @@
 import pathlib
 import config_measurement
-from .import program_measure
+from . import program_measure
 
 if __name__ == "__main__":
     configsetup = config_measurement.get_configsetup()
