@@ -1,4 +1,6 @@
 import atexit
+import enum
+import io
 import logging
 import os
 import pathlib
@@ -10,10 +12,15 @@ from . import library_logger
 
 logger = logging.getLogger("logger")
 
-DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
+FILENAME_TOPDIR_TXT = "TOPDIR.TXT"
 
-TOPDIR = DIRECTORY_OF_THIS_FILE.parent.parent
-assert (TOPDIR / "TOPDIR.TXT").exists()
+
+def find_topdir() -> pathlib.Path:
+    cwd = pathlib.Path.cwd()
+    for topdir in cwd.parents:
+        if (topdir / FILENAME_TOPDIR_TXT).exists():
+            return topdir
+    raise Exception(f'No file "{FILENAME_TOPDIR_TXT}" not found in parent directories!')
 
 
 class ExitCode(Enum):
@@ -40,11 +47,33 @@ def os_exit(exit_code: ExitCode, msg=None):
     os._exit(exit_code.value)
 
 
-FILENAME_LOCK = TOPDIR / "tmp_filelock_lock.txt"
-FILENAME_STATUS = TOPDIR / "tmp_filelock_status.txt"
-FILENAME_STOP_HARD = TOPDIR / "tmp_filelock_stop_hard.txt"
-FILENAME_STOP_SOFT = TOPDIR / "tmp_filelock_stop_soft.txt"
-FILENAME_SKIP_SETTLE = TOPDIR / "tmp_filelock_skip_settle.txt"
+class LockTag(enum.StrEnum):
+    FILENAME_LOCK = "tmp_filelock_lock.txt"
+    FILENAME_STATUS = "tmp_filelock_status.txt"
+    FILENAME_STOP_HARD = "tmp_filelock_stop_hard.txt"
+    FILENAME_STOP_SOFT = "tmp_filelock_stop_soft.txt"
+    FILENAME_SKIP_SETTLE = "tmp_filelock_skip_settle.txt"
+
+    @property
+    def filename(self) -> pathlib.Path:
+        topdir = find_topdir()
+        return topdir / self.value
+
+    def open(self, mode: str) -> io.TextIOWrapper:
+        return self.filename.open(mode)
+
+    def write_text(self, data: str) -> int:
+        return self.filename.write_text(data=data)
+
+    def read_text(self) -> str:
+        return self.filename.read_text()
+
+    def exists(self) -> bool:
+        return self.filename.exists()
+
+    def unlink(self, missing_ok=False) -> None:
+        return self.filename.unlink(missing_ok=missing_ok)
+
 
 REQUEST_CHECKINTERVAL_S = 0.5
 
@@ -55,23 +84,27 @@ class FilelockMeasurement:
     This class follows the singleton pattern.
     """
 
-    FILE_LOCK = None
+    FILE_LOCK: io.TextIOWrapper | None = None
     # Some caching of the status of the file
     REQUESTED_STOP = False
-    REQUESTED_STOP_HARD = False
-    REQUESTED_STOP_SOFT = False
-    REQUESTED_SKIP_SETTLE = False
-    REQUESTED_STOP_NEXT_S = time.time() + REQUEST_CHECKINTERVAL_S
+    REQUESTED_STOP_HARD: bool = False
+    REQUESTED_STOP_SOFT: bool = False
+    REQUESTED_SKIP_SETTLE: bool = False
+    REQUESTED_STOP_NEXT_S: float = time.time() + REQUEST_CHECKINTERVAL_S
 
     def __init__(self) -> None:
         if FilelockMeasurement.FILE_LOCK is not None:
             # Singleton-pattern: We may be instantiated multiple times and still refer to the same data
             return
 
-        FilelockMeasurement.FILE_LOCK = FILENAME_LOCK.open("w")
+        FilelockMeasurement.FILE_LOCK = LockTag.FILENAME_LOCK.filename.open("w")
 
-        for filename in (FILENAME_STOP_HARD, FILENAME_STOP_SOFT, FILENAME_SKIP_SETTLE):
-            with filename.open("w") as f:
+        for locktag in (
+            LockTag.FILENAME_STOP_HARD,
+            LockTag.FILENAME_STOP_SOFT,
+            LockTag.FILENAME_SKIP_SETTLE,
+        ):
+            with locktag.open("w") as f:
                 f.write("Delete this file to stop the measurement")
 
         FilelockMeasurement.update_status("-")
@@ -106,11 +139,11 @@ class FilelockMeasurement:
     @classmethod
     def cleanup_all_files(cls):
         for filename in (
-            FILENAME_LOCK,
-            FILENAME_STATUS,
-            FILENAME_STOP_SOFT,
-            FILENAME_STOP_HARD,
-            FILENAME_SKIP_SETTLE,
+            LockTag.FILENAME_LOCK,
+            LockTag.FILENAME_STATUS,
+            LockTag.FILENAME_STOP_SOFT,
+            LockTag.FILENAME_STOP_HARD,
+            LockTag.FILENAME_SKIP_SETTLE,
         ):
             try:
                 filename.unlink()
@@ -129,25 +162,25 @@ class FilelockMeasurement:
         )
 
         if not FilelockMeasurement.REQUESTED_STOP_HARD:
-            if not FILENAME_STOP_HARD.exists():
+            if not LockTag.FILENAME_STOP_HARD.exists():
                 logger.info(
-                    f"Stop requested: File '{FILENAME_STOP_HARD.name}' is missing!"
+                    f"Stop requested: File '{LockTag.FILENAME_STOP_HARD.name}' is missing!"
                 )
                 FilelockMeasurement.REQUESTED_STOP = True
                 FilelockMeasurement.REQUESTED_STOP_HARD = True
 
         if not FilelockMeasurement.REQUESTED_STOP_SOFT:
-            if not FILENAME_STOP_SOFT.exists():
+            if not LockTag.FILENAME_STOP_SOFT.exists():
                 logger.info(
-                    f"Stop requested: File '{FILENAME_STOP_SOFT.name}' is missing!"
+                    f"Stop requested: File '{LockTag.FILENAME_STOP_SOFT.name}' is missing!"
                 )
                 FilelockMeasurement.REQUESTED_STOP = True
                 FilelockMeasurement.REQUESTED_STOP_SOFT = True
 
         if not FilelockMeasurement.REQUESTED_SKIP_SETTLE:
-            if not FILENAME_SKIP_SETTLE.exists():
+            if not LockTag.FILENAME_SKIP_SETTLE.exists():
                 logger.info(
-                    f"Stop requested: File '{FILENAME_SKIP_SETTLE.name}' is missing!"
+                    f"Stop requested: File '{LockTag.FILENAME_SKIP_SETTLE.name}' is missing!"
                 )
                 FilelockMeasurement.REQUESTED_SKIP_SETTLE = True
 
@@ -187,7 +220,7 @@ class FilelockMeasurement:
     def update_status(cls, status: str):
         assert isinstance(status, str)
         logger.info(f"update_status: {status}")
-        FILENAME_STATUS.write_text(status)
+        LockTag.FILENAME_STATUS.write_text(status)
 
 
 class FilelockGui:
@@ -197,11 +230,11 @@ class FilelockGui:
             'We are the gui. "FilelockMeasurement" must not be initialized!'
         )
 
-        if not FILENAME_LOCK.exists():
+        if not LockTag.FILENAME_LOCK.exists():
             FilelockMeasurement.cleanup_all_files()
             return False
         try:
-            FILENAME_LOCK.unlink()
+            LockTag.FILENAME_LOCK.unlink()
             # The file was not locked anymore
             FilelockMeasurement.cleanup_all_files()
             return False
@@ -217,8 +250,8 @@ class FilelockGui:
         )
 
         try:
-            FILENAME_STOP_SOFT.unlink()
-            logger.info(f"successfully removed {FILENAME_STOP_SOFT.name}")
+            LockTag.FILENAME_STOP_SOFT.unlink()
+            logger.info(f"successfully removed {LockTag.FILENAME_STOP_SOFT.name}")
         except:  # pylint: disable=bare-except  # noqa: E722
             pass
 
@@ -229,8 +262,8 @@ class FilelockGui:
         )
 
         try:
-            FILENAME_SKIP_SETTLE.unlink()
-            logger.info(f"successfully removed {FILENAME_SKIP_SETTLE.name}")
+            LockTag.FILENAME_SKIP_SETTLE.unlink()
+            logger.info(f"successfully removed {LockTag.FILENAME_SKIP_SETTLE.name}")
         except:  # pylint: disable=bare-except  # noqa: E722
             pass
 
@@ -241,21 +274,22 @@ class FilelockGui:
         )
 
         try:
-            FILENAME_STOP_HARD.unlink()
-            logger.info(f"successfully removed {FILENAME_STOP_HARD.name}")
+            LockTag.FILENAME_STOP_HARD.unlink()
+            logger.info(f"successfully removed {LockTag.FILENAME_STOP_HARD.name}")
         except:  # pylint: disable=bare-except  # noqa: E722
             pass
 
     @classmethod
     def get_status(cls) -> str:
         try:
-            return FILENAME_STATUS.read_text()
+            return LockTag.FILENAME_STATUS.read_text()
         except FileNotFoundError:
             return "-"
 
 
 def main():
-    library_logger.init_logger_measurement(DIRECTORY_OF_THIS_FILE)
+    directory = pathlib.Path(__file__).parent
+    library_logger.init_logger_measurement(directory=directory)
 
     filelock = FilelockMeasurement()
     for i in range(1000):

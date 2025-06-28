@@ -726,8 +726,8 @@ class PlotDataMultipleDirectories:
         self.startup_duration = StartupDuration()
         self.startup_duration.log("PlotDataMultipleDirectories initialized")
         self.topdir = topdir
-        self.topic_basenoise = None
-        self.list_topics = []
+        self.topic_basenoise:Topic|None = None
+        self.list_topics:list[Topic] = []
         self.load_data(plot_config=plot_config, presentations=presentations)
         self.startup_duration.log("After load_data()")
 

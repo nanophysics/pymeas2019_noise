@@ -126,7 +126,7 @@ module = "scipy.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "ad-low-noise-float-2023-decoder.*"
+module = "ad_low_noise_float_2023_decoder.*"
 ignore_missing_imports = true
 
 [tool.pylint."MESSAGES CONTROL"]

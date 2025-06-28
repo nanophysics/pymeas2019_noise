@@ -375,9 +375,9 @@ class Selector:
 
 class ColorRotator:
     # https://stackoverflow.com/questions/22408237/named-colors-in-matplotlibpy
-    COLORS = "bgrcmykw"  # Attention: White at the end!
-    COLORS = "bgrcmyk"
-    COLORS = (
+    # COLORS = "bgrcmykw"  # Attention: White at the end!
+    # COLORS = "bgrcmyk"
+    COLORS: tuple[str, ...] = (
         "blue",
         "orange",
         "black",
@@ -411,7 +411,7 @@ class LsdSummary:
 
         self.__directory = directory
         self.__trace = trace
-        self.__list_density_points = []
+        self.__list_density_points: list[DensityPoint] = []
         self.__dict_stages = {}
 
         list_density = sorted(list_density, key=DensityPlot.sort_key, reverse=True)

@@ -121,7 +121,7 @@ class ConfigStepSkip(ConfigStep):
         super().__init__()
         self.skalierungsfaktor: float = 42.0
         self.input_channel: str = "42"
-        self.input_internal_Vp: enum.Enum = None
+        self.input_internal_Vp = None
         self.bandwidth: str = "42"
         self.offset: float = 42.0
         self.resolution: str = "42"

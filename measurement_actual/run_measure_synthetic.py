@@ -3,13 +3,7 @@ import pathlib
 
 import numpy as np
 
-import library_path
 from pymeas2019_noise import library_logger, program_configsetup, program_fir
-
-library_path.init(__file__)
-
-DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
-
 
 logger = logging.getLogger("logger")
 
@@ -63,7 +57,8 @@ class TestSignalSin:
 
 
 def main():
-    library_logger.init_logger_measurement(DIRECTORY_OF_THIS_FILE)
+    directory = pathlib.Path(__file__).parent
+    library_logger.init_logger_measurement(directory=directory)
 
     signal = TestSignal(sine_amp_V_rms=1e-4, noise_density_V_sqrtHz=1e-7)
     # signal = TestSignalSin(sine_amp_V_rms=1e-4, f_Hz=10.0)
@@ -74,7 +69,7 @@ def main():
     config.duration_s = 10.0
     config.validate()
 
-    sp = program_fir.SamplingProcess(config=config, directory_raw=DIRECTORY_OF_THIS_FILE/ "raw-green-synthetic")
+    sp = program_fir.SamplingProcess(config=config, directory_raw=directory/ "raw-green-synthetic")
     i = program_fir.InSynthetic(sp.output, signal=signal, dt_s=DT_S, time_total_s=config.duration_s)
     i.process()
     logger.info("Done")
