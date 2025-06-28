@@ -26,25 +26,25 @@ git clone https://github.com/nanophysics/pymeas2019_noise.git
 * install (windows: use "Cmd")
 
 ```bash
-uv venv venv --python 3.13.3
+uv venv venv --python 3.13.5
 venv\Scripts\activate
 uv pip install --upgrade -e .
 ```
 
 ```bash
-uv run --python 3.13.3 measurement_actual/run_0_plot_interactive.py
+uv run --python 3.13.5 measurement_actual/run_0_plot_interactive.py
 ```
 
 ### As user (without using git)
 
 ```bash
-uv venv venv --python 3.13.3
+uv venv venv --python 3.13.5
 venv\Scripts\activate
 uv pip install --upgrade -e .
 ```
 
 ```bash
-uv run --python 3.13.3 --with=git+https://github.com/nanophysics/pymeas2019_noise.git -- python -m measurement_actual.run_0_plot_interactive
+uv run --python 3.13.5 --with=git+https://github.com/nanophysics/pymeas2019_noise.git -- python -m measurement_actual.run_0_plot_interactive
 ```
 
 uv run --with=git+https://github.com/psf/black black --help

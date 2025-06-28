@@ -24,13 +24,20 @@ def measure2(configsetup, dir_raw):
         unit="V",
         integral_index_start=0.1,
     )
-    program.run_condense_dir_raw(dir_raw=dir_raw, do_plot=False, plot_config=plot_config_dummy)
+    program.run_condense_dir_raw(
+        dir_raw=dir_raw, do_plot=False, plot_config=plot_config_dummy
+    )
 
 
-def measure(configsetup, dir_measurement):
+def measure(configsetup, dir_measurement: pathlib.Path):
     assert isinstance(configsetup, program_configsetup.ConfigSetup)
     assert isinstance(dir_measurement, pathlib.Path)
 
     dir_raw = program.examine_dir_raw(dir_measurement=dir_measurement)
 
     measure2(configsetup, dir_raw)
+
+
+def measure0(configsetup, file):
+    assert isinstance(file, str)
+    measure(configsetup=configsetup, dir_measurement=pathlib.Path(file).parent)
