@@ -15,22 +15,36 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
   Installing to C:\Users\maerki\.local\bin
 ```
 
-### The following steps in the windows "Cmd"
+### As developer using git and venv
+
+* git clone
+
+```bash
+git clone https://github.com/nanophysics/pymeas2019_noise.git
+```
+
+* install (windows: use "Cmd")
 
 ```bash
 uv venv venv --python 3.13.3
 venv\Scripts\activate
-uv pip install --upgrade -r requirements.txt
+uv pip install --upgrade -e .
 ```
-
-## PC: Install decoder
-
-Download artifact `cibw-wheels-windows-latest-1` from https://github.com/petermaerki/ad_low_noise_float_2023_git/actions/workflows/software_decoder_wheels.yml.
-
-Unzip and move into `./wheels`.
 
 ```bash
-# Command Prompt (Not powershell)
-venv\Scripts\activate.bat
-uv pip install wheels\ad_low_noise_float_2023_decoder-0.1.2-cp313-cp313-win_amd64.whl
+uv run --python 3.13.3 measurement_actual/run_0_plot_interactive.py
 ```
+
+### As user (without using git)
+
+```bash
+uv venv venv --python 3.13.3
+venv\Scripts\activate
+uv pip install --upgrade -e .
+```
+
+```bash
+uv run --python 3.13.3 --with=git+https://github.com/nanophysics/pymeas2019_noise.git -- python -m measurement_actual.run_0_plot_interactive
+```
+
+uv run --with=git+https://github.com/psf/black black --help

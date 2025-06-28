@@ -41,12 +41,20 @@ dependencies = [
     "ruff",
     "mypy",
     "isort",
+    "ad_low_noise_float_2023_decoder",
 ]
 
 [project.urls]
 Homepage = "https://github.com/nanophysics/pymeas2019_noise"
 Documentation = "https://github.com/nanophysics/pymeas2019_noise"
 Repository = "https://github.com/nanophysics/pymeas2019_noise"
+
+[[tool.uv.index]]
+name = "ad_low_noise_float_2023_decoder"
+url = "https://www.maerki.com/hans/download/pymeas2019_noise"
+
+[tool.uv]
+allow-insecure-host = ["www.maerki.com"]
 
 [tool.pdm]
 version = { source = "file", path = "src/pymeas2019_noise/__init__.py" }
