@@ -14,13 +14,13 @@ This page will guide you to
 * Install uv + python
 * Clone the git repo
 * create a venv
-* Start the scripts using the bat-files.
+* Start the scripts using the bat-files
 * Start the scripts using the VSCode debugger
 
 This setup allows you to
 * Debug the application
-* Change the source file and restart the application to verify the change.
-* Commit changes back to the git-repo.
+* Change the source file and restart the application to verify the change
+* Commit changes back to the git-repo
 
 ## Installation
 
@@ -40,6 +40,7 @@ Run `run_9_install_uv.ps1` as described in [README_install_user.md](README_insta
 * install (windows: use "Cmd")
 
 ```bash
+cd pymeas2019_noise
 uv venv venv
 venv\Scripts\activate
 # Install project and dependencies

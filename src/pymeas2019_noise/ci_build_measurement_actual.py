@@ -84,6 +84,7 @@ def main() -> None:
         filename_zip = directory_artifacts / FILENAME_MEASUREMENT_ACTUAL_ZIP.replace(
             "<TARGET>", target.label
         )
+        print(f"Creating ZIP {filename_zip}")
         with zipfile.ZipFile(filename_zip, "w") as zipf:
             for command in COMMANDS:
                 content = target.content.replace("<COMMAND>", command)
@@ -92,11 +93,14 @@ def main() -> None:
                 )
                 zipf.writestr(filename, content)
 
-                if target.is_linux == IS_LINUX:
+                if target.is_linux != IS_LINUX:
+                    continue
+                if target.is_development:
                     filename1 = (
                         directory_measurement_actual
                         / f"{command}{target.filename_suffix}"
                     )
+                    print(f"    {filename1}")
                     filename1.write_text(content)
                     if IS_LINUX:
                         filename1.chmod(0o755)

@@ -16,7 +16,7 @@ This document explains how to install
 
 ### Remarks
 
-* The python version installed is managed by `uv` and does NOT conflict with other python version installed via the python installer.
+* The python version installed is managed by `uv` and does NOT conflict with other python version installed via the python installer
 * `uv` will handle in the background - no user interaction needed:
   * cloning of the git repo
   * installing python packages
