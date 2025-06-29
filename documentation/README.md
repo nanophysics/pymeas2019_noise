@@ -10,52 +10,19 @@
 
 
 ## State of development
-Alpha, no guarantee at all. 
-We just developed for our needs, over some weekends and during long evenings.
+
+Unstable: The application works perfectly for your needs.
 
 ## Installation
 
-Tested on Windows 10, Windows 7 and with the versions shown below.
+See
 
-### python
-https://www.python.org/ftp/python/3.9.7/python-3.9.7-amd64.exe
-python 3.9.7 64 bit
-Windows 64bit msi installer
- - Add Python 3.9 to path
- - Customize
-   - Uncheck: Python test suite
-   - Uncheck: pylauncher
- - Advanced
-   - Uncheck: Install for all users
-   - C:\Users\maerki\AppData\Local\Programs\Python\Python39
-
-### git
-https://git-scm.com/download/win
-install using defaults
-
-### install pymeas2019_noise
-start `cmd.exe`
-
-```
-python -m pip install --user --upgrade pip
-cd C:\data\temp        (for example, choose yourself)
-git clone --recurse-submodules https://github.com/nanophysics/pymeas2019_noise.git
-cd pymeas2019_noise
-python -m pip install --user -r requirements.txt
-```
-
-
-restart pc
-
-* file explorer: pymeas2019_noise/measurement_actual
-* double click run_0_gui.bat`
-click start
+* [README_install_developer.md](README_install_developer.md)
+* [README_install_user.md](README_install_user.md)
 
 ## Directory structure
 
-TODO(hans)
-
-- `<TOPDIR>` The directory containing the file `TOPDIR.TXT`
+- `<TOPDIR>` This is the top directory of the git repo. In the past, it was marked with the file `TOPDIR.TXT`
   - `<TOPDIR>\measurement_actual` \
     The results of the actual measurement. \
     If the measurements are done, the directory may be moved away.
@@ -73,6 +40,7 @@ TODO(hans)
       This will loop over all `raw-xxx` directoriehttps://stackoverflow.com/jobs/companies?so_medium=StackOverflow&so_source=SiteNavs and read `raw-xxx\result_summary.pickle`.
 
 ## Usecase: Measure noise of a voltage-reference
+
 ![input filter channel B](images/usecase_voltage_reference.jpg)
 A voltage reference has 10V at the output. An AC coupling network only passes higher frequencies to a preamplifier. After the noise is amplified, it passes to channel A and trough an input filter to channel B. The input filter is used as an antialiasing filter because we sample slow at input B. Channel A is sampled at 125 MHz without bandwith limitation and 62.5 MHz with build in bandwith limitation at 20 MHz.
 This setup is useful to characterize the noise between 0.1 Hz and 100 kHz for example.
