@@ -25,9 +25,9 @@ falls noch gar keine Messung im Ordner
 C:\data\pymeas2019_noise_git\measurement_actual
 
 
-ist, so kommt beim Starten von run_0_plot_interactive.bat
+ist, so kommt beim Starten von run_0_gui.bat
 
-C:\data\pymeas2019_noise_git\measurement_actual>python run_0_plot_interactive.py
+C:\data\pymeas2019_noise_git\measurement_actual>python run_0_gui.py
 logging to C:\data\pymeas2019_noise_git\measurement_actual\logger_gui.txt
 No handles with labels found to put in legend.
 Traceback (most recent call last):
@@ -101,7 +101,7 @@ aelter:
 ----------------------------------------------------------------------------------------
 nochmals kontrolle aliasing mit hf generator
 
-ohne eine messung crashed run_0_plot_interactive.bat 
+ohne eine messung crashed run_0_gui.bat 
 
 
 summary mit 0.1 bis 10 Hz noise

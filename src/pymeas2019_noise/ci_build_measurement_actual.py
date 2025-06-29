@@ -15,7 +15,7 @@ DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).parent
 
 COMMANDS: list[str] = [
     "run_0_measure",
-    "run_0_plot_interactive",
+    "run_0_gui",
     "run_1_condense",
     "run_1_process_raw",
     "run_2_composite_plots",

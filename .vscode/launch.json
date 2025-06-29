@@ -46,10 +46,10 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "run_0_plot_interactive.py",
+            "name": "run_0_gui.py",
             "type": "debugpy",
             "request": "launch",
-            "module": "pymeas2019_noise.run_0_plot_interactive",
+            "module": "pymeas2019_noise.run_0_gui",
             "cwd": "${workspaceFolder}/measurement_actual",
             "justMyCode": false,
             "console": "integratedTerminal"

@@ -32,7 +32,7 @@ uv pip install --upgrade -e .
 ```
 
 ```bash
-uv run --python 3.13.5 measurement_actual/run_0_plot_interactive.py
+uv run --python 3.13.5 measurement_actual/run_0_gui.py
 ```
 
 ### As user (without using git)
@@ -44,7 +44,7 @@ uv pip install --upgrade -e .
 ```
 
 ```bash
-uv run --python 3.13.5 --with=git+https://github.com/nanophysics/pymeas2019_noise.git -- python -m measurement_actual.run_0_plot_interactive
+uv run --python 3.13.5 --with=git+https://github.com/nanophysics/pymeas2019_noise.git -- python -m measurement_actual.run_0_gui
 ```
 
 uv run --with=git+https://github.com/psf/black black --help

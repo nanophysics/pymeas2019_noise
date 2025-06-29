@@ -25,5 +25,5 @@ pip install -r requirements.txt
 restart pc
 
 * file explorer: pymeas2019_noise/measurement_actual
-* double click run_0_plot_interactive.bat`
+* double click run_0_gui.bat`
 click start

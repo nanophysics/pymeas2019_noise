@@ -267,13 +267,13 @@ class PlotContext:
         self.set_presentation(presentation=presentation)
 
     def open_display_clone(self):
-        from . import run_0_plot_interactive
+        from . import run_0_gui
 
         subprocess.Popen(
             [
                 sys.executable,
                 "-m",
-                run_0_plot_interactive.__name__,
+                run_0_gui.__name__,
             ],
             cwd=pathlib.Path.cwd(),
         )

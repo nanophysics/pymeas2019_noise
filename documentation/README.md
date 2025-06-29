@@ -48,7 +48,7 @@ python -m pip install --user -r requirements.txt
 restart pc
 
 * file explorer: pymeas2019_noise/measurement_actual
-* double click run_0_plot_interactive.bat`
+* double click run_0_gui.bat`
 click start
 
 ## Directory structure
@@ -68,7 +68,7 @@ TODO(hans)
     - `run_1_condense.bat` \
       This will loop over all `raw-xxx` directories and create `result_xxx` files.
 
-    - `run_0_plot_interactive.bat` \
+    - `run_0_gui.bat` \
       You may still run this script when the folder is moved away. \
       This will loop over all `raw-xxx` directoriehttps://stackoverflow.com/jobs/companies?so_medium=StackOverflow&so_source=SiteNavs and read `raw-xxx\result_summary.pickle`.
 
@@ -98,7 +98,7 @@ duration_slow_s=1*3600.0, # maximum time
 skalierungsfaktor=1.0E-3 # -> gain of the preamplifier
 ```
 
-doubleclick run_0_plot_interactive.bat
+doubleclick run_0_gui.bat
 
 ![](images/start_background.png)
 
@@ -158,7 +158,7 @@ ax.set_xlim(1e-1, 1e4)
 # ax.set_ylim(1e-10, 1e-1)
 ```
 
-restart run_0_plot_interactive.bat
+restart run_0_gui.bat
 
 ![](images/start_reference_1_lim.png)
 
