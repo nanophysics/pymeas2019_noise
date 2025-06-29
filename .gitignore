@@ -28,3 +28,4 @@ compact_measurements/**
 artifacts/**
 measurement_actual/*.bat
 measurement_actual/*.sh
+*_gitignore*
