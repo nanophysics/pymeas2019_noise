@@ -1,12 +1,13 @@
 # pymeas2019
+<span style="background-color: yellow; font-weight: bold;">Outdated!!! Will be reworked in July 2026.</span>
 
 ## Highlights
 
-* Measures noise from 56 MHz down to very low frequencies. Just start a measurement and observe lower frequencies apearing over time. Stop the measurement when you are satisfied. (in comparison: with other instruments you have to choose a time window, then you wait until the time is over and then you see what you got. Playing around at low frequencies this is very inefficient and boring.)
+* Measures noise from 39 kHz down to very low frequencies. Just start a measurement and observe lower frequencies apearing over time. Stop the measurement when you are satisfied. (in comparison: with other instruments you have to choose a time window, then you wait until the time is over and then you see what you got. Playing around at low frequencies this is very inefficient and boring.)
 * Measuring over many decades of frequency. (in comparison: this is normally not possible as the number of samples is limited to 10M for example. In addition: if you want to measure at a low frequency, you have to reduce the samplerate acordingly to get long aquisition time. Now, with the low samplerate, you get in trouble with the nyquist theorem. You need low frequency antialiasing filters: this can be very tricky.)
 * Frequency points have equally distance in logaritmic scale: 12 bins in one decade for example. You get diagrams over a many decades of frequency. (in coparison: normally the frequency spacing is constant, 1 Hz for example. At high frequencies the bin size is very small and the noise corresponding high. Useless presentation if you show data, especially if you show data in logaritmic scale.)
 * Presentation as LSD, PSD, LS or PS, Integral, Decade, Stepsize, Timeserie.
-* Cheap setup, around 1000 USD for the oscilloscope.
+* Cheap setup, around 200 USD for the ad_low_noise_float_2023. This is the recomended analog to digital converter.
 
 
 ## State of development
@@ -17,45 +18,40 @@ Unstable: The application works perfectly for your needs.
 
 See
 
-* [README_install_developer.md](README_install_developer.md)
 * [README_install_user.md](README_install_user.md)
+* [README_install_developer.md](README_install_developer.md)
+
 
 ## Directory structure
 
-- `<TOPDIR>` This is the top directory of the git repo. In the past, it was marked with the file `TOPDIR.TXT`
-  - `<TOPDIR>\measurement_actual` \
-    The results of the actual measurement. \
-    If the measurements are done, the directory may be moved away.
+- `measurement_actual\` \
+  The results of the actual measurement. \
+  If the measurements are done, the directory may be moved away.
 
-    - `config_measurement.py` \
-      configuration within the file. \
-      The results will be placed in a subfolder `raw-blue-2020-01-18_20-30-22`. \
-      You may copy and rename this folder but you have to preserve `raw-<color>-<topic>`.
+  - `config_measurement.py` \
+    configuration within the file. \
+    The results will be placed in a subfolder `raw-blue-2020-01-18_20-30-22`. \
+    You may copy and rename this folder but you have to preserve `raw-<color>-<topic>`.
 
-    - `run_1_condense.bat` \
-      This will loop over all `raw-xxx` directories and create `result_xxx` files.
+  - `run_1_condense.bat` \
+    This will loop over all `raw-xxx` directories and create `result_xxx` files.
 
-    - `run_0_gui.bat` \
-      You may still run this script when the folder is moved away. \
-      This will loop over all `raw-xxx` directoriehttps://stackoverflow.com/jobs/companies?so_medium=StackOverflow&so_source=SiteNavs and read `raw-xxx\result_summary.pickle`.
+  - `run_0_gui.bat` \
+    You may still run this script when the folder is moved away. \
+    This will loop over all `raw-xxx` directoriehttps://stackoverflow.com/jobs/companies?so_medium=StackOverflow&so_source=SiteNavs and read `raw-xxx\result_summary.pickle`.
 
 ## Usecase: Measure noise of a voltage-reference
 
-![input filter channel B](images/usecase_voltage_reference.jpg)
-A voltage reference has 10V at the output. An AC coupling network only passes higher frequencies to a preamplifier. After the noise is amplified, it passes to channel A and trough an input filter to channel B. The input filter is used as an antialiasing filter because we sample slow at input B. Channel A is sampled at 125 MHz without bandwith limitation and 62.5 MHz with build in bandwith limitation at 20 MHz.
-This setup is useful to characterize the noise between 0.1 Hz and 100 kHz for example.
+![input filter channel B](images/ad_low_noise_float_reference_ac_short.png)
+A voltage reference has 10V at the output (DUR, device under test). An AC coupling network only passes higher frequencies to the AD converter. A switch let you choose between the signal and a short to gnd.
 
-![input filter channel B](images/input_filter_channel_b.jpg)
 
 You need
 * voltage referece
 * AC coupler
-* preamplifier (for example preamplifier_noise_2020)
-* input filter channel B
-* picoscope PS5442D
-* windows 10, python ... and pymeas2019_noise install according to former chapter
-
-Check the function of all stages, use the picoscope SW provides by picoscope to see the singal at input A and input B. Short the input of the AC coupling stage. Can you see the decrease of noise? Choose a range, 1V for example, where no overload occures.
+* ad_low_noise_float_2023
+* windows 10 or 11
+* pymeas2019_noise installed
 
 We start with a measurement of the shortet AC coupling stage.
 
@@ -64,6 +60,7 @@ change config_measurement.py
 inputRange=program_config_instrument_picoscope.InputRange.R_1V,
 duration_slow_s=1*3600.0, # maximum time
 skalierungsfaktor=1.0E-3 # -> gain of the preamplifier
+(!!! outdated -> Peter todo !!!)
 ```
 
 doubleclick run_0_gui.bat
@@ -76,6 +73,7 @@ give name 'short' as the input of the AC coupling stage is shorted.
 give color 'green'.
 
 ![](images/start_background_2.png)
+(!!! outdated -> Peter todo !!!)
 
 start
 
@@ -84,14 +82,16 @@ Close the cmd window yourself.
 
 
 ![](images/start_background_3.png)
+(!!! outdated -> Peter todo !!!)
 
 * you can see 1/f region (0.01 Hz to 1 Hz)
 * you can see the white noise region (10 Hz to 10k Hz)
 * some peaks: 50 Hz, 150 Hz and 250 Hz
 * at 100kHz the amplifier has a built in low pass
 
+![](images/ad_low_noise_float_reference_ac_connected.png)
 
-Now we connect the reference voltage to the AC coupling stage.
+Now we set the switch to measure the noise.
 
 start
 give name 'reference XY'
@@ -101,7 +101,7 @@ start
 The background noise of the measuring setup 'short' is well below the noise measurement. If this would not be the case, the background noise would have an influence on the result. To be able to compare these values it is important to measure the background noise with exactly the same settings as the measurement itself.
 
 ![](images/start_reference_1.png)
-
+(!!! outdated -> Peter todo !!!)
 
 You could:
 * start more measurements
@@ -192,9 +192,3 @@ the lowest frequency you can see is about
 f_lowest = 1 / (1.3 * aquisition_time)
 
 
-## Noise Picoscope
-
-Removed by Hans
-
-## Limitation
-* Not perfect for signals above 30 MHz. There is no good antialiasing filter for the samplerates 62.5 MHz and 125 MHz. This can lead to spurious measurements if your signal contains frequencies above 30 MHz. Example: you have a sinusoidal signal at 61.5 MHz. Due to the missing antialiasing filter you will see a 1 MHz signal in your measurement: 62.5 MHz - 61.5 MHz = 1 MHz.
