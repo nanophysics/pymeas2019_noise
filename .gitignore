@@ -26,3 +26,5 @@ measurement_actual/logger_condense.txt
 venv/*
 compact_measurements/**
 artifacts/**
+measurement_actual/*.bat
+measurement_actual/*.sh
