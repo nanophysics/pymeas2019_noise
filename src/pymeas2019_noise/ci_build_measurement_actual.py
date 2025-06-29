@@ -5,6 +5,7 @@ create a measurement_actual.zip file.
 
 import dataclasses
 import pathlib
+import sys
 import zipfile
 
 DIRECTORY_ARTIFACTS = "artifacts"
@@ -12,6 +13,7 @@ DIRECTORY_MEASUREMENT_ACTUAL = "measurement_actual"
 FILENAME_MEASUREMENT_ACTUAL_ZIP = f"{DIRECTORY_MEASUREMENT_ACTUAL}_<TARGET>.zip"
 
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).parent
+IS_LINUX = sys.platform.startswith("linux")
 
 COMMANDS: list[str] = [
     "run_0_measure",
@@ -26,7 +28,12 @@ COMMANDS: list[str] = [
 class Target:
     label: str
     content: str
-    filename_suffix: str
+    is_linux: bool
+    is_development: bool
+
+    @property
+    def filename_suffix(self) -> str:
+        return ".sh" if self.is_linux else ".bat"
 
 
 TARGETS: list[Target] = [
@@ -37,7 +44,8 @@ uv run --with=git+https://github.com/nanophysics/pymeas2019_noise.git -- python 
 echo ERRORLEVEL %ERRORLEVEL%
 pause
         """.strip(),
-        filename_suffix=".bat",
+        is_development=False,
+        is_linux=False,
     ),
     Target(
         label="windows_dev",
@@ -46,7 +54,8 @@ pause
 echo ERRORLEVEL %ERRORLEVEL%
 pause
         """.strip(),
-        filename_suffix=".bat",
+        is_development=True,
+        is_linux=False,
     ),
     Target(
         label="linux_dev",
@@ -57,7 +66,8 @@ set -eu
 
 # uv run --with=git+https://github.com/nanophysics/pymeas2019_noise.git -- python -m pymeas2019_noise.<COMMAND>
         """.strip(),
-        filename_suffix=".sh",
+        is_development=True,
+        is_linux=True,
     ),
 ]
 
@@ -81,6 +91,15 @@ def main() -> None:
                     f"{DIRECTORY_MEASUREMENT_ACTUAL}/{command}{target.filename_suffix}"
                 )
                 zipf.writestr(filename, content)
+
+                if target.is_linux == IS_LINUX:
+                    filename1 = (
+                        directory_measurement_actual
+                        / f"{command}{target.filename_suffix}"
+                    )
+                    filename1.write_text(content)
+                    if IS_LINUX:
+                        filename1.chmod(0o755)
 
             for pattern in ("*.py", "*.ps1"):
                 for config_file in directory_measurement_actual.glob(pattern):

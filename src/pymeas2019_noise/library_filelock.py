@@ -288,7 +288,7 @@ class FilelockGui:
 
 
 def main():
-    directory = pathlib.Path(__file__).parent
+    directory = pathlib.Path.cwd()
     library_logger.init_logger_measurement(directory=directory)
 
     filelock = FilelockMeasurement()

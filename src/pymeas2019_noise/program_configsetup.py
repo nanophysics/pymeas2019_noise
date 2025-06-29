@@ -225,14 +225,17 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
                 configstep,
                 program_config_instrument_ad_low_noise_float_2023.ConfigStepAdLowNoiseFloat2023,
             ):
-                assert isinstance(
+                if isinstance(
                     ad_low_noise_float_2023,
                     program_instrument_ad_low_noise_float_2023.Instrument,
-                )
-                gain_from_jumpers = (
-                    ad_low_noise_float_2023.adc.pcb_status.gain_from_jumpers
-                )
-                configstep.input_internal_Vp = AD_FS_V / gain_from_jumpers
+                ):
+                    gain_from_jumpers = (
+                        ad_low_noise_float_2023.adc.pcb_status.gain_from_jumpers
+                    )
+                    configstep.input_internal_Vp = AD_FS_V / gain_from_jumpers
+                else:
+                    configstep.input_internal_Vp = 42.0
+
             configstep.dump(logger=logger, indent="")
             process_config = configstep.process_config
             process_config.validate()

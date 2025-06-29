@@ -25,3 +25,4 @@ measurement_actual/logger_condense.txt
 **/hidden/
 venv/*
 compact_measurements/**
+artifacts/**

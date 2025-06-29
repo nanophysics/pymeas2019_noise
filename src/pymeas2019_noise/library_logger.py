@@ -6,7 +6,9 @@ DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 LOGGER_NAME = "logger"
 logger = logging.getLogger(LOGGER_NAME)
 
-LOGGING_DEFAULT_FMT = "%(asctime)s - %(name)s - %(threadName)s - %(levelname)7s - %(message)s"
+LOGGING_DEFAULT_FMT = (
+    "%(asctime)s - %(name)s - %(threadName)s - %(levelname)7s - %(message)s"
+)
 LOGGING_DEFAULT_DATEFMT = "%Y-%m-%d %H:%M:%S"
 
 
@@ -15,25 +17,39 @@ class Dummy:
 
 
 def init_logger_gui(directory):
-    init_logger(directory, ("logger_gui.txt", "logger_gui_clone1.txt", "logger_gui_clone2.txt"))
+    init_logger(
+        directory, ("logger_gui.txt", "logger_gui_clone1.txt", "logger_gui_clone2.txt")
+    )
 
 
 def init_logger_condense(directory):
-    init_logger(directory, ("logger_condense.txt", "logger_condense_1.txt", "logger_condense_2.txt"))
+    init_logger(
+        directory,
+        ("logger_condense.txt", "logger_condense_1.txt", "logger_condense_2.txt"),
+    )
 
 
 def init_logger_composite_plots(directory):
-    init_logger(directory, ("logger_composite_plots.txt", "logger_composite_plots_1.txt", "logger_composite_plots_2.txt"))
+    init_logger(
+        directory,
+        (
+            "logger_composite_plots.txt",
+            "logger_composite_plots_1.txt",
+            "logger_composite_plots_2.txt",
+        ),
+    )
 
 
 def init_logger_measurement(directory):
     assert isinstance(directory, None | pathlib.Path)
     if directory is None:
-        directory = DIRECTORY_OF_THIS_FILE
+        directory = pathlib.Path.cwd()
     init_logger(directory, ("logger_measurement.txt",))
 
 
-def init_logger_append(filename, fmt=LOGGING_DEFAULT_FMT, datefmt=LOGGING_DEFAULT_DATEFMT):
+def init_logger_append(
+    filename, fmt=LOGGING_DEFAULT_FMT, datefmt=LOGGING_DEFAULT_DATEFMT
+):
     print(f"logging to {str(filename)}")
     logger.setLevel(logging.DEBUG)
 

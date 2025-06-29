@@ -30,7 +30,7 @@
             "justMyCode": false
         },
         {
-            "name": "run_0_measure.py",
+            "name": "run_0_measure",
             "type": "debugpy",
             "request": "launch",
             "module": "pymeas2019_noise.run_0_measure",
@@ -39,47 +39,51 @@
             "justMyCode": false
         },
         {
-            "name": "run_measure_synthetic.py",
+            "name": "run_measure_synthetic",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/run_measure_synthetic.py",
-            "console": "integratedTerminal"
+            "module": "pymeas2019_noise.run_measure_synthetic",
+            "cwd": "${workspaceFolder}/measurement_actual",
+            "console": "integratedTerminal",
+            "justMyCode": false,
         },
         {
-            "name": "run_0_gui.py",
+            "name": "run_0_gui",
             "type": "debugpy",
             "request": "launch",
             "module": "pymeas2019_noise.run_0_gui",
             "cwd": "${workspaceFolder}/measurement_actual",
+            "console": "integratedTerminal",
             "justMyCode": false,
-            "console": "integratedTerminal"
         },
         {
-            "name": "run_1_process_raw.py",
+            "name": "run_1_process_raw",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/measurement_actual/run_1_process_raw.py",
+            "module": "pymeas2019_noise.run_1_process_raw",
             "cwd": "${workspaceFolder}/measurement_actual",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "justMyCode": false,
         },
         {
-            "name": "run_1_condense.py",
+            "name": "run_1_condense",
             "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
-            "program": "${workspaceFolder}/measurement_actual/run_1_condense.py",
+            "module": "pymeas2019_noise.run_1_condense",
             "cwd": "${workspaceFolder}/measurement_actual",
             "args": [],
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "justMyCode": false,
         },
         {
-            "name": "run_2_composite_plots.py",
+            "name": "run_2_composite_plots",
             "type": "debugpy",
             "request": "launch",
-            "justMyCode": false,
-            "program": "${workspaceFolder}/measurement_actual/run_2_composite_plots.py",
+            "module": "pymeas2019_noise.run_2_composite_plots",
             "cwd": "${workspaceFolder}/measurement_actual",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "justMyCode": false,
         },
     ]
 }

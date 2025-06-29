@@ -3,7 +3,7 @@ import pathlib
 
 import numpy as np
 
-from . import program_configsetup, program_fir
+from . import program_configsetup, program_fir, library_filelock
 
 logger = logging.getLogger("logger")
 
@@ -18,8 +18,17 @@ class Instrument:
     def close(self):
         pass
 
-    def acquire(self, configstep: program_configsetup.ConfigStep, filename_capture_raw: pathlib.Path, stream_output, filelock_measurement):  # pylint: disable=too-many-statements
+    def acquire(
+        self,
+        configstep: program_configsetup.ConfigStep,
+        filename_capture_raw: pathlib.Path | None,
+        stream_output: program_fir.UniformPieces,
+        filelock_measurement: library_filelock.FilelockMeasurement,
+    ):  # pylint: disable=too-many-statements
         assert isinstance(configstep, program_configsetup.ConfigStep)
+        assert isinstance(filename_capture_raw, pathlib.Path | None)
+        assert isinstance(stream_output, program_fir.UniformPieces)
+        assert isinstance(filelock_measurement, library_filelock.FilelockMeasurement)
 
         pushcalulator_next = program_fir.PushCalculator(configstep.dt_s)
         stream_output.init(stage=0, dt_s=configstep.dt_s)
@@ -32,6 +41,9 @@ class Instrument:
                 done = len(calculation_stage) == 0
                 if done:
                     break
+
+        if filename_capture_raw is None:
+            return
 
         with filename_capture_raw.open("rb") as f:
             while True:

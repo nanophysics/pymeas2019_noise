@@ -9,7 +9,7 @@ logger = logging.getLogger("logger")
 
 np.random.seed(47)
 
-DT_S = 2 ** 5 / 125e6
+DT_S = 2**5 / 125e6
 
 
 class TestSignal:
@@ -31,12 +31,20 @@ class TestSignal:
         time_0 = sample_start * dt_s
         logger.info(f"time s: {time_0:0.1f}")
         time = np.arange(push_size_samples) * dt_s + time_0
-        signal = np.random.normal(scale=self.noise_density_V_sqrtHz * np.sqrt(1 / (2.0 * dt_s)), size=push_size_samples)
+        signal = np.random.normal(
+            scale=self.noise_density_V_sqrtHz * np.sqrt(1 / (2.0 * dt_s)),
+            size=push_size_samples,
+        )
         for sine_freq_Hz in self.list_frequencies:
-            signal += self.sine_amp_V_rms * np.sqrt(2) * np.sin(2 * np.pi * sine_freq_Hz * time)
+            signal += (
+                self.sine_amp_V_rms
+                * np.sqrt(2)
+                * np.sin(2 * np.pi * sine_freq_Hz * time)
+            )
         assert len(signal) == push_size_samples
         # logger.info('.', end='')
         return signal
+
 
 class TestSignalSin:
     def __init__(self, sine_amp_V_rms, f_Hz):
@@ -57,7 +65,7 @@ class TestSignalSin:
 
 
 def main():
-    directory = pathlib.Path(__file__).parent
+    directory = pathlib.Path.cwd()
     library_logger.init_logger_measurement(directory=directory)
 
     signal = TestSignal(sine_amp_V_rms=1e-4, noise_density_V_sqrtHz=1e-7)
@@ -69,8 +77,12 @@ def main():
     config.duration_s = 10.0
     config.validate()
 
-    sp = program_fir.SamplingProcess(config=config, directory_raw=directory/ "raw-green-synthetic")
-    i = program_fir.InSynthetic(sp.output, signal=signal, dt_s=DT_S, time_total_s=config.duration_s)
+    sp = program_fir.SamplingProcess(
+        config=config, directory_raw=directory / "raw-green-synthetic"
+    )
+    i = program_fir.InSynthetic(
+        sp.output, signal=signal, dt_s=DT_S, time_total_s=config.duration_s
+    )
     i.process()
     logger.info("Done")
 
