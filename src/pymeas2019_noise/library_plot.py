@@ -212,6 +212,7 @@ class PlotContext:
         # The start button has been pressed
         # proc = subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw])
         # proc = subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw], start_new_session=True, startupinfo=subprocess.DETACHED_PROCESS)
+        creationflags = subprocess.CREATE_NEW_CONSOLE if sys.platform == "win32" else 0
         proc = subprocess.Popen(
             args=[
                 sys.executable,
@@ -219,9 +220,10 @@ class PlotContext:
                 run_0_measure.__name__,
                 dir_raw,
             ],
-            creationflags=subprocess.CREATE_NEW_CONSOLE,
+            creationflags=creationflags,
             cwd=pathlib.Path.cwd(),
         )
+
         logger.info(f"Started measurement in folder '{dir_raw}' with pid={proc.pid}.")
 
     def open_directory_in_explorer(self):
