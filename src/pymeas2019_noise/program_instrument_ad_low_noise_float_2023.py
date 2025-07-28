@@ -162,7 +162,7 @@ class Adc:
                 return False, status
             line = line_bytes.decode("ascii").strip()
             status.add(line)
-            print(f"  status: {line}")
+            logger.info(f"  status: {line}")
             if line == "END=1":
                 return True, status
 
@@ -180,13 +180,13 @@ class Adc:
                     print(".", end="")
                     break
                 if self.decoder.get_crc() != 0:
-                    print(f"ERROR crc={self.decoder.get_crc()}")
+                    logger.error(f"ERROR crc={self.decoder.get_crc()}")
                 if self.decoder.get_errors() not in (0, 8, 72):
-                    print(f"ERROR errors={self.decoder.get_errors()}")
+                    logger.error(f"ERROR errors={self.decoder.get_errors()}")
 
                 counter += len(numpy_array)
                 duration_ns = time.monotonic_ns() - begin_ns
-                print(f"{1e9 * counter / duration_ns:0.1f} SPS")
+                logger.info(f"{1e9 * counter / duration_ns:0.1f} SPS")
 
                 # counter += len(measurements) // 3
                 # duration_ns = time.monotonic_ns() - begin_ns
@@ -222,7 +222,7 @@ class Adc:
                 )
                 if len(error_strings) > 0:
                     msg = f"ERROR: {errors}: {' '.join(error_strings)}"
-                    print(msg)
+                    logger.error(msg)
 
                 # duration_s = time.monotonic() - begin_s
                 # if duration_s > self.PRINTF_INTERVAL_S:
@@ -242,25 +242,24 @@ class Instrument:
         self.adc = Adc()
 
     def _send_command(self, command: str) -> None:
-        print(f"send command: {command}")
+        logger.info(f"send command: {command}")
         command_bytes = f"\n{command}\n".encode("ascii")
         self.adc.serial.write(command_bytes)
 
     def _send_command_reset(self):
-        print(
-            f"send command reset: {self.configstep.register_filter1!r} {self.configstep.register_mux!r}"
-        )
+        msg = f"send command reset: {self.configstep.register_filter1!r} {self.configstep.register_mux!r}"
+        logger.info(msg)
         command_reset = f"r-{self.configstep.register_filter1:02X}-{self.configstep.register_mux:02X}-{self.configstep.additional_SPI_reads:d}"
         self._send_command(command_reset)
 
     def connect(self):
-        print("Started")
+        logger.info("Started")
         self._send_command(Adc.COMMAND_STOP)
         self.adc.drain()
         self._send_command_reset()
         self.adc.read_status()
         self._send_command(Adc.COMMAND_START)
-        print(f"iter_measurements(): gain={self.adc.pcb_status.gain_from_jumpers:0.3f}")
+        logger.info(f"iter_measurements(): gain={self.adc.pcb_status.gain_from_jumpers:0.3f}")
 
     def close(self):
         self.adc.close()
@@ -328,13 +327,13 @@ class Instrument:
                             f"{actual_sample_count / duration_s:,.0f}SPS",
                             f"{actual_sample_count:,} samples of {total_samples:,}",
                         ]
-                        print(" ".join(elements))
+                        logger.info(" ".join(elements))
                     queueFull = stream_output.push(adc_value_V)
                     assert not queueFull
             except OutOfSyncException as e:
                 logger.error(f"OutOfSyncException: {e}")
                 bytes_purged = self.adc.decoder.purge_until_and_with_separator()
-                print(f"Purged {bytes_purged} bytes!")
+                logger.info(f"Purged {bytes_purged} bytes!")
 
                 # self.connect()
 
