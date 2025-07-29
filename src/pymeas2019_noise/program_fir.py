@@ -1,7 +1,9 @@
+import gc
 import logging
 import math
 import pathlib
 import sys
+import tracemalloc
 
 import numpy as np
 import scipy.signal
@@ -116,7 +118,7 @@ class FIR:  # pylint: disable=too-many-instance-attributes
 
     def print_size(self, f):
         array_len = -1 if self.array is None else len(self.array)
-        print(f"stage {self.stage} FIR: array_len: {array_len}")
+        # print(f"stage {self.stage} FIR: array_len: {array_len}")
 
         self.out.print_size(f)
 
@@ -475,6 +477,8 @@ class InSynthetic:
         push_size_samples = self.pushcalulator_next.push_size_samples
         sample_start = 0
 
+        tracemalloc.start()
+
         while sample_start < self.total_samples:
             array = self.signal.calculate(
                 dt_s=self.dt_s,
@@ -485,13 +489,62 @@ class InSynthetic:
             self.out.push(array)
             sample_start += push_size_samples
 
-            print("----------------")
-            self.out.print_size(sys.stdout)
-            print("----------------")
+            if False:
+                print("----------------")
+                self.out.print_size(sys.stdout)
+                print("----------------")
+
+            limit = 1_121_976_320
+            limit = 121_634_816
+            limit = 79_691_776
+            limit = 12_582_912
+            if sample_start >= limit:
+                # if sample_start == 1121976320:
+                # if sample_start == 121634816:
+                # if sample_start == 79691776:
+                # if sample_start == 12582912:
+                print(
+                    "Reference: 12'582'912, get_traced_memory(): (69'990'615, 136'709'384), get_objects() 117'984"
+                )
+                print(
+                    "Reference: 79'691'776, get_traced_memory(): (85'452'810, 152'178'219), get_objects() 125'539"
+                )
+                print(
+                    "Reference: 121'634'816, get_traced_memory(): (95'261'893, 161'987'546), get_objects() 129'102"
+                )
+                print(
+                    "Reference: 1'121'976'320, get_traced_memory(): (332'643'389, 399'404'943), get_objects() 215'211"
+                )
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_short_time_fft.py:1018: size=249 MiB, count=15916, average=16.0 KiB
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/numpy/lib/_function_base_impl.py:5728: size=48.4 MiB, count=60, average=826 KiB
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/src/pymeas2019_noise/run_measure_synthetic.py:34: size=16.0 MiB, count=2, average=8192 KiB
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_spectral_py.py:914: size=1494 KiB, count=15916, average=96 B
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_short_time_fft.py:1674: size=661 KiB, count=7958, average=85 B
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_short_time_fft.py:1623: size=434 KiB, count=7940, average=56 B
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/numpy/fft/_helper.py:235: size=306 KiB, count=38, average=8233 B
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_spectral_py.py:475: size=249 KiB, count=7958, average=32 B
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_short_time_fft.py:1620: size=249 KiB, count=7958, average=32 B
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/src/pymeas2019_noise/program_fir.py:372: size=185 KiB, count=7890, average=24 B
+                gc.collect(generation=2)
+                print(f"sample_start={sample_start} garbage={len(gc.garbage)}")
+                print(tracemalloc.get_traced_memory())
+                # Print the top 10 memory allocations
+                snapshot = tracemalloc.take_snapshot()
+                top_stats = snapshot.statistics("lineno")
+                print("[ Top 10 memory allocations ]")
+                for stat in top_stats[:10]:
+                    print(stat)
+                # Optionally, print the number of tracked objects by the gc
+                print(f"Tracked objects: {len(gc.get_objects())}")
+                print("gc.DEBUG_LEAK")
+                gc.set_debug(gc.DEBUG_LEAK)
+                return
+            print(f"sample_start={sample_start} garbage={len(gc.garbage)}")
 
             max_calculations = 30
             for _ in range(max_calculations):
                 calculation_stage = self.out.push(None)
+
                 done = len(calculation_stage) == 0
                 if done:
                     break
