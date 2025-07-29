@@ -293,8 +293,9 @@ class Instrument:
             logger.info(f"STOP({reason})")
 
         actual_sample_count = 0
-        next_print_s = start_s = time.monotonic()
         printf_interval_s = 10.0
+        next_print_s = start_s = time.monotonic() + printf_interval_s
+        last_sample_count = 0
         factor = configstep.input_Vp * configstep.skalierungsfaktor / (2**23)
         while True:
             try:
@@ -314,7 +315,6 @@ class Instrument:
                         dtype=np.float32,
                     )  # NUMPY_FLOAT_TYPE
 
-                    duration_s = time.monotonic() - start_s
                     if next_print_s < time.monotonic():
                         if False:
                             # Mock errors to test recovery
@@ -324,10 +324,11 @@ class Instrument:
                         elements = [
                             f"{adc_value_V[0]:3.6f}V",
                             f"{actual_sample_count / total_samples * 100:0.0f}%",
-                            f"{actual_sample_count / duration_s:,.0f}SPS",
+                            f"{(actual_sample_count - last_sample_count) / printf_interval_s:,.0f}SPS",
                             f"{actual_sample_count:,} samples of {total_samples:,}",
                         ]
                         logger.info(" ".join(elements))
+                        last_sample_count = actual_sample_count
                     queueFull = stream_output.push(adc_value_V)
                     assert not queueFull
             except OutOfSyncException as e:
