@@ -494,9 +494,10 @@ class InSynthetic:
                 self.out.print_size(sys.stdout)
                 print("----------------")
 
-            limit = 1_121_976_320
             limit = 121_634_816
             limit = 79_691_776
+            limit = 1_121_976_320
+            limit = 10_122_952_704  # 10_121_976_320
             limit = 12_582_912
             if sample_start >= limit:
                 # if sample_start == 1121976320:
@@ -525,6 +526,20 @@ class InSynthetic:
                 # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_spectral_py.py:475: size=249 KiB, count=7958, average=32 B
                 # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_short_time_fft.py:1620: size=249 KiB, count=7958, average=32 B
                 # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/src/pymeas2019_noise/program_fir.py:372: size=185 KiB, count=7890, average=24 B
+                print(
+                    "Reference: 10_122_952_704, get_traced_memory(): (24'79'620'042, 2'545'130'311), get_objects() 1'017'099"
+                )
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_short_time_fft.py:1018: size=2265 MiB, count=144546, average=16.0 KiB
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/numpy/lib/_function_base_impl.py:5728: size=48.4 MiB, count=60, average=826 KiB
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/src/pymeas2019_noise/run_measure_synthetic.py:34: size=16.0 MiB, count=2, average=8192 KiB
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_spectral_py.py:914: size=13.2 MiB, count=144546, average=96 B
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_short_time_fft.py:1674: size=5948 KiB, count=72273, average=84 B
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_short_time_fft.py:1623: size=3951 KiB, count=72245, average=56 B
+                # /usr/lib/python3.13/pathlib/_local.py:274: size=3755 KiB, count=1, average=3755 KiB
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_spectral_py.py:475: size=2259 KiB, count=72273, average=32 B
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/venv/lib/python3.13/site-packages/scipy/signal/_short_time_fft.py:1620: size=2259 KiB, count=72273, average=32 B
+                # /home/maerki/work_ad_low_noise_float_2023/pymeas2019_noise/src/pymeas2019_noise/program_fir.py:374: size=1692 KiB, count=72196, average=24 B
+                # Tracked objects: 1017099
                 gc.collect(generation=2)
                 print(f"sample_start={sample_start} garbage={len(gc.garbage)}")
                 print(tracemalloc.get_traced_memory())

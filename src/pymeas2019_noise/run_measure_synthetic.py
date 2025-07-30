@@ -75,6 +75,7 @@ def main():
     config.fir_count = 20
     config.stepname = "slow"
     config.duration_s = 10000.0
+    config.duration_s = 10_000_000_000.0
     config.validate()
 
     sp = program_fir.SamplingProcess(
