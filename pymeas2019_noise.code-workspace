@@ -1,7 +1,12 @@
 {
 	"folders": [
 		{
+			"name": "pymease2019_noise",
 			"path": "."
+		},
+		{
+			"name": "ad_low_noise_float_2023_git",
+			"path": "../ad_low_noise_float_2023_git"
 		}
 	],
 	"settings": {

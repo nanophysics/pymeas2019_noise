@@ -5,6 +5,8 @@ import pathlib
 import types
 from collections.abc import Iterable
 
+from ad_low_noise_float_2023.constants import AD_FS_V, PcbParams
+
 from . import program_fir
 from .library_filelock import ExitCode, FilelockMeasurement
 from .program_lockingmixin_mock import LockingMixinMock, TO_BE_SET
@@ -213,13 +215,10 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
 
             _lock.update_status(f"Measuring: {dir_raw.name} / {configstep.stepname}")
             ad_low_noise_float_2023 = self.module_instrument.Instrument(configstep)
-            ad_low_noise_float_2023.connect()
-
             from . import (
                 program_config_instrument_ad_low_noise_float_2023,
                 program_instrument_ad_low_noise_float_2023,
             )
-            from .constants_ad_low_noise_float_2023 import AD_FS_V
 
             if isinstance(
                 configstep,
@@ -229,6 +228,8 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
                     ad_low_noise_float_2023,
                     program_instrument_ad_low_noise_float_2023.Instrument,
                 ):
+                    # Call connect to aquire the jumper settings from the hardware
+                    ad_low_noise_float_2023.connect(PcbParams())
                     gain_from_jumpers = (
                         ad_low_noise_float_2023.adc.pcb_status.gain_from_jumpers
                     )

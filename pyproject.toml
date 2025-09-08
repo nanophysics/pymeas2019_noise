@@ -36,13 +36,12 @@ dependencies = [
     "types-openpyxl>=3.0.5",
     "wxPython>=4.2.3",
     "types-wxpython",
-    "pyserial>=3.5",
-    "types-pyserial>=3.5",
     "pylint",
     "ruff",
     "mypy",
     "isort",
     "ad-low-noise-float-2023-decoder",
+    "ad_low_noise_float_2023@git+https://github.com/petermaerki/ad_low_noise_float_2023_git.git",
 ]
 
 [project.urls]
