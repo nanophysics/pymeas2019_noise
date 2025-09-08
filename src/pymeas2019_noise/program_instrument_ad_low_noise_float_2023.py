@@ -55,7 +55,7 @@ class Instrument:
         def out_of_sync() -> None:
             logger.info("out_of_sync")
 
-        for adc_value_V in self.adc.iter_measurements_V(
+        for _errors, adc_value_V in self.adc.iter_measurements_V(
             pcb_params=pcb_params,
             total_samples=total_samples,
             cb_out_of_sync=out_of_sync,
