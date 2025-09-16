@@ -55,14 +55,14 @@ class Instrument:
         def out_of_sync() -> None:
             logger.info("out_of_sync")
 
-        for _errors, adc_value_V in self.adc.iter_measurements_V(
+        for measurements in self.adc.iter_measurements_V(
             pcb_params=pcb_params,
             total_samples=total_samples,
             cb_out_of_sync=out_of_sync,
         ):
             if filelock_measurement.requested_stop_soft():
                 return stop(ExitCode.CTRL_C, "<ctrl-c> or softstop")
-            queueFull = stream_output.push(adc_value_V)
+            queueFull = stream_output.push(measurements.adc_value_V)
             assert not queueFull
 
         flush_stages()
@@ -72,7 +72,7 @@ class Instrument:
 def main():
     print(f"Started: {sys.version}")
     instrument = Instrument(configstep=None)
-    instrument.connect()
+    instrument.connect(pcb_params=PcbParams())
 
     instrument.adc.test_usb_speed()
     return
