@@ -33,8 +33,7 @@ class Instrument:
         assert isinstance(stream_output, UniformPieces)
 
         total_samples = int(configstep.duration_s / configstep.dt_s)
-        input_Vp = configstep.input_Vp * configstep.skalierungsfaktor
-        pcb_params = PcbParams(input_Vp=input_Vp)
+        pcb_params = PcbParams(scale_factor=configstep.skalierungsfaktor)
 
         stream_output.init(stage=0, dt_s=configstep.dt_s)
 

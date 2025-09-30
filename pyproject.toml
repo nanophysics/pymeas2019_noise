@@ -31,7 +31,8 @@ classifiers = [
 dependencies = [
     "numpy>=2.3.0",
     "matplotlib>=3.10.3",
-    "scipy<=1.15.3", # 1.16.0 and 1.16.1 leaks: https://github.com/scipy/scipy/issues/23411
+    # "scipy<=1.15.3", # 1.16.0 and 1.16.1 leaks: https://github.com/scipy/scipy/issues/23411
+    "scipy",
     "openpyxl>=3.0.5",
     "types-openpyxl>=3.0.5",
     "wxPython>=4.2.3",
@@ -40,7 +41,6 @@ dependencies = [
     "ruff",
     "mypy",
     "isort",
-    "ad-low-noise-float-2023-decoder",
     "ad_low_noise_float_2023@git+https://github.com/petermaerki/ad_low_noise_float_2023_git.git",
 ]
 

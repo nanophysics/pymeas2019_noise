@@ -215,27 +215,7 @@ class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
 
             _lock.update_status(f"Measuring: {dir_raw.name} / {configstep.stepname}")
             ad_low_noise_float_2023 = self.module_instrument.Instrument(configstep)
-            from . import (
-                program_config_instrument_ad_low_noise_float_2023,
-                program_instrument_ad_low_noise_float_2023,
-            )
-
-            if isinstance(
-                configstep,
-                program_config_instrument_ad_low_noise_float_2023.ConfigStepAdLowNoiseFloat2023,
-            ):
-                if isinstance(
-                    ad_low_noise_float_2023,
-                    program_instrument_ad_low_noise_float_2023.Instrument,
-                ):
-                    # Call connect to aquire the jumper settings from the hardware
-                    ad_low_noise_float_2023.connect(PcbParams())
-                    gain_from_jumpers = (
-                        ad_low_noise_float_2023.adc.pcb_status.gain_from_jumpers
-                    )
-                    configstep.input_internal_Vp = AD_FS_V / gain_from_jumpers
-                else:
-                    configstep.input_internal_Vp = 42.0
+            configstep.input_internal_Vp = 42.0
 
             configstep.dump(logger=logger, indent="")
             process_config = configstep.process_config
