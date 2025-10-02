@@ -2,6 +2,7 @@
 import logging
 import sys
 
+import ad_low_noise_float_2023
 from ad_low_noise_float_2023.ad import AdLowNoiseFloat2023
 from ad_low_noise_float_2023.constants import PcbParams
 
@@ -12,15 +13,23 @@ from .program_fir import UniformPieces
 
 logger = logging.getLogger("logger")
 
+REQUIRED_PACKAGE_VERSION = "0.0.3"
+"""
+Required version of python package 'ad_low_noise_float_2023'
+"""
+
 
 class Instrument:
     def __init__(self, configstep: ConfigStepAdLowNoiseFloat2023):
         assert isinstance(configstep, ConfigStepAdLowNoiseFloat2023)
+
+        if ad_low_noise_float_2023.__version__ < REQUIRED_PACKAGE_VERSION:
+            msg = f"Found '{ad_low_noise_float_2023.__version__}' but required at least '{REQUIRED_PACKAGE_VERSION}'!"
+            logger.error(msg)
+            raise ValueError(msg)
+   
         self.configstep = configstep
         self.adc = AdLowNoiseFloat2023()
-
-    def connect(self, pcb_params: PcbParams):
-        self.adc.connect(pcb_params=pcb_params)
 
     def acquire(
         self,

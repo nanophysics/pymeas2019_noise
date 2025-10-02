@@ -1,6 +1,8 @@
 import logging
 import pathlib
 
+from ad_low_noise_float_2023 import ad
+
 DIRECTORY_OF_THIS_FILE = pathlib.Path(__file__).absolute().parent
 
 LOGGER_NAME = "logger"
@@ -70,6 +72,10 @@ def init_logger_append(
     logger.addHandler(ch)
     logger.addHandler(fh)
 
+    logger_ad = logging.getLogger(ad.LOGGER_NAME)
+    logger_ad.setLevel(logging.INFO)
+    logger_ad.addHandler(ch)
+    logger_ad.addHandler(fh)
 
 def init_logger(directory, filenames):
     assert isinstance(directory, pathlib.Path)

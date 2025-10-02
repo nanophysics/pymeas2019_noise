@@ -42,7 +42,7 @@ Run `run_9_install_uv.ps1` as described in [README_install_user.md](README_insta
 ```bash
 cd pymeas2019_noise
 uv venv venv
-venv\Scripts\activate
+. venv\Scripts\activate
 # Install project and dependencies
 uv pip install --upgrade -e .
 # Create .bat files in `measurement_actual`
