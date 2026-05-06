@@ -21,7 +21,9 @@ class Settle:  # pylint: disable=too-many-instance-attributes
 
         if config.settle:
             if config.settle_time_ok_s + 1.0 > config.duration_s:
-                raise Exception(f"Will never settle if settle_time_ok_s {config.settle_time_ok_s:0.1}s is bigger than duration_s {config.duration_s:0.1}s!")
+                raise Exception(
+                    f"Will never settle if settle_time_ok_s {config.settle_time_ok_s:0.1}s is bigger than duration_s {config.duration_s:0.1}s!"
+                )
 
         self.__config = config
         self.__dt_s = None
@@ -36,7 +38,9 @@ class Settle:  # pylint: disable=too-many-instance-attributes
         self.__dt_s = dt_s
 
     def done(self):
-        ExitCode.ERROR_INPUT_NOT_SETTLE.os_exit(msg="Settling: The input voltage did not settle!")
+        ExitCode.ERROR_INPUT_NOT_SETTLE.os_exit(
+            msg="Settling: The input voltage did not settle!"
+        )
 
     def push(self, array_in):
         """
@@ -54,7 +58,9 @@ class Settle:  # pylint: disable=too-many-instance-attributes
 
         now_s = self.__dt_s * len(self.__fifo)
 
-        if (array_in.max() > self.__ok_range_V) or (array_in.min() < -self.__ok_range_V):
+        if (array_in.max() > self.__ok_range_V) or (
+            array_in.min() < -self.__ok_range_V
+        ):
             # A sample is outside the range
             self.__last_sample_outside_s = now_s
 
@@ -67,7 +73,9 @@ class Settle:  # pylint: disable=too-many-instance-attributes
             logger.error("Exiting!")
             ExitCode.CTRL_C.os_exit()
 
-        time_left_s = self.__config.settle_time_ok_s + self.__last_sample_outside_s - now_s
+        time_left_s = (
+            self.__config.settle_time_ok_s + self.__last_sample_outside_s - now_s
+        )
 
         now_V = float(array_in[-1])
         status = f"Settle: inputRange +-{self.__input_range_V:0.2e}V, ok_range +-{self.__ok_range_V:0.2e}V, now {now_V:0.2e}V, wait for ok {self.__config.settle_time_ok_s:0.1f}s, {time_left_s:0.0f}s left"

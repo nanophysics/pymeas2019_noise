@@ -5,8 +5,6 @@ import pathlib
 import types
 from collections.abc import Iterable
 
-from ad_low_noise_float_2023.constants import AD_FS_V, PcbParams
-
 from . import program_fir
 from .library_filelock import ExitCode, FilelockMeasurement
 from .program_lockingmixin_mock import LockingMixinMock, TO_BE_SET

@@ -2,13 +2,13 @@ from pymeas2019_noise.library_plot_config import PlotConfig
 
 
 def _func_matplotlib_fig(fig):
-    #fig.set_size_inches(3.0, 7.0)
+    # fig.set_size_inches(3.0, 7.0)
     pass
 
 
 def _func_matplotlib_ax(ax):
-    #ax.set_xlim(1e-1, 1e5)
-    #ax.set_ylim(1e-9, 1e-5)
+    # ax.set_xlim(1e-1, 1e5)
+    # ax.set_ylim(1e-9, 1e-5)
     pass
 
 

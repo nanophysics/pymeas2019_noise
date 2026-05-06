@@ -17,8 +17,12 @@ def postprocess(dir_measurement, plot_data):
         f.write("Flickernoise: 0.1 ... 10 Hz\n")
         f.write(f"{'Topic':50s}\t{'Vrms':8s}\t{'Vrms-BASENOISE':8s}\tcomment\n")
         for topic in plot_data.list_topics:
-            flickernoise_Vrms, flickernoise_minus_basenoise_Vrms, comment = topic.flickernoise()
-            f.write(f"{topic.topic:50s}\t{flickernoise_Vrms:8.3e}\t{flickernoise_minus_basenoise_Vrms:8.3e}\t{comment}\n")
+            flickernoise_Vrms, flickernoise_minus_basenoise_Vrms, comment = (
+                topic.flickernoise()
+            )
+            f.write(
+                f"{topic.topic:50s}\t{flickernoise_Vrms:8.3e}\t{flickernoise_minus_basenoise_Vrms:8.3e}\t{comment}\n"
+            )
 
     # flicker_noise_Vrms = math.sqrt(P_sum)
     # flicker_noise_limit_Vrms = 1.0e-6

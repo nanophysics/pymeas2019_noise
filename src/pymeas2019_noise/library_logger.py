@@ -77,6 +77,7 @@ def init_logger_append(
     logger_ad.addHandler(ch)
     logger_ad.addHandler(fh)
 
+
 def init_logger(directory, filenames):
     assert isinstance(directory, pathlib.Path)
     assert isinstance(filenames, list | tuple)

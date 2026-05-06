@@ -3,7 +3,7 @@ import pathlib
 
 import numpy as np
 
-from . import program_configsetup, program_fir, library_filelock
+from . import library_filelock, program_configsetup, program_fir
 
 logger = logging.getLogger("logger")
 

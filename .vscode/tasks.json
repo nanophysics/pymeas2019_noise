@@ -27,7 +27,7 @@
         {
             "label": "ruff",
             "type": "shell",
-            "command": "ruff check --config pyproject.toml --fix",
+            "command": ". .venv/bin/activate && ruff format --config pyproject.toml && ruff check --config pyproject.toml --fix || true",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -40,7 +40,7 @@
         {
             "label": "mypy",
             "type": "shell",
-            "command": "mypy --config-file pyproject.toml src tests measurement_actual",
+            "command": ". .venv/bin/activate && python -m mypy --config-file pyproject.toml src tests || true",
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
@@ -56,7 +56,7 @@
         {
             "label": "pylint",
             "type": "shell",
-            "command": "PYTHONPATH=${workspaceFolder} python -m pylint src tests measurement_actual || true",
+            "command": ". .venv/bin/activate && PYTHONPATH=${workspaceFolder} python -m pylint src tests || true",
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {

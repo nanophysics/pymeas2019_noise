@@ -40,5 +40,3 @@ def measure(configsetup, dir_measurement: pathlib.Path):
     dir_raw = program.examine_dir_raw(dir_measurement=dir_measurement)
 
     measure2(configsetup, dir_raw)
-
-

@@ -81,7 +81,7 @@ class LockTag(enum.StrEnum):
             except PermissionError:
                 pass
             os.write(fd, f"locked by pid {os.getpid()}\n".encode())
-            return io.open(fd, "w", closefd=True)
+            return open(fd, "w", closefd=True)
 
     def is_measurement_running(self) -> bool:
         fd = self.lock()

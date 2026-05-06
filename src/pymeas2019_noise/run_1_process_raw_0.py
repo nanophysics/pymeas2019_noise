@@ -25,7 +25,7 @@ def patch_configsetup(configsetup) -> ConfigSetup:
     return configsetup
 
 
-def doit(dir_measurement:pathlib.Path):
+def doit(dir_measurement: pathlib.Path):
     configsetup = patch_configsetup(config_measurement.get_configsetup())
 
     for dir_raw in program.iter_dir_raw(dir_measurement=dir_measurement):
@@ -57,6 +57,7 @@ def main():
     library_logger.init_logger_condense(dir_measurement)
 
     doit(dir_measurement=dir_measurement)
+
 
 if __name__ == "__main__":
     main()
