@@ -27,9 +27,12 @@ class Instrument:
             msg = f"Found '{ad_low_noise_float_2023.__version__}' but required at least '{REQUIRED_PACKAGE_VERSION}'!"
             logger.error(msg)
             raise ValueError(msg)
-   
+
         self.configstep = configstep
         self.adc = AdLowNoiseFloat2023()
+
+    def close(self):
+        pass
 
     def acquire(
         self,

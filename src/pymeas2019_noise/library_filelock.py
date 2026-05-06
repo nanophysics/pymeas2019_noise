@@ -5,6 +5,7 @@ import logging
 import os
 import pathlib
 import signal
+import sys
 import time
 from enum import Enum
 
@@ -12,12 +13,13 @@ from . import library_logger
 
 logger = logging.getLogger("logger")
 
+IS_WINDOWS = sys.platform == "win32"
 
 FILENAME_CONFIG_MEASUREMENTS = "config_measurement.py"
 
 
 def find_topdir() -> pathlib.Path:
-    cwd = pathlib.Path.cwd()
+    cwd = pathlib.Path.cwd().resolve()
     config_measurement = cwd / FILENAME_CONFIG_MEASUREMENTS
     assert config_measurement.is_file(), str(config_measurement)
     return cwd
@@ -55,24 +57,54 @@ class LockTag(enum.StrEnum):
     FILENAME_SKIP_SETTLE = "tmp_filelock_skip_settle.txt"
 
     @property
-    def filename(self) -> pathlib.Path:
+    def _filename(self) -> pathlib.Path:
         topdir = find_topdir()
         return topdir / self.value
 
+    def lock(self) -> io.TextIOWrapper | None:
+        filename = self._filename
+        if IS_WINDOWS:
+            return filename.open("w")
+        else:
+            import fcntl
+
+            fd = os.open(filename, os.O_CREAT | os.O_RDWR)
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                # logger.info(f"{filename}: lock acquired!")
+            except BlockingIOError:
+                logger.debug(f"{filename}: {filename.read_text()}")
+                return None
+
+            try:
+                os.fchmod(fd, 0o666)
+            except PermissionError:
+                pass
+            os.write(fd, f"locked by pid {os.getpid()}\n".encode())
+            return io.open(fd, "w", closefd=True)
+
+    def is_measurement_running(self) -> bool:
+        fd = self.lock()
+        if fd is not None:
+            fd.close()
+            self._filename.unlink()
+            return False
+        return True
+
     def open(self, mode: str) -> io.TextIOWrapper:
-        return self.filename.open(mode)
+        return self._filename.open(mode)
 
     def write_text(self, data: str) -> int:
-        return self.filename.write_text(data=data)
+        return self._filename.write_text(data=data)
 
     def read_text(self) -> str:
-        return self.filename.read_text()
+        return self._filename.read_text()
 
     def exists(self) -> bool:
-        return self.filename.exists()
+        return self._filename.exists()
 
     def unlink(self, missing_ok=False) -> None:
-        return self.filename.unlink(missing_ok=missing_ok)
+        return self._filename.unlink(missing_ok=missing_ok)
 
 
 REQUEST_CHECKINTERVAL_S = 0.5
@@ -97,7 +129,7 @@ class FilelockMeasurement:
             # Singleton-pattern: We may be instantiated multiple times and still refer to the same data
             return
 
-        FilelockMeasurement.FILE_LOCK = LockTag.FILENAME_LOCK.filename.open("w")
+        FilelockMeasurement.FILE_LOCK = LockTag.FILENAME_LOCK.lock()
 
         for locktag in (
             LockTag.FILENAME_STOP_HARD,
@@ -230,18 +262,13 @@ class FilelockGui:
             'We are the gui. "FilelockMeasurement" must not be initialized!'
         )
 
-        if not LockTag.FILENAME_LOCK.exists():
-            FilelockMeasurement.cleanup_all_files()
-            return False
-        try:
-            LockTag.FILENAME_LOCK.unlink()
-            # The file was not locked anymore
-            FilelockMeasurement.cleanup_all_files()
-            return False
-        except:  # pylint: disable=bare-except  # noqa: E722
-            pass
+        if LockTag.FILENAME_LOCK.is_measurement_running():
+            return True
 
-        return True
+        # The file is not locked anymore
+        FilelockMeasurement.cleanup_all_files()
+
+        return False
 
     @classmethod
     def stop_measurement_soft(cls):

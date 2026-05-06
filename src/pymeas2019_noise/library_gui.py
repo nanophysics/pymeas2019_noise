@@ -6,6 +6,7 @@ This code is base on a sample from
   with this source code, and is also available at
   https://docs.python.org/3/license.html
 """
+
 import itertools
 import logging
 import pathlib
@@ -202,21 +203,33 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.button_start.Bind(wx.EVT_BUTTON, self.OnStart)
         self.button_stop = xrc.XRCCTRL(self.frame, "button_measurement_stop")
         self.button_stop.Bind(wx.EVT_BUTTON, self.OnStop)
-        button_measurement_skip_settle = xrc.XRCCTRL(self.frame, "button_measurement_skip_settle")
+        button_measurement_skip_settle = xrc.XRCCTRL(
+            self.frame, "button_measurement_skip_settle"
+        )
         button_measurement_skip_settle.Bind(wx.EVT_BUTTON, self.OnSkipSettle)
-        self.button_display_open_directory = xrc.XRCCTRL(self.frame, "button_display_open_directory")
+        self.button_display_open_directory = xrc.XRCCTRL(
+            self.frame, "button_display_open_directory"
+        )
         self.button_display_open_directory.Bind(wx.EVT_BUTTON, self.OnOpenDirectory)
         self.button_display_clone = xrc.XRCCTRL(self.frame, "button_display_clone")
         self.button_display_clone.Bind(wx.EVT_BUTTON, self.OnDisplayClone)
 
         # display select topic/stage
-        self.button_display_reload_topic = xrc.XRCCTRL(self.frame, "button_display_reload_topic")
+        self.button_display_reload_topic = xrc.XRCCTRL(
+            self.frame, "button_display_reload_topic"
+        )
         self.button_display_reload_topic.Bind(wx.EVT_BUTTON, self.OnButtonReloadTopic)
-        self.button_display_reload_stage = xrc.XRCCTRL(self.frame, "button_display_reload_stage")
+        self.button_display_reload_stage = xrc.XRCCTRL(
+            self.frame, "button_display_reload_stage"
+        )
         self.button_display_reload_stage.Bind(wx.EVT_BUTTON, self.OnButtonReloadStage)
-        self.combo_box_display_topic = xrc.XRCCTRL(self.frame, "combo_box_display_topic")
+        self.combo_box_display_topic = xrc.XRCCTRL(
+            self.frame, "combo_box_display_topic"
+        )
         self.combo_box_display_topic.Bind(wx.EVT_COMBOBOX, self.OnComboBoxDisplayTopic)
-        self.combo_box_display_stage = xrc.XRCCTRL(self.frame, "combo_box_display_stage")
+        self.combo_box_display_stage = xrc.XRCCTRL(
+            self.frame, "combo_box_display_stage"
+        )
         self.combo_box_display_stage.Bind(wx.EVT_COMBOBOX, self.OnComboBoxDisplayStage)
 
         # presentation combo ------------------
@@ -225,15 +238,23 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         for presentation in self._presentations.list:
             self.combo_box_presentation.Append(presentation.title, presentation)
 
-        idx = self.combo_box_presentation.FindString(self._plot_context.presentation_title)
+        idx = self.combo_box_presentation.FindString(
+            self._plot_context.presentation_title
+        )
         self.combo_box_presentation.Select(idx)
 
-        self.combo_box_measurement_color = xrc.XRCCTRL(self.frame, "combo_box_measurement_color")
+        self.combo_box_measurement_color = xrc.XRCCTRL(
+            self.frame, "combo_box_measurement_color"
+        )
         self.combo_box_measurement_color.Append(COLORS)
         self.combo_box_measurement_color.Select(0)
 
-        self.text_ctrl_measurement_topic = xrc.XRCCTRL(self.frame, "text_ctrl_measurement_topic")
-        self.text_ctrl_measurement_topic.Value = library_topic.ResultAttributes.getdatetime()
+        self.text_ctrl_measurement_topic = xrc.XRCCTRL(
+            self.frame, "text_ctrl_measurement_topic"
+        )
+        self.text_ctrl_measurement_topic.Value = (
+            library_topic.ResultAttributes.getdatetime()
+        )
 
         self.label_status_text = xrc.XRCCTRL(self.frame, "label_status_text")
         font = self.label_status_text.GetFont()
@@ -252,7 +273,7 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnTimer)
-        self.timer.Start(1000)  # 1 second interval
+        self.timer.Start(2000)  # 1 second interval
 
         self.OnButtonReloadTopic(event=None)
 
@@ -298,11 +319,15 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
 
     @property
     def presentation(self):
-        return self.combo_box_presentation.GetClientData(self.combo_box_presentation.Selection)
+        return self.combo_box_presentation.GetClientData(
+            self.combo_box_presentation.Selection
+        )
 
     @property
     def topic(self):
-        return self.combo_box_display_topic.GetClientData(self.combo_box_display_topic.Selection)
+        return self.combo_box_display_topic.GetClientData(
+            self.combo_box_display_topic.Selection
+        )
 
     @property
     def stage(self):
@@ -336,7 +361,9 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.__enable_display_stage()
 
         self._plot_context.invalidate()
-        self._plot_context.select_topic_stage(presentation=self.presentation, topic=self.topic, stage=self.stage)
+        self._plot_context.select_topic_stage(
+            presentation=self.presentation, topic=self.topic, stage=self.stage
+        )
 
     def OnComboBoxDisplayTopic(self, event):
         # Update the combobox
@@ -345,4 +372,6 @@ class MyApp(wx.App):  # pylint: disable=too-many-instance-attributes
         self.OnComboBoxDisplayStage(event=None)
 
     def OnComboBoxDisplayStage(self, event):
-        self._plot_context.select_topic_stage(presentation=self.presentation, topic=self.topic, stage=self.stage)
+        self._plot_context.select_topic_stage(
+            presentation=self.presentation, topic=self.topic, stage=self.stage
+        )
