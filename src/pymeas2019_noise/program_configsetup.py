@@ -20,11 +20,11 @@ class SamplingProcessConfig(LockingMixinMock):
     fir_count_skipped: int = 0
     stepname: str = TO_BE_SET
     settle: bool = False
-    settle_time_ok_s: float = None
-    settle_input_part: float = None
+    settle_time_ok_s: float = None  # type: ignore[assignment]
+    settle_input_part: float = None  # type: ignore[assignment]
     skalierungsfaktor: float = 1.0
     input_Vp: float = 1.0
-    duration_s: float = TO_BE_SET
+    duration_s: float = TO_BE_SET  # type: ignore[assignment]
 
     def validate(self):
         assert isinstance(self.fir_count, int)
@@ -47,9 +47,9 @@ class SamplingProcessConfig(LockingMixinMock):
 class ConfigStep(LockingMixinMock):
     stepname: str = TO_BE_SET
     settle: bool = False
-    settle_time_ok_s: float = None
-    settle_input_part: float = None
-    skalierungsfaktor: float = TO_BE_SET
+    settle_time_ok_s: float = None  # type: ignore[assignment]
+    settle_input_part: float = None  # type: ignore[assignment]
+    skalierungsfaktor: float = TO_BE_SET  # type: ignore[assignment]
     fir_count: int = 0
     fir_count_skipped: int = 0
     input_channel: str = TO_BE_SET
@@ -58,10 +58,10 @@ class ConfigStep(LockingMixinMock):
     None if provided by the instrument.
     """
     bandwidth: str = TO_BE_SET
-    offset: float = TO_BE_SET
+    offset: float = TO_BE_SET  # type: ignore[assignment]
     resolution: str = TO_BE_SET
-    duration_s: float = TO_BE_SET
-    dt_s: float = TO_BE_SET
+    duration_s: float = TO_BE_SET  # type: ignore[assignment]
+    dt_s: float = TO_BE_SET  # type: ignore[assignment]
     skip: bool = False
 
     @property
@@ -132,16 +132,16 @@ class ConfigStepSkip(ConfigStep):
 
 @dataclasses.dataclass(slots=True)
 class ConfigSetup(LockingMixin):  # pylint: disable=too-few-public-methods
-    filename: str = None
+    filename: str = None  # type: ignore[assignment]
     setup_name: str = TO_BE_SET
-    module_instrument: types.ModuleType = TO_BE_SET
+    module_instrument: types.ModuleType = TO_BE_SET  # type: ignore[assignment]
     capture_raw: bool = False
     "Save the datastream from the scope directly to a file and do not process it."
     capture_raw_hit_anykey: bool = False
-    step_0_settle: ConfigStep = TO_BE_SET
-    step_1_fast: ConfigStep = TO_BE_SET
-    step_2_medium: ConfigStep = TO_BE_SET
-    step_3_slow: ConfigStep = TO_BE_SET
+    step_0_settle: ConfigStep = TO_BE_SET  # type: ignore[assignment]
+    step_1_fast: ConfigStep = TO_BE_SET  # type: ignore[assignment]
+    step_2_medium: ConfigStep = TO_BE_SET  # type: ignore[assignment]
+    step_3_slow: ConfigStep = TO_BE_SET  # type: ignore[assignment]
 
     def __post_init__(self):
         pass

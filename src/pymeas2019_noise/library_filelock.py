@@ -65,23 +65,23 @@ class LockTag(enum.StrEnum):
         filename = self._filename
         if IS_WINDOWS:
             return filename.open("w")
-        else:
-            import fcntl
 
-            fd = os.open(filename, os.O_CREAT | os.O_RDWR)
-            try:
-                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                # logger.info(f"{filename}: lock acquired!")
-            except BlockingIOError:
-                logger.debug(f"{filename}: {filename.read_text()}")
-                return None
+        import fcntl
 
-            try:
-                os.fchmod(fd, 0o666)
-            except PermissionError:
-                pass
-            os.write(fd, f"locked by pid {os.getpid()}\n".encode())
-            return open(fd, "w", closefd=True)
+        fd = os.open(filename, os.O_CREAT | os.O_RDWR)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # logger.info(f"{filename}: lock acquired!")
+        except BlockingIOError:
+            logger.debug(f"{filename}: {filename.read_text()}")
+            return None
+
+        try:
+            os.fchmod(fd, 0o666)
+        except PermissionError:
+            pass
+        os.write(fd, f"locked by pid {os.getpid()}\n".encode())
+        return open(fd, "w", closefd=True)
 
     def is_measurement_running(self) -> bool:
         fd = self.lock()

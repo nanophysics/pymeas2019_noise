@@ -132,6 +132,7 @@ ignore_missing_imports = true
 [tool.pylint."MESSAGES CONTROL"]
 disable = '''
     broad-exception-caught,
+    broad-exception-raised,
     cyclic-import,
     fixme,
     import-outside-toplevel,
