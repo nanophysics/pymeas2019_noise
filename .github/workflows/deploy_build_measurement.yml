@@ -1,12 +1,14 @@
 name: Deploy build_measurement_windows.zip
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
   pull_request:
     branches:
       - main
+
 
 jobs:
   build:
@@ -34,4 +36,4 @@ jobs:
         with:
           name: pymeas2019_noise_template_directories
           path: artifacts/*.zip
-          
+          retention-days: 90
