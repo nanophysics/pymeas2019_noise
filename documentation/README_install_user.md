@@ -5,6 +5,7 @@
 ### Required
 
 * Windows 10/11
+* Ubuntu 24.04 or newer
 * No adminstrator rights are required.
 * `ad_low_noise_float_2023` hardware
 
