@@ -26,9 +26,9 @@ This document explains how to install
 
 Whenever a program is startet, it will pick the NEWEST version available on https://github.com/nanophysics/pymeas2019_noise.
 
-## Installation
+## Installation - Windows
 
-The starting point is `measurement_actual_windows.zip` which may be downloaded [here](https://github.com/nanophysics/pymeas2019_noise/actions/workflows/deploy_build_measurement.yml).
+The starting point is `measurement_actual_windows.zip` which may be downloaded [here](https://github.com/nanophysics/pymeas2019_noise/tree/main/artifacts).
 
 * Extract `measurement_actual_windows.zip` into `measurement_actual`.
 * Start `measurement_actual\run_9_install_uv.ps1` to install `uv` and `python`.
@@ -56,6 +56,29 @@ The starting point is `measurement_actual_windows.zip` which may be downloaded [
       Built pymeas2019-noise @ git+https://github.com/nanophysics/pymeas2019_noise.git@6c73db3a18bc882bf5394ea59e37d57e0e5252de
   Installed 34 packages in 1.81s
   logging to C:\Projekte\ETH-Fir\pymeas2019_noise_uv_test\measurement_actual\logger_gui.txt
+  ```
+
+  Now the gui opens.
+
+
+## Installation - Linux
+
+The starting point is `measurement_actual_linux.zip` which may be downloaded [here](https://github.com/nanophysics/pymeas2019_noise/tree/main/artifacts).
+
+* `unzip measurement_actual_linux.zip`. This will create a folder `measurement_actual`.
+* `chmod a+x measurement_actual/*.sh`
+* Install `uv`. On ubuntu, uv may be installed via snap store.
+
+  ```
+* Start the gui: `cd measurement_actual; ./run_0_gui.sh`.
+
+  Expected output:
+  ```bash
+  uv run --with=git+https://github.com/nanophysics/pymeas2019_noise.git -- python -m pymeas2019_noise.run_0_gui
+    Updated https://github.com/nanophysics/pymeas2019_noise.git (6c73db3a18bc882bf5394ea59e37d57e0e5252de)
+      Built pymeas2019-noise @ git+https://github.com/nanophysics/pymeas2019_noise.git@6c73db3a18bc882bf5394ea59e37d57e0e5252de
+  Installed 34 packages in 1.81s
+  logging to .../measurement_actual/logger_gui.txt
   ```
 
   Now the gui opens.

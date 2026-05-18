@@ -60,9 +60,9 @@ pause
     Target(
         label="linux",
         content=r"""
+#!/usr/bin/env bash
+# You may need to add the execution bit: chmod a+x *.sh
 set -eu
-
-../venv/bin/python -m pymeas2019_noise.<COMMAND>
 
 uv run --with=git+https://github.com/nanophysics/pymeas2019_noise.git -- python -m pymeas2019_noise.<COMMAND>
         """.strip(),
@@ -115,10 +115,14 @@ def main() -> None:
                     if IS_LINUX:
                         filename1.chmod(0o755)
 
-            for pattern in ("*.py", "*.ps1"):
+            def add_files(zipf, pattern: str) -> None:
                 for config_file in directory_measurement_actual.glob(pattern):
                     filename = f"{DIRECTORY_MEASUREMENT_ACTUAL}/{config_file.name}"
                     zipf.writestr(filename, config_file.read_text())
+
+            add_files(zipf, "*.py")
+            if not target.is_linux:
+                add_files(zipf, "*.ps1")
 
 
 if __name__ == "__main__":

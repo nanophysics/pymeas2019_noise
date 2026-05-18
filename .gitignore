@@ -25,7 +25,6 @@ measurement_actual/logger_condense.txt
 **/hidden/
 venv/*
 compact_measurements/**
-artifacts/**
 measurement_actual/*.bat
 measurement_actual/*.sh
 *_gitignore*
