@@ -47,28 +47,38 @@ pause
         is_development=False,
         is_linux=False,
     ),
+    #     Target(
+    #         label="windows_dev",
+    #         content=r"""
+    # ..\venv\Scripts\python.exe -m pymeas2019_noise.<COMMAND>
+    # echo ERRORLEVEL %ERRORLEVEL%
+    # pause
+    #         """.strip(),
+    #         is_development=True,
+    #         is_linux=False,
+    #     ),
     Target(
-        label="windows_dev",
-        content=r"""
-..\venv\Scripts\python.exe -m pymeas2019_noise.<COMMAND>
-echo ERRORLEVEL %ERRORLEVEL%
-pause
-        """.strip(),
-        is_development=True,
-        is_linux=False,
-    ),
-    Target(
-        label="linux_dev",
+        label="linux",
         content=r"""
 set -eu
 
 ../venv/bin/python -m pymeas2019_noise.<COMMAND>
 
-# uv run --with=git+https://github.com/nanophysics/pymeas2019_noise.git -- python -m pymeas2019_noise.<COMMAND>
+uv run --with=git+https://github.com/nanophysics/pymeas2019_noise.git -- python -m pymeas2019_noise.<COMMAND>
         """.strip(),
-        is_development=True,
+        is_development=False,
         is_linux=True,
     ),
+    #     Target(
+    #         label="linux_dev",
+    #         content=r"""
+    # set -eu
+    # ../venv/bin/python -m pymeas2019_noise.<COMMAND>
+    # # uv run --with=git+https://github.com/nanophysics/pymeas2019_noise.git -- python -m pymeas2019_noise.<COMMAND>
+    #         """.strip(),
+    #         is_development=True,
+    #         is_linux=True,
+    #     ),
 ]
 
 
