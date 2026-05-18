@@ -81,3 +81,5 @@ logging to /tmp/measurement_actual/logger_gui.txt
   ```
 
   Now the gui opens.
+
+If there is an error about "xvb", run: `sudo apt install xcb libxcb-cursor0 -y`.
