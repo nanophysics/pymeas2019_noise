@@ -2,7 +2,8 @@ import pathlib
 
 import config_plot
 
-from . import library_gui, library_logger, library_plot, library_topic
+from . import library_logger, library_plot, library_topic
+from .qt_main import MyApp
 
 directory_cwd = pathlib.Path.cwd()
 library_logger.init_logger_gui(directory_cwd)
@@ -25,9 +26,9 @@ def run():
 
     plot_data.startup_duration.log("After update_presentation()")
 
-    app = library_gui.MyApp(plot_context=plot_context, presentations=presentations)
+    app = MyApp(plot_context=plot_context, presentations=presentations)
     plot_data.startup_duration.log("After MyApp()")
-    app.MainLoop()
+    app.main_loop()
 
 
 if __name__ == "__main__":

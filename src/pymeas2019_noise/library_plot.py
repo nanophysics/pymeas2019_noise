@@ -9,12 +9,11 @@ do_show=True,do_animate=True: GUI. Show the data, animation.
 
 import logging
 import pathlib
-import subprocess
 import sys
 
-import matplotlib.animation
 import matplotlib.pyplot as plt
 import matplotlib.ticker
+from PySide6 import QtCore
 
 from . import library_plot_config, library_topic, run_0_measure
 
@@ -210,25 +209,27 @@ class PlotContext:
 
     def start_measurement(self, dir_raw):
         # The start button has been pressed
-        # proc = subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw])
-        # proc = subprocess.Popen(["cmd.exe", "/K", "start", sys.executable, run_0_measure.__file__, dir_raw], start_new_session=True, startupinfo=subprocess.DETACHED_PROCESS)
-        creationflags = subprocess.CREATE_NEW_CONSOLE if sys.platform == "win32" else 0
-        proc = subprocess.Popen(
-            args=[
-                sys.executable,
-                "-m",
-                run_0_measure.__name__,
-                dir_raw,
-            ],
-            creationflags=creationflags,
-            cwd=pathlib.Path.cwd(),
+        started = QtCore.QProcess.startDetached(
+            sys.executable,
+            ["-m", run_0_measure.__name__, dir_raw],
+            str(pathlib.Path.cwd()),
         )
-
-        logger.info(f"Started measurement in folder '{dir_raw}' with pid={proc.pid}.")
+        if not started:
+            logger.error(f"Failed to start measurement in folder '{dir_raw}'.")
+            return
+        logger.info(f"Started measurement in folder '{dir_raw}'.")
 
     def open_directory_in_explorer(self):
         directory = pathlib.Path(run_0_measure.__file__).absolute().parent
-        subprocess.Popen(["explorer", str(directory)])  # pylint: disable=consider-using-with
+        if sys.platform == "win32":
+            started = QtCore.QProcess.startDetached("explorer", [str(directory)])
+        elif sys.platform == "darwin":
+            started = QtCore.QProcess.startDetached("open", [str(directory)])
+        else:
+            started = QtCore.QProcess.startDetached("xdg-open", [str(directory)])
+
+        if not started:
+            logger.error(f"Failed to open directory in file browser: {directory}")
 
     @property
     def iter_topics(self):
@@ -271,14 +272,13 @@ class PlotContext:
     def open_display_clone(self):
         from . import run_0_gui
 
-        subprocess.Popen(
-            [
-                sys.executable,
-                "-m",
-                run_0_gui.__name__,
-            ],
-            cwd=pathlib.Path.cwd(),
+        started = QtCore.QProcess.startDetached(
+            sys.executable,
+            ["-m", run_0_gui.__name__],
+            str(pathlib.Path.cwd()),
         )
+        if not started:
+            logger.error("Failed to open display clone.")
 
     def savefig(self, filename, dpi):
         self.__fig.savefig(filename, dpi=dpi)

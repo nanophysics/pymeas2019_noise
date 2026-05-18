@@ -4,6 +4,32 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "qt compile resources",
+            "type": "shell",
+            "command": "${workspaceFolder}/src/pymeas2019_noise/pyside6-rcc.sh",
+            "options": {
+                "cwd": "${workspaceFolder}/src/pymeas2019_noise/"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "qt designer",
+            "type": "shell",
+            "command": "${workspaceFolder}/src/pymeas2019_noise/pyside6-designer.sh",
+            "options": {
+                "cwd": "${workspaceFolder}/src/pymeas2019_noise/"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
             "label": "pip upgrade",
             "type": "shell",
             "command": "uv pip install --no-deps --no-cache --upgrade -e .",

@@ -35,16 +35,19 @@ dependencies = [
     "scipy",
     "openpyxl>=3.0.5",
     "types-openpyxl>=3.0.5",
-    "wxPython>=4.2.3",
     "PySide6-stubs>=6.7.3.0",
-    "PySide6>=6.10.0",
-    "qasync>=0.27.1",
-    "types-wxpython",
+    "PySide6>=6.11.1",
     "pylint",
     "ruff",
     "mypy",
     "isort",
     "ad_low_noise_float_2023@git+https://github.com/petermaerki/ad_low_noise_float_2023_git.git",
+]
+
+[project.optional-dependencies]
+wx = [
+    "wxPython>=4.2.3",
+    "types-wxpython",
 ]
 
 [project.urls]
@@ -168,4 +171,5 @@ max-line-length = 88
 disable = [
     "R0801", # Similar lines in 2 files
     "E1136", # unsubscriptable-object
+    "I1101", # c-extension-no-member
 ]

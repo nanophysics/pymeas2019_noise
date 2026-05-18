@@ -49,7 +49,23 @@ uv pip install --upgrade -e .
 python -m pymeas2019_noise.ci_build_measurement_actual
 ```
 
-### Start the scripts using the bat-files
+### Start the scripts using the bat-files (windows)
+
+In Windows explorer in folder `pymeas2019_noise\measurement_actual` *\<left-mouse-double-click\>* `run_0_gui.bat`.
+
+Now the gui opens.
+
+### Start the scripts using the sh-files (linux)
+
+In the terminal type
+
+```bash
+chmod a+x *.sh
+./run_0_gui.sh
+```
+
+Now the gui opens.
+
 
 In Windows explorer in folder `pymeas2019_noise\measurement_actual` *\<left-mouse-double-click\>* `run_0_gui.bat`.
 

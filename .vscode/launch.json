@@ -48,6 +48,15 @@
             "justMyCode": false,
         },
         {
+            "name": "run_0_gui (wxwidgets)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pymeas2019_noise.run_0_gui_wxwidgets",
+            "cwd": "${workspaceFolder}/measurement_actual",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
             "name": "run_0_gui",
             "type": "debugpy",
             "request": "launch",
@@ -55,8 +64,7 @@
             "cwd": "${workspaceFolder}/measurement_actual",
             "console": "integratedTerminal",
             "justMyCode": false,
-        },
-        {
+        },        {
             "name": "run_1_process_raw",
             "type": "debugpy",
             "request": "launch",

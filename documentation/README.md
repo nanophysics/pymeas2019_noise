@@ -166,7 +166,7 @@ We can see a swing into.
 
 Settle of the input highpass filter
 * Press Start to start a new measurement
-* Press Stopp to stop the measurement
+* Press Stop to stop the measurement
 * Press Skip Settle to force the measurement to start even though the voltage may not have been settled 
 
 Basenoise
