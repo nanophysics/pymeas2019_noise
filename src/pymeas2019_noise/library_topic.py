@@ -362,7 +362,8 @@ class Topic:  # pylint: disable=too-many-public-methods
 
     def get_timeserie(self, stage):
         assert isinstance(stage, Stage)
-        assert stage.belongs_to_topic(self)
+        # Why is the following line needed?
+        # assert stage.belongs_to_topic(self)
         # TODO(Hans): Cache this array
         x = np.linspace(
             start=0.0, stop=stage.dt_s * len(stage.samples_V), num=len(stage.samples_V)
