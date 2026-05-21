@@ -20,15 +20,28 @@ def start_in_terminal(cwd: pathlib.Path, args: list[str]) -> bool:
         ]
         for args in launch_options:
             try:
-                subprocess.Popen(
+                proc = subprocess.Popen(
                     args,
                     cwd=cwd,
                     start_new_session=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
                 )
             except (FileNotFoundError, OSError):
                 continue
             else:
-                logger.info(f"Started: {args}")
+                logger.info(f"Started: {' '.join(args)}")
+                if True:
+                    # Just for debugging
+                    import time
+
+                    time.sleep(2.0)
+                    stdout, stderr = proc.communicate(timeout=2.0)
+                    rc = proc.wait(timeout=2.0)
+                    logger.info(f"proc.stdout={stdout}")
+                    logger.info(f"proc.stderr={stderr}")
+                    logger.info(f"proc.rc={rc}")
                 return True
         logger.error(f"Failed to start: {args}")
 
