@@ -215,7 +215,11 @@ class PlotContext:
             run_0_measure.__name__,
             dir_raw,
         ]
-        library_subprocess.start_in_terminal(cwd=pathlib.Path.cwd(), args=args)
+        library_subprocess.start_in_terminal(
+            cwd=pathlib.Path.cwd(),
+            args=args,
+            title=f"measure: {dir_raw}",
+        )
 
     def open_directory_in_explorer(self):
         directory = pathlib.Path(run_0_measure.__file__).absolute().parent

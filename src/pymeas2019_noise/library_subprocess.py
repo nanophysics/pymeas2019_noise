@@ -7,16 +7,15 @@ import sys
 logger = logging.getLogger("logger")
 
 
-def start_in_terminal(cwd: pathlib.Path, args: list[str]) -> bool:
+def start_in_terminal(cwd: pathlib.Path, args: list[str], title: str) -> bool:
     if sys.platform.startswith("linux"):
         python_cmd = shlex.join(args)
         command = f"{python_cmd}; exec bash"
-        quoted_command = shlex.quote(command)
         launch_options = [
-            ["x-terminal-emulator", "-e", "bash", "-lc", quoted_command],
-            ["gnome-terminal", "--", "bash", "-lc", quoted_command],
-            ["konsole", "-e", "bash", "-lc", quoted_command],
-            ["xterm", "-e", "bash", "-lc", quoted_command],
+            ["gnome-terminal", "--title", title, "--", "bash", "-lc", command],
+            ["xterm", "-e", "bash", "-lc", command],
+            ["x-terminal-emulator", "-e", "bash", "-lc", shlex.quote(command)],
+            ["konsole", "-e", "bash", "-lc", command],
         ]
         for args in launch_options:
             try:
@@ -32,7 +31,7 @@ def start_in_terminal(cwd: pathlib.Path, args: list[str]) -> bool:
                 continue
             else:
                 logger.info(f"Started: {' '.join(args)}")
-                if True:
+                if False:
                     # Just for debugging
                     import time
 
