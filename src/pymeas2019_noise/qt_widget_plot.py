@@ -1,4 +1,3 @@
-import itertools
 
 # pylint: disable=import-error,no-name-in-module
 import logging
@@ -47,19 +46,16 @@ class PlotPanel(QWidget):
         )
 
     def _on_canvas_resize(self, _event: object) -> None:
-        self.canvas_last_resize_s = time.time()
+        self.canvas_last_resize_s = time.monotonic()
 
     def init_plot_data(self) -> None:
         self.toolbar.update()
-
-        def endless_iter():
-            yield from itertools.count(start=42)
 
         self._plot_context.plot_data.startup_duration.log("FuncAnimation() - before")
         self.animation = matplotlib.animation.FuncAnimation(
             fig=self._plot_context.fig,
             func=cast(Callable[[Any], Any], self.animate),
-            frames=endless_iter(),
+            frames=None,
             interval=1000,
             init_func=None,
             repeat=False,
@@ -69,9 +65,13 @@ class PlotPanel(QWidget):
         self._plot_context.update_presentation()
 
     def animate(self, _frame: Any) -> None:
-        if self.canvas_last_resize_s and self.canvas_last_resize_s + 0.5 < time.time():
-            logger.info("matplotlib-canvas: delayed resize")
-            self.canvas.draw_idle()
-            self.canvas_last_resize_s = None
+        """
+        This will be called by a timer
+        """
+        if self.canvas_last_resize_s is not None:
+            if self.canvas_last_resize_s + 0.5 < time.monotonic():
+                logger.info("matplotlib-canvas: delayed resize")
+                self.canvas.draw_idle()
+                self.canvas_last_resize_s = None
 
         self._plot_context.animate()

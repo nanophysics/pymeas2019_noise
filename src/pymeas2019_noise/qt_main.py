@@ -6,8 +6,6 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
-import config_plot  # type: ignore[import-not-found]
-
 from . import library_logger, library_plot, library_topic
 from .qt_widget_main import MainWindow
 

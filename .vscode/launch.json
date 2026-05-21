@@ -77,7 +77,6 @@
             "name": "run_1_condense",
             "type": "debugpy",
             "request": "launch",
-            "justMyCode": false,
             "module": "pymeas2019_noise.run_1_condense",
             "cwd": "${workspaceFolder}/measurement_actual",
             "args": [],
