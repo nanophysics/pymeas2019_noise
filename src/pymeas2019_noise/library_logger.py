@@ -1,5 +1,7 @@
 import logging
 import pathlib
+import sys
+from importlib import metadata
 
 from ad_low_noise_float_2023 import ad
 
@@ -15,7 +17,7 @@ LOGGING_DEFAULT_DATEFMT = "%Y-%m-%d %H:%M:%S"
 
 
 class Dummy:
-    INITIALIZED = False
+    INITIALIZED: bool = False
 
 
 def init_logger_gui(directory):
@@ -78,7 +80,7 @@ def init_logger_append(
     logger_ad.addHandler(fh)
 
 
-def init_logger(directory, filenames):
+def init_logger(directory: pathlib.Path, filenames: tuple[str, ...]):
     assert isinstance(directory, pathlib.Path)
     assert isinstance(filenames, list | tuple)
 
@@ -101,3 +103,12 @@ def init_logger(directory, filenames):
         raise Exception(f"All log-files locked: {filenames}")
 
     init_logger_append(filename=filename)
+
+    logger.info(f"python={sys.version}")
+    try:
+        pyside6_version = metadata.version("PySide6")
+    except metadata.PackageNotFoundError:
+        pyside6_version = "not installed"
+    logger.info(f"pyside6={pyside6_version}")
+    logger.info(f"cwd={pathlib.Path.cwd()}")
+    logger.info(f"sys.argv={sys.argv}")
