@@ -87,8 +87,11 @@ class LockTag(enum.StrEnum):
         fd = self.lock()
         if fd is not None:
             fd.close()
-            self._filename.unlink()
-            return False
+            try:
+                self._filename.unlink()
+                return False
+            except PermissionError:
+                return True
         return True
 
     def open(self, mode: str) -> io.TextIOWrapper:
