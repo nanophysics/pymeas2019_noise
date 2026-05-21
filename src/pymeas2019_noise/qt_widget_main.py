@@ -54,8 +54,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.statusbar.addWidget(QtWidgets.QLabel("Status", self.centralwidget))
         self.label_status_text = QtWidgets.QLabel("-", self.centralwidget)
         self.statusbar.addWidget(self.label_status_text, 1)
-        self.label_coordinates = QtWidgets.QLabel("x:, y:", self.centralwidget)
-        self.statusbar.addPermanentWidget(self.label_coordinates)
 
         self.verticalLayout_centralwidget.addWidget(self.plotpanel)
 
@@ -69,7 +67,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.timer.timeout.connect(self.on_timer)
         self.timer.start(2000)
 
-        self.plotpanel.bind_mouse_motion(self.update_status_bar)
         self.plotpanel.init_plot_data()
 
         self.on_button_reload_topic()
@@ -157,10 +154,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self._plot_context.set_presentation(self.presentation)
         self._plot_context.update_presentation()
         self._enable_display_stage()
-
-    def update_status_bar(self, event: MouseEvent) -> None:
-        if event.inaxes and event.xdata is not None and event.ydata is not None:
-            self.label_coordinates.setText(f"x={event.xdata:e}  y={event.ydata:e}")
 
     def on_open_directory(self, _checked: bool = False) -> None:
         self._plot_context.open_directory_in_explorer()
