@@ -64,20 +64,21 @@ The starting point is `measurement_actual_windows.zip` which may be downloaded [
 
 The starting point is `measurement_actual_linux.zip` which may be downloaded [here](https://github.com/nanophysics/pymeas2019_noise/tree/main/artifacts).
 
+* Install `uv`. On ubuntu, uv may be installed via snap store.
 * `unzip measurement_actual_linux.zip`. This will create a folder `measurement_actual`.
 * `chmod a+x measurement_actual/*.sh`
-* Install `uv`. On ubuntu, uv may be installed via snap store.
-* Start the gui: `cd measurement_actual; ./run_0_gui.sh`.
+* `cd measurement_actual`
+* Start the gui: `./run_0_gui.sh`
 
   Expected output:
   ```bash
-./run_0_gui.sh 
-    Updated https://github.com/nanophysics/pymeas2019_noise.git (75a4021ae894640665ea33dc3cc830d753113b3b)
-    Updated https://github.com/petermaerki/ad_low_noise_float_2023_git.git (c55e548d8698e4aee3b0e0d70d6bbedd799e464f)
-      Built pymeas2019-noise @ git+https://github.com/nanophysics/pymeas2019_noise.git@75a4021ae894640665ea33dc3cc830d753113b3b
-      Built ad-low-noise-float-2023 @ git+https://github.com/petermaerki/ad_low_noise_float_2023_git.git@c55e548d8698e4aee3b0e0d70d6bbedd799e464f
-Installed 39 packages in 128ms
-logging to /tmp/measurement_actual/logger_gui.txt
+  ./run_0_gui.sh 
+      Updated https://github.com/nanophysics/pymeas2019_noise.git (75a4021ae894640665ea33dc3cc830d753113b3b)
+      Updated https://github.com/petermaerki/ad_low_noise_float_2023_git.git (c55e548d8698e4aee3b0e0d70d6bbedd799e464f)
+        Built pymeas2019-noise @ git+https://github.com/nanophysics/pymeas2019_noise.git@75a4021ae894640665ea33dc3cc830d753113b3b
+        Built ad-low-noise-float-2023 @ git+https://github.com/petermaerki/ad_low_noise_float_2023_git.git@c55e548d8698e4aee3b0e0d70d6bbedd799e464f
+  Installed 39 packages in 128ms
+  logging to /tmp/measurement_actual/logger_gui.txt
   ```
 
   Now the gui opens.
