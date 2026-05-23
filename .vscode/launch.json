@@ -21,10 +21,15 @@
             "justMyCode": false
         },
         {
-            "name": "ci_build_measurement_actual",
+            "name": "init",
             "type": "debugpy",
             "request": "launch",
-            "module": "pymeas2019_noise.ci_build_measurement_actual",
+            "module": "pymeas2019_noise.program_cli",
+            "args": [
+                "init",
+                "--dev",
+                "--force",
+            ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "justMyCode": false
@@ -33,16 +38,34 @@
             "name": "run_0_measure",
             "type": "debugpy",
             "request": "launch",
-            "module": "pymeas2019_noise.run_0_measure",
+            "module": "pymeas2019_noise.program_cli",
+            "args": [
+                "run_0_measure"
+            ],
             "cwd": "${workspaceFolder}/measurement_actual",
             "console": "integratedTerminal",
             "justMyCode": false
         },
         {
-            "name": "run_measure_synthetic",
+            "name": "run_0_measure_synthetic",
             "type": "debugpy",
             "request": "launch",
-            "module": "pymeas2019_noise.run_measure_synthetic",
+            "module": "pymeas2019_noise.program_cli",
+            "args": [
+                "run_0_measure_synthetic"
+            ],
+            "cwd": "${workspaceFolder}/measurement_actual",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
+            "name": "run_0_gui (QT)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pymeas2019_noise.program_cli",
+            "args": [
+                "run_0_gui"
+            ],
             "cwd": "${workspaceFolder}/measurement_actual",
             "console": "integratedTerminal",
             "justMyCode": false,
@@ -51,24 +74,22 @@
             "name": "run_0_gui (wxwidgets)",
             "type": "debugpy",
             "request": "launch",
-            "module": "pymeas2019_noise.run_0_gui_wxwidgets",
+            "module": "pymeas2019_noise.program_cli",
+            "args": [
+                "run_0_gui_wxwidgets"
+            ],
             "cwd": "${workspaceFolder}/measurement_actual",
             "console": "integratedTerminal",
             "justMyCode": false,
         },
         {
-            "name": "run_0_gui",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "pymeas2019_noise.run_0_gui",
-            "cwd": "${workspaceFolder}/measurement_actual",
-            "console": "integratedTerminal",
-            "justMyCode": false,
-        },        {
             "name": "run_1_process_raw",
             "type": "debugpy",
             "request": "launch",
-            "module": "pymeas2019_noise.run_1_process_raw",
+            "module": "pymeas2019_noise.program_cli",
+            "args": [
+                "run_1_process_raw"
+            ],
             "cwd": "${workspaceFolder}/measurement_actual",
             "console": "integratedTerminal",
             "justMyCode": false,
@@ -77,9 +98,11 @@
             "name": "run_1_condense",
             "type": "debugpy",
             "request": "launch",
-            "module": "pymeas2019_noise.run_1_condense",
+            "module": "pymeas2019_noise.program_cli",
+            "args": [
+                "run_1_condense"
+            ],
             "cwd": "${workspaceFolder}/measurement_actual",
-            "args": [],
             "console": "integratedTerminal",
             "justMyCode": false,
         },
@@ -87,7 +110,10 @@
             "name": "run_2_composite_plots",
             "type": "debugpy",
             "request": "launch",
-            "module": "pymeas2019_noise.run_2_composite_plots",
+            "module": "pymeas2019_noise.program_cli",
+            "args": [
+                "run_2_composite_plots"
+            ],
             "cwd": "${workspaceFolder}/measurement_actual",
             "console": "integratedTerminal",
             "justMyCode": false,

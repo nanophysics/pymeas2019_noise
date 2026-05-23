@@ -1,15 +1,15 @@
 import logging
 import pathlib
 
-import config_measurement
-import config_plot
-
 from . import library_logger, library_plot, library_topic
 
 logger = logging.getLogger("logger")
 
 
-def run(dir_measurement):
+def main(dir_measurement):
+    import config_measurement
+    import config_plot
+
     library_logger.init_logger_composite_plots(dir_measurement)
 
     plot_config = config_plot.get_plot_config()
@@ -38,4 +38,4 @@ def run(dir_measurement):
 
 
 if __name__ == "__main__":
-    run(dir_measurement=pathlib.Path.cwd())
+    main(dir_measurement=pathlib.Path.cwd())

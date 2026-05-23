@@ -5,7 +5,6 @@ import logging
 
 from PySide6 import QtWidgets
 from PySide6.QtCore import QTimer
-from matplotlib.backend_bases import MouseEvent
 
 from . import library_filelock, library_plot, library_topic
 from .qt_widget_plot import PlotPanel

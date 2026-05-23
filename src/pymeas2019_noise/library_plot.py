@@ -37,34 +37,34 @@ class PlotContext:
         self._plot_config = plot_config
         self._presentations = presentations
         # The currently active presentation
-        self.__presentation = presentations.get(library_topic.DEFAULT_PRESENTATION)
+        self._presentation = presentations.get(library_topic.DEFAULT_PRESENTATION)
         # The data to be displayed
         self.plot_data = plot_data
-        self.__plot_is_invalid = True
-        self.__topic = None
-        self.__stage = None
-        self.__fig, self.__ax = plt.subplots(figsize=(8, 4))
+        self._plot_is_invalid = True
+        self._topic = None
+        self._stage = None
+        self._fig, self._ax = plt.subplots(figsize=(8, 4))
 
     @property
     def fig(self):
-        return self.__fig
+        return self._fig
 
     @property
     def presentation_title(self):
-        return self.__presentation.title
+        return self._presentation.title
 
     @property
     def presentation_tag(self):
-        return self.__presentation.tag
+        return self._presentation.tag
 
     def invalidate(self):
-        self.__plot_is_invalid = True
+        self._plot_is_invalid = True
 
     def set_presentation(self, presentation):
         assert isinstance(presentation, library_topic.Presentation)
-        if self.__presentation != presentation:
+        if self._presentation != presentation:
             self.invalidate()
-        self.__presentation = presentation
+        self._presentation = presentation
 
     def initialize_plot_lines(self):
         """
@@ -75,7 +75,7 @@ class PlotContext:
             x = (0, 1)
             y = (0, 1)
             assert len(x) == len(y)
-            (plot_line,) = self.__ax.plot(
+            (plot_line,) = self._ax.plot(
                 x,
                 y,
                 linestyle="none",
@@ -83,33 +83,33 @@ class PlotContext:
                 marker=".",
                 markersize=3,
                 color=topic.color,
-                label=topic.topic_basenoise(self.__presentation),
+                label=topic.topic_basenoise(self._presentation),
             )
-            scale = "log" if self.__presentation.logarithmic_scales else "linear"
-            self.__ax.set_xscale(scale)
-            self.__ax.set_yscale(scale)
+            scale = "log" if self._presentation.logarithmic_scales else "linear"
+            self._ax.set_xscale(scale)
+            self._ax.set_yscale(scale)
             topic.set_plot_line(plot_line)
 
-        leg = self.__ax.legend(fancybox=True, framealpha=0.5)
+        leg = self._ax.legend(fancybox=True, framealpha=0.5)
         leg.get_frame().set_linewidth(0.0)
 
     def clear_figure(self):
         # for legend in self.__fig.legends:
         #     legend.remove()
-        for line in self.__fig.lines:
+        for line in self._fig.lines:
             line.remove()
         # for axe in self.__fig.axes:
         #     axe.remove()
-        while len(self.__ax.lines) > 0:
+        while len(self._ax.lines) > 0:
             # Why are the lines not removed in the first go?
-            for line in self.__ax.lines:
+            for line in self._ax.lines:
                 line.remove()
 
     def update_presentation(self):
         assert self.plot_data is not None
 
-        if self.__plot_is_invalid:
-            self.__plot_is_invalid = False
+        if self._plot_is_invalid:
+            self._plot_is_invalid = False
             for topic in self.plot_data.list_topics:
                 topic.reset_plot_line()
             self.clear_figure()
@@ -118,8 +118,8 @@ class PlotContext:
         label_stepsize = set()
 
         for topic in self.list_selected_topics:
-            stage = self.__stage
-            if self.__presentation.requires_stage:
+            stage = self._stage
+            if self._presentation.requires_stage:
                 stage = topic.find_stage(stage)
                 if stage is None:
                     topic.remove_line()
@@ -128,7 +128,7 @@ class PlotContext:
                 if stage is not None:
                     label_stepsize.add(stage.label)
             try:
-                topic.recalculate_data(presentation=self.__presentation, stage=stage)
+                topic.recalculate_data(presentation=self._presentation, stage=stage)
             except (
                 library_topic.Stage100msNotFoundException,
                 library_topic.FrequencyNotFound,
@@ -136,14 +136,14 @@ class PlotContext:
                 logger.error(f"SKIPPED: Topic {topic.topic}: {exc}")
                 continue
 
-        x_label = self.__presentation.x_label
+        x_label = self._presentation.x_label
         if len(label_stepsize) > 0:
             x_label += "  "
             x_label += ", ".join(sorted(label_stepsize))
         plt.xlabel(x_label)
-        plt.ylabel(self.__presentation.title)
+        plt.ylabel(self._presentation.title)
 
-        for ax in self.__fig.get_axes():
+        for ax in self._fig.get_axes():
             ax.relim()
             ax.autoscale()
             plt.grid(
@@ -162,7 +162,7 @@ class PlotContext:
                 color="silver",
                 linewidth=0.1,
             )
-            if self.__presentation.logarithmic_scales:
+            if self._presentation.logarithmic_scales:
                 ax.xaxis.set_major_locator(
                     matplotlib.ticker.LogLocator(base=10.0, numticks=20)
                 )
@@ -174,21 +174,21 @@ class PlotContext:
                 # ax.set_xlim(1e-3, 1e4)
                 # ax.set_ylim(1e-9, 1e-5)
                 if self._plot_config.func_matplotlib_ax is not None:
-                    if self.__presentation.tag != library_topic.PRESENTATION_STEPSIZE:
+                    if self._presentation.tag != library_topic.PRESENTATION_STEPSIZE:
                         self._plot_config.func_matplotlib_ax(ax=ax)
 
         # The following line will take up to 5s. Why?
         # self.__fig.canvas.draw()
 
-        if self.__presentation.logarithmic_scales:
+        if self._presentation.logarithmic_scales:
             if self._plot_config.func_matplotlib_fig is not None:
-                self._plot_config.func_matplotlib_fig(fig=self.__fig)
+                self._plot_config.func_matplotlib_fig(fig=self._fig)
 
     @property
     def list_selected_topics(self) -> list:
-        if self.__topic is None:
+        if self._topic is None:
             return self.plot_data.list_topics
-        return [topic for topic in self.plot_data.list_topics if self.__topic == topic]
+        return [topic for topic in self.plot_data.list_topics if self._topic == topic]
 
     def animate(self):
         if self.plot_data.directories_changed():
@@ -198,14 +198,12 @@ class PlotContext:
                 plot_config=self._plot_config, presentations=self._presentations
             )
 
-        if self.__plot_is_invalid:
+        if self._plot_is_invalid:
             self.update_presentation()
             return
 
         for topic in self.list_selected_topics:
-            topic.reload_if_changed(
-                presentation=self.__presentation, stage=self.__stage
-            )
+            topic.reload_if_changed(presentation=self._presentation, stage=self._stage)
 
     def start_measurement(self, dir_raw):
         # The start button has been pressed
@@ -269,13 +267,13 @@ class PlotContext:
         assert isinstance(topic, None | library_topic.Topic)
         assert isinstance(stage, None | library_topic.Stage)
 
-        if self.__topic != topic:
+        if self._topic != topic:
             self.invalidate()
-        if self.__stage != stage:
+        if self._stage != stage:
             self.invalidate()
 
-        self.__topic = topic
-        self.__stage = stage
+        self._topic = topic
+        self._stage = stage
 
         self.set_presentation(presentation=presentation)
 
@@ -297,11 +295,11 @@ class PlotContext:
             logger.error("Failed to open display clone.")
 
     def savefig(self, filename, dpi):
-        self.__fig.savefig(filename, dpi=dpi)
+        self._fig.savefig(filename, dpi=dpi)
 
     def close(self):
-        self.__fig.clf()
-        plt.close(self.__fig)
+        self._fig.clf()
+        plt.close(self._fig)
         plt.clf()
         plt.close()
 

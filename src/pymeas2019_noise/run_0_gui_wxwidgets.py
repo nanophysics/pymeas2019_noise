@@ -1,14 +1,14 @@
 import pathlib
 
-import config_plot
-
 from . import library_gui, library_logger, library_plot, library_topic
 
 directory_cwd = pathlib.Path.cwd()
 library_logger.init_logger_gui(directory_cwd)
 
 
-def run():
+def main():
+    import config_plot
+
     plot_config = config_plot.get_plot_config()
     presentations = library_topic.get_presentations(plot_config=plot_config)
 
@@ -31,4 +31,4 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    main()

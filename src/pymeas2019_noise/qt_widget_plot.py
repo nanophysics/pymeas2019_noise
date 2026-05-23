@@ -1,4 +1,3 @@
-
 # pylint: disable=import-error,no-name-in-module
 import logging
 import time
@@ -22,6 +21,19 @@ warnings.filterwarnings(action="ignore")
 logger = logging.getLogger("logger")
 
 
+class PymeasNavigationToolbar2QTAgg(NavigationToolbar2QTAgg):
+    def __init__(self, canvas, parent, plot_context: library_plot.PlotContext):
+        super().__init__(canvas=canvas, parent=parent)
+        self._plot_context = plot_context
+
+    def home(self, *args):
+        """
+        Hack to make 'home' button redraw the whole figure.
+        """
+        self._plot_context.invalidate()
+        super().home(*args)
+
+
 class PlotPanel(QWidget):
     def __init__(self, plot_context: library_plot.PlotContext, parent: QWidget | None):
         super().__init__(parent)
@@ -31,7 +43,7 @@ class PlotPanel(QWidget):
         self.canvas_last_resize_s: float | None = None
 
         self.canvas = FigureCanvasQTAgg(self._plot_context.fig)
-        self.toolbar = NavigationToolbar2QTAgg(self.canvas, self)
+        self.toolbar = PymeasNavigationToolbar2QTAgg(self.canvas, self, plot_context)
         self.canvas.mpl_connect("resize_event", self._on_canvas_resize)
 
         layout = QVBoxLayout(self)

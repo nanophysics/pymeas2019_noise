@@ -13,7 +13,7 @@ from . import (
 logger = logging.getLogger("logger")
 
 
-def measure2(configsetup, dir_raw):
+def measure2(configsetup: program_configsetup.ConfigSetup, dir_raw: pathlib.Path):
     program.create_or_empty_directory(dir_raw=dir_raw)
     configsetup.backup(dir_raw=dir_raw)
 
@@ -33,10 +33,14 @@ def measure2(configsetup, dir_raw):
     )
 
 
-def measure(configsetup, dir_measurement: pathlib.Path):
+def measure(configsetup, dir_measurement: pathlib.Path, subdir_raw: str):
     assert isinstance(configsetup, program_configsetup.ConfigSetup)
     assert isinstance(dir_measurement, pathlib.Path)
+    assert isinstance(subdir_raw, str)
 
-    dir_raw = program.examine_dir_raw(dir_measurement=dir_measurement)
+    dir_raw = program.examine_dir_raw(
+        dir_measurement=dir_measurement,
+        subdir_raw=subdir_raw,
+    )
 
     measure2(configsetup, dir_raw)

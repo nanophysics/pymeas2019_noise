@@ -3,7 +3,6 @@
 #
 import logging
 import pathlib
-import sys
 
 import numpy as np
 
@@ -16,17 +15,13 @@ DIRECTORY_TOP = pathlib.Path(__file__).absolute().parent
 DIRECTORY_RESULT = "result"
 
 
-def examine_dir_raw(dir_measurement):
+def examine_dir_raw(dir_measurement: pathlib.Path, subdir_raw: str) -> pathlib.Path:
     "Returns the directory with the raw-results"
     assert isinstance(dir_measurement, pathlib.Path)
+    assert isinstance(subdir_raw, str)
 
-    dir_arg = None
-    if len(sys.argv) > 1:
-        dir_arg = sys.argv[1]
-        logger.info(f"command line: directory_name={dir_arg}")
-
-    dir_raw = dir_measurement / library_topic.ResultAttributes.result_dir_actual(
-        dir_arg
+    dir_raw = dir_measurement / library_topic.ResultAttributes.validate_dir_actual(
+        subdir_raw
     )
 
     create_or_empty_directory(dir_raw)
@@ -34,18 +29,18 @@ def examine_dir_raw(dir_measurement):
     return dir_raw
 
 
-def create_or_empty_directory(dir_raw):
-    if dir_raw.exists():
-
-        def delete_directory_contents(directory):
-            assert isinstance(directory, pathlib.Path)
-
-            for filename in directory.glob("*.*"):
-                filename.unlink()
-
-        delete_directory_contents(dir_raw)
-    else:
+def create_or_empty_directory(dir_raw: pathlib.Path):
+    if not dir_raw.exists():
         dir_raw.mkdir(parents=True, exist_ok=True)
+        return
+
+    def delete_directory_contents(directory):
+        assert isinstance(directory, pathlib.Path)
+
+        for filename in directory.glob("*.*"):
+            filename.unlink()
+
+    delete_directory_contents(dir_raw)
 
 
 def reload_if_changed(dir_raw, plot_config):

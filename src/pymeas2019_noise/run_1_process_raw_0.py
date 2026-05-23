@@ -1,8 +1,6 @@
 import logging
 import pathlib
 
-import config_measurement
-
 from . import (
     library_logger,
     library_topic,
@@ -26,6 +24,8 @@ def patch_configsetup(configsetup) -> ConfigSetup:
 
 
 def doit(dir_measurement: pathlib.Path):
+    import config_measurement
+
     configsetup = patch_configsetup(config_measurement.get_configsetup())
 
     for dir_raw in program.iter_dir_raw(dir_measurement=dir_measurement):

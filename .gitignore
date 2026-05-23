@@ -1,4 +1,4 @@
-s**/*.egg-info/**
+**/*.egg-info/**
 **/__pycache__
 **/logger_*.txt
 **/comm_measurement_*.txt
@@ -25,6 +25,6 @@ measurement_actual/logger_condense.txt
 **/hidden/
 venv/*
 compact_measurements/**
-measurement_actual/*.bat
-measurement_actual/*.sh
 *_gitignore*
+measurement_actual/*
+uv.lock

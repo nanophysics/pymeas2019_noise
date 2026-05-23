@@ -29,18 +29,14 @@ classifiers = [
 ]
 
 dependencies = [
-    "numpy>=2.3.0",
     "matplotlib>=3.10.3",
-    # "scipy<=1.15.3", # 1.16.0 and 1.16.1 leaks: https://github.com/scipy/scipy/issues/23411
-    "scipy",
+    "numpy>=2.3.0",
     "openpyxl>=3.0.5",
-    "types-openpyxl>=3.0.5",
     "PySide6-stubs>=6.7.3.0",
     "PySide6>=6.11.1",
-    "pylint",
-    "ruff",
-    "mypy",
-    "isort",
+    "scipy",
+    "typer>=0.19.2",
+    "types-openpyxl>=3.0.5",
     "ad_low_noise_float_2023@git+https://github.com/petermaerki/ad_low_noise_float_2023_git.git",
 ]
 
@@ -49,6 +45,18 @@ wx = [
     "wxPython>=4.2.3",
     "types-wxpython",
 ]
+
+dev = [
+    # "-e .
+    "isort",
+    "mypy",
+    "pylint",
+    "pytest",
+    "ruff",
+]
+
+[project.scripts]
+pymeas2019 = "pymeas2019_noise.program_cli:app"
 
 [project.urls]
 Homepage = "https://github.com/nanophysics/pymeas2019_noise"
@@ -73,7 +81,7 @@ includes = [
 ]
 source-includes = [
     "LICENSE",
-    "README.md"
+    "README.md",
 ]
 
 [tool.ruff]

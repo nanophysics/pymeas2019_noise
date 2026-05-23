@@ -44,10 +44,15 @@ class ResultAttributes:
         return time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
 
     @classmethod
-    def result_dir_actual(cls, dir_arg=None):
-        if dir_arg is None:
-            return f"{DIRECTORY_NAME_RAW_PREFIX}red-{cls.getdatetime()}"
-        assert dir_arg.startswith(DIRECTORY_NAME_RAW_PREFIX)
+    def result_dir_default(cls):
+        return f"{DIRECTORY_NAME_RAW_PREFIX}red-{cls.getdatetime()}"
+
+    @classmethod
+    def validate_dir_actual(cls, dir_arg: str):
+        assert dir_arg.startswith(DIRECTORY_NAME_RAW_PREFIX), (
+            dir_arg,
+            DIRECTORY_NAME_RAW_PREFIX,
+        )
         return dir_arg
 
 
