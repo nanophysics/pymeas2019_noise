@@ -1,16 +1,27 @@
+import logging
 import pathlib
 
 from . import library_logger, library_plot, library_topic
 from .qt_main import MyApp
+
+logger = logging.getLogger("logger")
 
 directory_cwd = pathlib.Path.cwd()
 library_logger.init_logger_gui(directory_cwd)
 
 
 def main():
-    import config_plot
+    try:
+        import config_plot
+    except ImportError:
+        logger.error(
+            "'import config_plot' failed as 'config_plot.py' is expected in the current directory."
+        )
+        logger.error("You probably missed to run pymeas2019 init")
+        return 1
 
     plot_config = config_plot.get_plot_config()
+
     presentations = library_topic.get_presentations(plot_config=plot_config)
 
     plot_data = library_topic.PlotDataMultipleDirectories(
